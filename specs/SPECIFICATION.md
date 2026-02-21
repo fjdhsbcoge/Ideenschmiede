@@ -1,9 +1,13 @@
 # Ideenschmiede Living Specification
 
-**Version:** 0.1.0  
+**Version:** 0.2.0  
 **Last Updated:** 2026-02-22  
 **Author:** Kimi Claw (AI Assistant)  
 **Status:** Draft - Open for Review
+
+**Changelog:**
+- v0.2.0: Added Implementation Phase, Team Selection, Revenue Sharing, Chain-of-Thought rewards
+- v0.1.0: Initial specification with Voting, DLC, and Share Tracking
 
 ---
 
@@ -233,18 +237,15 @@ Investors can sell shares to other users.
 
 ### 6.3 Revenue Distribution
 
+**DEPRECATED:** See Section 10 (Implementation Phase) for updated revenue sharing model.
+
 When idea generates revenue:
 ```
 payout_per_share = total_revenue / total_shares
 investor_payout = payout_per_share * investor_shares
 ```
 
-**⚠️ OPEN POINT:** Revenue attestation mechanism.
-
-How does the platform verify revenue? Options:
-- Self-reported by ideator (reputation risk)
-- Third-party oracle (adds trust)
-- On-chain revenue (if Bitcoin-native business)
+**Note:** This simple model is replaced by the team-based equity pool system in Section 10.
 
 ---
 
@@ -330,7 +331,168 @@ Reputation score calculation TBD.
 
 ---
 
-## 10. Open Points Summary
+## 10. Implementation Phase
+
+### 10.1 Overview
+
+Once an idea passes voting, it enters the **Implementation Phase**. This is where the concept becomes reality through team execution.
+
+**Key principle:** Each team forms a **separate equity pool**. Investors self-select which team(s) to fund.
+
+### 10.2 Stakeholders
+
+| Stakeholder | Role | Compensation |
+|-------------|------|--------------|
+| **Idea-share owners** | Original concept + validation | % of revenue from ALL team pools |
+| **Investors** | Capital + curation | % of revenue (via idea-shares) |
+| **Team-owners** | Execution + build | % of revenue (negotiated per team) |
+| **Contributors** | Early feedback, refinements | % of exit (chain-of-thought pool) |
+
+### 10.3 Implementation Flow
+
+```
+1. IDEA ACCEPTED
+   └── Voting ends with PASS
+   └── DLC funds released from investor locks
+   
+2. TEAM FORMATION
+   └── Teams submit proposals with:
+       - Milestone plan
+       - Budget request
+       - Equity ask (team-ownership %)
+       
+3. INVESTOR SELECTION
+   └── Investors review proposals
+   └── Each investor chooses which team(s) to fund
+   └── Funds sent DIRECTLY to chosen team(s)
+   └── No treasury middleman
+   
+4. PARALLEL BUILDING
+   └── Multiple teams can build simultaneously
+   └── Each team is independent
+   └── Competition encouraged
+   
+5. REVENUE SHARING
+   └── Each team generates revenue independently
+   └── Revenue split per team:
+       - 50% to idea-share owners (all investors + ideator)
+       - 50% to team-owners
+   
+6. EXIT (Company Sale)
+   └── Sale proceeds distributed:
+       - Idea-share owners: 40%
+       - Team-owners: 40%
+       - Chain-of-thought pool: 5%
+       - Platform reserve: 15%
+```
+
+### 10.4 Equity Pool Structure
+
+**Example:** Idea "Decentralized Energy Storage"
+
+```
+Idea Shares (100M total):
+├── @solar_punk (Ideator): 55M shares (55%)
+├── @energy_whale: 20M shares (20%)
+├── @green_future: 15M shares (15%)
+└── @tech_savvy: 10M shares (10%)
+
+Team Pools:
+├── Team A (Battery-focused)
+│   ├── Funded by: @energy_whale, @green_future
+│   ├── Team equity: 50%
+│   └── Idea-share holders get: 50%
+│
+├── Team B (Grid-focused)
+│   ├── Funded by: @tech_savvy
+│   ├── Team equity: 50%
+│   └── Idea-share holders get: 50%
+│
+└── Team C (Software-only)
+    ├── Funded by: @green_future
+    ├── Team equity: 40% (negotiated)
+    └── Idea-share holders get: 60%
+```
+
+**Key rule:** Idea-share owners receive revenue from **every** team pool proportional to their share ownership.
+
+### 10.5 Team Selection (Investor Self-Selection)
+
+**Process:**
+1. Teams post proposals to platform
+2. 7-day review period for investors
+3. Each investor decides independently
+4. No collective vote required
+
+**Minimum funding:** Team can set minimum threshold. If not met, funds returned.
+
+**Multiple investments:** Investor can fund multiple teams for same idea (diversification).
+
+### 10.6 Revenue Split Default
+
+**Standard terms:**
+- Idea-share owners: 50%
+- Team-owners: 50%
+
+**Negotiable range:** ±20% (40/60 to 60/40)
+
+**If no agreement:**
+- 30-day negotiation period
+- If still deadlocked: investor vote (weighted by shares)
+- If vote inconclusive: team can be replaced
+
+### 10.7 Chain-of-Thought Rewards
+
+**Purpose:** Reward early contributors who helped refine the idea.
+
+**Qualifying contributions:**
+- Substantive comments that improved the idea
+- Voting participation (either direction)
+- Sharing/amplification (tracked via referrals)
+
+**Reward pool:** 5% of exit value
+
+**Distribution:**
+- Proportional to engagement score
+- Minimum threshold to prevent spam
+- Paid at exit (company sale or liquidation)
+
+**Example:**
+```
+Exit value: $1,000,000
+Chain-of-thought pool: $50,000 (5%)
+
+Top contributors:
+- @energy_whale (5 comments, early voter): $15,000
+- @green_future (3 comments, refined concept): $10,000
+- @random_user (1 comment, shared widely): $5,000
+- Others: $20,000 distributed
+```
+
+### 10.8 Dispute Resolution
+
+**Types of disputes:**
+1. Revenue reporting (team claims lower revenue)
+2. Milestone completion (disagreement on deliverables)
+3. Equity split renegotiation
+
+**Resolution ladder:**
+1. Direct negotiation (30 days)
+2. Investor vote (weighted by shares)
+3. Team replacement (if vote >66% against team)
+4. Arbitration (optional, external)
+
+### 10.9 Treasury Model (Deprecated for Implementation)
+
+**Note:** Original design included a multi-sig treasury (2-of-3: ideator, investor rep, platform).
+
+**Current design:** Direct investor-to-team funding eliminates treasury need.
+
+**⚠️ OPEN POINT:** Revisit if complex milestone-based funding is needed later.
+
+---
+
+## 11. Open Points Summary
 
 | # | Topic | Priority | Notes |
 |---|-------|----------|-------|
@@ -338,28 +500,34 @@ Reputation score calculation TBD.
 | 2 | **Oracle key holders** | Critical | 2-of-3 federation members |
 | 3 | **Share representation** | High | RGB vs UTXO tracking vs other |
 | 4 | **Quorum requirement** | Medium | Minimum votes for valid decision |
-| 5 | **Revenue attestation** | Medium | How to verify idea revenue |
-| 6 | **Resubmission cooldown** | Low | Time between rejected → new submission |
-| 7 | **Fork equity enforcement** | Low | Social vs technical enforcement |
+| 5 | **Revenue attestation** | Medium | How to verify team revenue |
+| 6 | **Team replacement process** | Medium | Technical mechanism for removing teams |
+| 7 | **Chain-of-thought calculation** | Low | Engagement scoring algorithm |
 | 8 | **Username registration** | Low | First-come-first-served vs auction |
 | 9 | **Secondary market type** | Low | Order book vs AMM |
+| 10 | **Treasury multi-sig** | Low | Only if milestone funding needed later |
 
 ---
 
-## 11. Implementation Phases
+## 12. Implementation Phases
 
 ### Phase 1: MVP (Current)
 - [x] Idea card prototype
+- [x] Living specification v0.2.0
+- [ ] Subscription system ($12/mo, $120/yr)
 - [ ] DLC implementation (basic)
 - [ ] Federated oracle (2-of-3)
 - [ ] Simple share tracking
 - [ ] Web interface
 
 ### Phase 2: Enhanced
+- [ ] Team formation & selection
+- [ ] Parallel team support
+- [ ] Revenue sharing contracts
+- [ ] Chain-of-thought tracking
 - [ ] Sybil resistance mechanism
 - [ ] RGB protocol integration
 - [ ] Secondary market
-- [ ] Reputation system
 
 ### Phase 3: Decentralized
 - [ ] Permissionless oracle federation
@@ -368,7 +536,7 @@ Reputation score calculation TBD.
 
 ---
 
-## 12. References
+## 13. References
 
 - [DLC Specification](https://github.com/discreetlogcontracts/dlcspecs)
 - [RGB Protocol](https://rgb.info/)
@@ -377,10 +545,11 @@ Reputation score calculation TBD.
 
 ---
 
-## 13. Changelog
+## 14. Changelog
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-02-22 | 0.2.0 | Added Implementation Phase, Team Selection, Revenue Sharing, Chain-of-Thought rewards, Exit distribution |
 | 2026-02-22 | 0.1.0 | Initial specification draft |
 
 ---
