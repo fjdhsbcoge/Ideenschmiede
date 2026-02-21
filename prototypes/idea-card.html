@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ideenschmiede - Ideen-Karte</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #eaeaea;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .idea-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .idea-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(233, 69, 96, 0.2);
+        }
+
+        .card-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .idea-title-section {
+            flex: 1;
+        }
+
+        .idea-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .idea-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            color: #a0a0a0;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .meta-item::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #e94560;
+        }
+
+        .phase-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .phase-voting {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .phase-trading {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .phase-rejected {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .card-body {
+            padding: 28px;
+        }
+
+        .idea-description {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #d0d0d0;
+            margin-bottom: 24px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #e94560;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ownership-section {
+            background: rgba(233, 69, 96, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .ownership-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .ownership-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #e94560;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .share-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .share-price span {
+            color: #f39c12;
+        }
+
+        .ownership-bar {
+            display: flex;
+            height: 32px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .ownership-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: white;
+            transition: opacity 0.3s ease;
+        }
+
+        .ownership-segment:hover {
+            opacity: 0.8;
+        }
+
+        .seg-original { background: #e94560; }
+        .seg-investor1 { background: #3498db; }
+        .seg-investor2 { background: #2ecc71; }
+        .seg-investor3 { background: #9b59b6; }
+
+        .ownership-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.8rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .voting-section {
+            background: rgba(243, 156, 18, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .voting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .voting-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #f39c12;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .voting-timer {
+            font-size: 0.85rem;
+            color: #a0a0a0;
+        }
+
+        .voting-timer span {
+            color: #f39c12;
+            font-weight: 600;
+        }
+
+        .vote-bar-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            height: 40px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .vote-bar {
+            display: flex;
+            height: 100%;
+        }
+
+        .vote-positive {
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: width 0.5s ease;
+        }
+
+        .vote-negative {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: width 0.5s ease;
+        }
+
+        .vote-threshold {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: white;
+            opacity: 0.5;
+        }
+
+        .vote-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .vote-btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .vote-btn-up {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .vote-btn-up:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.3);
+        }
+
+        .vote-btn-down {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .vote-btn-down:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 14px 24px;
+            border: 1px solid rgba(233, 69, 96, 0.5);
+            background: transparent;
+            color: #e94560;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(233, 69, 96, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            color: white;
+            border: none;
+        }
+
+        .action-btn.primary:hover {
+            box-shadow: 0 8px 25px rgba(233, 69, 96, 0.4);
+        }
+
+        .comments-section {
+            padding: 28px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .comments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .comments-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .comments-count {
+            background: rgba(233, 69, 96, 0.2);
+            color: #e94560;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .comment-input {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .comment-field {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #eaeaea;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .comment-field:focus {
+            border-color: #e94560;
+        }
+
+        .comment-field::placeholder {
+            color: #666;
+        }
+
+        .comment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .comment {
+            display: flex;
+            gap: 12px;
+        }
+
+        .comment-content {
+            flex: 1;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .comment-author span {
+            color: #e94560;
+            font-size: 0.8rem;
+            margin-left: 8px;
+        }
+
+        .comment-text {
+            color: #b0b0b0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .comment-time {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .bitcoin-address {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #f39c12;
+            background: rgba(243, 156, 18, 0.1);
+            padding: 8px 12px;
+            border-radius: 6px;
+            word-break: break-all;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .idea-title {
+                font-size: 1.3rem;
+            }
+
+            .card-header {
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .vote-actions {
+                flex-direction: column;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Ideenschmiede</h1>
+            <p>Der Marktplatz für Ideen</p>
+        </div>
+
+        <div class="idea-card">
+            <div class="card-header">
+                <div class="idea-title-section">
+                    <h2 class="idea-title">Dezentrale Energiespeicher-Community</h2>
+                    <div class="idea-meta">
+                        <span class="meta-item">Von @solar_punk</span>
+                        <span class="meta-item">Kategorie: Energie</span>
+                        <span class="meta-item">Erstellt: 15. Feb 2026</span>
+                    </div>
+                </div>
+                <span class="phase-badge phase-voting">🗳️ Abstimmungsphase</span>
+            </div>
+
+            <div class="card-body">
+                <p class="idea-description">
+                    Eine Plattform, die Hausbesitzer mit Solaranlagen verbindet, um überschüssige Energie 
+                    in einer dezentralen Batterie-Community zu speichern. Statt teurer Einzelbatterien 
+                    nutzt die Community gemeinsame Speicherkapazitäten. Smart Contracts verteilen 
+                    gespeicherte Energie automatisch nach Bedarf und Einspeisung.
+                </p>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value">247</div>
+                        <div class="stat-label">Unterstützer</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">₿ 0.42</div>
+                        <div class="stat-label">Gesamtwert</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">18</div>
+                        <div class="stat-label">Tage aktiv</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">89%</div>
+                        <div class="stat-label">Positive Stimmen</div>
+                    </div>
+                </div>
+
+                <div class="ownership-section">
+                    <div class="ownership-header">
+                        <span class="ownership-title">📊 Eigentumsstruktur</span>
+                        <span class="share-price">Aktueller Preis: <span>₿ 0.001</span> / Anteil</span>
+                    </div>
+                    <div class="ownership-bar">
+                        <div class="ownership-segment seg-original" style="width: 55%">55%</div>
+                        <div class="ownership-segment seg-investor1" style="width: 20%">20%</div>
+                        <div class="ownership-segment seg-investor2" style="width: 15%">15%</div>
+                        <div class="ownership-segment seg-investor3" style="width: 10%">10%</div>
+                    </div>
+                    <div class="ownership-legend">
+                        <div class="legend-item">
+                            <div class="legend-dot seg-original"></div>
+                            <span>@solar_punk (Ideeninhaber)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot seg-investor1"></div>
+                            <span>@energy_whale</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot seg-investor2"></div>
+                            <span>@green_future</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot seg-investor3"></div>
+                            <span>@tech_savvy</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 0.8rem; color: #888;">
+                        📍 On-Chain: <span class="bitcoin-address">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</span>
+                    </div>
+                </div>
+
+                <div class="voting-section">
+                    <div class="voting-header">
+                        <span class="voting-title">🗳️ Community-Abstimmung</span>
+                        <span class="voting-timer">Noch <span>5 Tage 8 Std</span> bis zum Urteil</span>
+                    </div>
+                    <div class="vote-bar-container">
+                        <div class="vote-bar">
+                            <div class="vote-positive" style="width: 89%">👍 89%</div>
+                            <div class="vote-negative" style="width: 11%">11% 👎</div>
+                        </div>
+                        <div class="vote-threshold"></div>
+                    </div>
+                    <div class="vote-actions">
+                        <button class="vote-btn vote-btn-up">
+                            👍 Diese Idee unterstützen
+                        </button>
+                        <button class="vote-btn vote-btn-down">
+                            👎 Ablehnen
+                        </button>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn primary">💰 Anteile kaufen</button>
+                    <button class="action-btn">📋 Idee verfeinern</button>
+                    <button class="action-btn">🔗 Teilen</button>
+                </div>
+            </div>
+
+            <div class="comments-section">
+                <div class="comments-header">
+                    <span class="comments-title">💬 Diskussion</span>
+                    <span class="comments-count">23 Kommentare</span>
+                </div>
+                
+                <div class="comment-input">
+                    <div class="comment-avatar">DU</div>
+                    <input type="text" class="comment-field" placeholder="Deine Gedanken zur Idee...">
+                </div>
+
+                <div class="comment-list">
+                    <div class="comment">
+                        <div class="comment-avatar" style="background: linear-gradient(135deg, #3498db, #2980b9);">EW</div>
+                        <div class="comment-content">
+                            <div class="comment-author">@energy_whale <span>Top-Investor</span></div>
+                            <div class="comment-text">
+                                Die regulatorischen Hürden in Deutschland könnten ein Problem sein. 
+                                Hast du dich schon mit dem Bundesnetzagentur auseinandergesetzt?
+                            </div>
+                            <div class="comment-time">vor 2 Stunden</div>
+                        </div>
+                    </div>
+                    
+                    <div class="comment">
+                        <div class="comment-avatar" style="background: linear-gradient(135deg, #2ecc71, #27ae60);">GF</div>
+                        <div class="comment-content">
+                            <div class="comment-author">@green_future</div>
+                            <div class="comment-text">
+                                Super Konzept! Ich habe ähnliche Gedanken für Windenergie. 
+                                Vielleicht können wir das später zusammenführen?
+                            </div>
+                            <div class="comment-time">vor 5 Stunden</div>
+                        </div>
+                    </div>
+
+                    <div class="comment">
+                        <div class="comment-avatar" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">TS</div>
+                        <div class="comment-content">
+                            <div class="comment-author">@tech_savvy</div>
+                            <div class="comment-text">
+                                Technisch machbar. Für den Smart Contract würde ich RGB oder 
+                                Liquid in Betracht ziehen, nicht direkt on-chain.
+                            </div>
+                            <div class="comment-time">vor 1 Tag</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple interactivity for demonstration
+        document.querySelectorAll('.vote-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const isUp = this.classList.contains('vote-btn-up');
+                const message = isUp ? '👍 Du hast diese Idee unterstützt!' : '👎 Du hast diese Idee abgelehnt.';
+                
+                // Visual feedback
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                    alert(message + '\n\n(In der echten Version würde hier eine Bitcoin-Signaturtransaktion stattfinden)');
+                }, 150);
+            });
+        });
+
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const text = this.textContent;
+                alert(`${text} - Funktion würde hier geöffnet werden`);
+            });
+        });
+
+        // Comment input
+        const commentField = document.querySelector('.comment-field');
+        commentField.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && this.value.trim()) {
+                alert('Kommentar würde gesendet: ' + this.value);
+                this.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
