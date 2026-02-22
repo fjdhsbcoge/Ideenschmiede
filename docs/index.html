@@ -916,6 +916,406 @@
             color: #555;
         }
 
+        /* Team Formation UI */
+        .team-formation-page {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .formation-header {
+            margin-bottom: 40px;
+        }
+
+        .formation-header h2 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .formation-header p {
+            color: #888;
+        }
+
+        .formation-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+
+        .formation-section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #d0d0d0;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: white;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-hint {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 6px;
+        }
+
+        .equity-slider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .equity-slider input[type="range"] {
+            flex: 1;
+            height: 8px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .equity-slider input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .equity-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #e94560;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .position-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .position-item {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px 16px;
+            border-radius: 10px;
+        }
+
+        .position-item input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        .position-item input:focus {
+            outline: none;
+        }
+
+        .position-item button {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .add-position-btn {
+            background: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+            border: 1px dashed rgba(46, 204, 113, 0.3);
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .add-position-btn:hover {
+            background: rgba(46, 204, 113, 0.2);
+        }
+
+        .submit-team-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .submit-team-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(233, 69, 96, 0.3);
+        }
+
+        /* Team Dashboard */
+        .team-dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .dashboard-title h2 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .dashboard-title p {
+            color: #888;
+        }
+
+        .dashboard-stats {
+            display: flex;
+            gap: 24px;
+        }
+
+        .dashboard-stat {
+            text-align: center;
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+        }
+
+        .dashboard-stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #e94560;
+        }
+
+        .dashboard-stat-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .dashboard-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .member-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: 600;
+        }
+
+        .member-role {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .member-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-active { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+        .status-pending { background: rgba(243, 156, 18, 0.2); color: #f39c12; }
+
+        .application-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .application-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .application-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .application-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .application-position {
+            color: #f39c12;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .application-message {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .application-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .app-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .app-btn-accept {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+        }
+
+        .app-btn-decline {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+
+        .invite-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .invite-input-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .invite-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        .invite-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .hero h1 { font-size: 2rem; }
@@ -926,6 +1326,9 @@
             .detail-header-top { flex-direction: column; }
             .process-flow { flex-direction: column; gap: 40px; }
             .process-flow::before { display: none; }
+            .dashboard-stats { flex-direction: column; }
+            .equity-slider { flex-direction: column; align-items: stretch; }
+            .equity-value { text-align: left; }
         }
     </style>
 </head>
@@ -1352,15 +1755,284 @@
         </div>
     </div>
 
+    <!-- Team Formation Page -->
+    <div id="team-formation" class="page-section">
+        <div class="team-formation-page">
+            <div class="formation-header">
+                <h2>🚀 Neues Team gründen</h2>
+                <p>Du möchtest die Idee "Open-Source Medikamenten-Datenbank" umsetzen? Gründe ein Team und finde Mitstreiter.</p>
+            </div>
+
+            <div class="formation-card">
+                <div class="formation-section-title">📋 Team-Informationen</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Team-Name</label>
+                    <input type="text" class="form-input" placeholder="z.B. Team PharmaData">
+                    <div class="form-hint">Ein aussagekräftiger Name hilft Investoren, dein Team zu erkennen.</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Beschreibung</label>
+                    <textarea class="form-textarea" placeholder="Beschreibe deinen Ansatz, dein Team und eure Erfahrung..."></textarea>
+                    <div class="form-hint">Was macht euren Ansatz einzigartig? Warum sollten Investoren euch vertrauen?</div>
+                </div>
+            </div>
+
+            <div class="formation-card">
+                <div class="formation-section-title">⚖️ Equity-Aufteilung</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Team-Anteil</label>
+                    <div class="equity-slider">
+                        <input type="range" min="20" max="80" value="50" id="equitySlider" oninput="updateEquity(this.value)">
+                        <div class="equity-value" id="equityValue">50%</div>
+                    </div>
+                    <div class="form-hint">
+                        <span id="equitySplit">50% Team / 50% Ideen-Inhaber</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Interne Team-Aufteilung (Vorschlag)</label>
+                    <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px; margin-top: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>Team Leader (du)</span>
+                            <span style="color: #e94560; font-weight: 600;">30%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; color: #888;">
+                            <span>Verbleibend für Team-Mitglieder</span>
+                            <span>20%</span>
+                        </div>
+                    </div>
+                    <div class="form-hint">Dies ist ein Vorschlag. Die finale Aufteilung wird mit dem Team verhandelt.</div>
+                </div>
+            </div>
+
+            <div class="formation-card">
+                <div class="formation-section-title">👥 Offene Positionen</div>
+                <div class="form-hint" style="margin-bottom: 16px;">Welche Rollen suchst du für dein Team?</div>
+                
+                <div class="position-list" id="positionList">
+                    <div class="position-item">
+                        <input type="text" value="Full-Stack Developer" readonly>
+                        <button onclick="this.parentElement.remove()">Entfernen</button>
+                    </div>
+                    <div class="position-item">
+                        <input type="text" value="UI/UX Designer" readonly>
+                        <button onclick="this.parentElement.remove()">Entfernen</button>
+                    </div>
+                </div>
+                
+                <button class="add-position-btn" onclick="addPosition()" style="margin-top: 12px;">+ Position hinzufügen</button>
+            </div>
+
+            <div class="formation-card">
+                <div class="formation-section-title">🎯 Meilensteine (Optional)</div>
+                
+                <div class="form-group">
+                    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                        <input type="text" class="form-input" placeholder="Meilenstein 1: MVP Launch" style="flex: 2;">
+                        <input type="text" class="form-input" placeholder="3 Monate" style="flex: 1;">
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <input type="text" class="form-input" placeholder="Meilenstein 2: Erster Kunde" style="flex: 2;">
+                        <input type="text" class="form-input" placeholder="6 Monate" style="flex: 1;">
+                    </div>
+                </div>
+            </div>
+
+            <button class="submit-team-btn" onclick="submitTeam()">Team gründen & Bewerbungen öffnen</button>
+        </div>
+    </div>
+
+    <!-- Team Dashboard Page -->
+    <div id="team-dashboard" class="page-section">
+        <div class="team-dashboard">
+            <div class="dashboard-header">
+                <div class="dashboard-title">
+                    <h2>👥 Team PharmaData</h2>
+                    <p>Open-Source Medikamenten-Datenbank • Gegründet vor 5 Tagen</p>
+                </div>
+                <div class="dashboard-stats">
+                    <div class="dashboard-stat">
+                        <div class="dashboard-stat-value">₿ 0.8</div>
+                        <div class="dashboard-stat-label">Investiert</div>
+                    </div>
+                    <div class="dashboard-stat">
+                        <div class="dashboard-stat-value">4</div>
+                        <div class="dashboard-stat-label">Mitglieder</div>
+                    </div>
+                    <div class="dashboard-stat">
+                        <div class="dashboard-stat-value">3</div>
+                        <div class="dashboard-stat-label">Bewerbungen</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3>👤 Team-Mitglieder</h3>
+                    <div class="member-list">
+                        <div class="member-item">
+                            <div class="member-avatar" style="background: linear-gradient(135deg, #e94560, #ff6b6b);">JD</div>
+                            <div class="member-info">
+                                <div class="member-name">@john_dev</div>
+                                <div class="member-role">Team Leader • Full-Stack Dev</div>
+                            </div>
+                            <span class="member-status status-active">Leader</span>
+                        </div>
+                        <div class="member-item">
+                            <div class="member-avatar" style="background: linear-gradient(135deg, #3498db, #2980b9);">AS</div>
+                            <div class="member-info">
+                                <div class="member-name">@alice_design</div>
+                                <div class="member-role">UI/UX Designer</div>
+                            </div>
+                            <span class="member-status status-active">Aktiv</span>
+                        </div>
+                        <div class="member-item">
+                            <div class="member-avatar" style="background: linear-gradient(135deg, #2ecc71, #27ae60);">MB</div>
+                            <div class="member-info">
+                                <div class="member-name">@mike_backend</div>
+                                <div class="member-role">Backend Developer</div>
+                            </div>
+                            <span class="member-status status-pending">Ausstehend</span>
+                        </div>
+                    </div>
+
+                    <div class="invite-section">
+                        <div style="font-weight: 600; margin-bottom: 8px;">✉️ Mitglied einladen</div>
+                        <div class="invite-input-group">
+                            <input type="text" class="invite-input" placeholder="@username">
+                            <button class="invite-btn">Einladen</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>📨 Bewerbungen (3)</h3>
+                    <div class="application-list">
+                        <div class="application-item">
+                            <div class="application-header">
+                                <div class="application-user">
+                                    <div class="member-avatar" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); width: 32px; height: 32px; font-size: 0.75rem;">SK</div>
+                                    <span style="font-weight: 600;">@sarah_frontend</span>
+                                </div>
+                                <span class="application-position">Frontend Dev</span>
+                            </div>
+                            <div class="application-message">
+                                "Hallo! Ich habe 5 Jahre Erfahrung mit React und Vue. Würde mich freuen, Teil des Teams zu werden."
+                            </div>
+                            <div class="application-actions">
+                                <button class="app-btn app-btn-accept">Annehmen</button>
+                                <button class="app-btn app-btn-decline">Ablehnen</button>
+                            </div>
+                        </div>
+
+                        <div class="application-item">
+                            <div class="application-header">
+                                <div class="application-user">
+                                    <div class="member-avatar" style="background: linear-gradient(135deg, #f39c12, #e67e22); width: 32px; height: 32px; font-size: 0.75rem;">TP</div>
+                                    <span style="font-weight: 600;">@tom_product</span>
+                                </div>
+                                <span class="application-position">Product Manager</span>
+                            </div>
+                            <div class="application-message">
+                                "Ehemaliger Product Lead bei PharmaCorp. Kenne die Branche gut und sehe großes Potenzial."
+                            </div>
+                            <div class="application-actions">
+                                <button class="app-btn app-btn-accept">Annehmen</button>
+                                <button class="app-btn app-btn-decline">Ablehnen</button>
+                            </div>
+                        </div>
+
+                        <div class="application-item">
+                            <div class="application-header">
+                                <div class="application-user">
+                                    <div class="member-avatar" style="background: linear-gradient(135deg, #1abc9c, #16a085); width: 32px; height: 32px; font-size: 0.75rem;">LW</div>
+                                    <span style="font-weight: 600;">@lisa_writer</span>
+                                </div>
+                                <span class="application-position">Technical Writer</span>
+                            </div>
+                            <div class="application-message">
+                                "Medizinische Dokumentation ist mein Spezialgebiet. Kann bei Compliance-Dokumenten helfen."
+                            </div>
+                            <div class="application-actions">
+                                <button class="app-btn app-btn-accept">Annehmen</button>
+                                <button class="app-btn app-btn-decline">Ablehnen</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>⚙️ Team-Einstellungen</h3>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                            <div>
+                                <div style="font-weight: 500;">Team-Equity</div>
+                                <div style="font-size: 0.85rem; color: #888;">Aktuell: 50% Team / 50% Ideen-Inhaber</div>
+                            </div>
+                            <button style="background: rgba(255,255,255,0.1); border: none; color: #888; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Bearbeiten</button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                            <div>
+                                <div style="font-weight: 500;">Bewerbungen</div>
+                                <div style="font-size: 0.85rem; color: #888;">Aktuell: Offen</div>
+                            </div>
+                            <button style="background: rgba(255,255,255,0.1); border: none; color: #888; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Schließen</button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                            <div>
+                                <div style="font-weight: 500;">Offene Positionen</div>
+                                <div style="font-size: 0.85rem; color: #888;">2 Positionen aktiv</div>
+                            </div>
+                            <button style="background: rgba(255,255,255,0.1); border: none; color: #888; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Verwalten</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>📊 Fortschritt</h3>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="font-size: 0.9rem;">Team-Bildung</span>
+                                <span style="color: #2ecc71;">✓ Abgeschlossen</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                <div style="width: 100%; height: 100%; background: #2ecc71; border-radius: 3px;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="font-size: 0.9rem;">Seed-Funding</span>
+                                <span style="color: #f39c12;">● Läuft</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                <div style="width: 40%; height: 100%; background: #f39c12; border-radius: 3px;"></div>
+                            </div>
+                            <div style="font-size: 0.8rem; color: #888; margin-top: 4px;">₿ 0.8 / ₿ 2.0 Ziel</div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="font-size: 0.9rem;">MVP Entwicklung</span>
+                                <span style="color: #888;">○ Wartet</span>
+                            </div>
+                            <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                                <div style="width: 0%; height: 100%; background: #3498db; border-radius: 3px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         function showPage(pageId) {
-            if (pageId === 'detail-voting' || pageId === 'detail-approved' || pageId === 'detail-building') {
-                document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-                document.getElementById(pageId).classList.add('active');
-            } else {
-                document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-                document.getElementById(pageId).classList.add('active');
-            }
+            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
             window.scrollTo(0, 0);
         }
 
@@ -1386,6 +2058,30 @@
                     card.style.display = 'none';
                 }
             });
+        }
+
+        function updateEquity(value) {
+            document.getElementById('equityValue').textContent = value + '%';
+            document.getElementById('equitySplit').textContent = value + '% Team / ' + (100 - value) + '% Ideen-Inhaber';
+        }
+
+        function addPosition() {
+            const position = prompt('Position eingeben (z.B. Frontend Developer):');
+            if (position) {
+                const list = document.getElementById('positionList');
+                const item = document.createElement('div');
+                item.className = 'position-item';
+                item.innerHTML = `
+                    <input type="text" value="${position}" readonly>
+                    <button onclick="this.parentElement.remove()">Entfernen</button>
+                `;
+                list.appendChild(item);
+            }
+        }
+
+        function submitTeam() {
+            alert('🚀 Team erfolgreich gegründet!\n\nDein Team ist jetzt öffentlich und nimmt Bewerbungen entgegen.');
+            showPage('team-dashboard');
         }
 
         document.querySelectorAll('.vote-btn').forEach(btn => {
