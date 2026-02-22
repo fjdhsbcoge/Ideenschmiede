@@ -734,6 +734,188 @@
             margin-top: 4px;
         }
 
+        /* Process Flow */
+        .process-section {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .process-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .process-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+
+        .process-header p {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .process-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            position: relative;
+        }
+
+        .process-flow::before {
+            content: '';
+            position: absolute;
+            top: 40px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg, #e94560, #f39c12, #2ecc71, #3498db);
+            z-index: 0;
+        }
+
+        .process-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 3px solid;
+            position: relative;
+        }
+
+        .step-1 .step-icon { border-color: #e94560; }
+        .step-2 .step-icon { border-color: #f39c12; }
+        .step-3 .step-icon { border-color: #2ecc71; }
+        .step-4 .step-icon { border-color: #3498db; }
+
+        .step-number {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e94560;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .step-1 .step-title { color: #e94560; }
+        .step-2 .step-title { color: #f39c12; }
+        .step-3 .step-title { color: #2ecc71; }
+        .step-4 .step-title { color: #3498db; }
+
+        .step-desc {
+            color: #888;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .process-arrow {
+            position: absolute;
+            top: 30px;
+            font-size: 1.5rem;
+            color: #666;
+        }
+
+        /* Graveyard Section */
+        .graveyard-section {
+            padding: 80px 20px;
+            background: linear-gradient(180deg, transparent 0%, rgba(149, 165, 166, 0.05) 50%, transparent 100%);
+        }
+
+        .graveyard-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .graveyard-header h2 {
+            font-size: 2rem;
+            color: #95a5a6;
+            margin-bottom: 12px;
+        }
+
+        .graveyard-header p {
+            color: #666;
+        }
+
+        .graveyard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .graveyard-card {
+            background: rgba(149, 165, 166, 0.05);
+            border: 1px solid rgba(149, 165, 166, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .graveyard-card:hover {
+            opacity: 1;
+        }
+
+        .graveyard-reason {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .reason-rejected { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+        .reason-timeout { background: rgba(149, 165, 166, 0.3); color: #95a5a6; }
+        .reason-no-team { background: rgba(243, 156, 18, 0.2); color: #f39c12; }
+
+        .graveyard-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #a0a0a0;
+        }
+
+        .graveyard-desc {
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+
+        .graveyard-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #555;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .hero h1 { font-size: 2rem; }
@@ -742,6 +924,8 @@
             .ideas-grid { grid-template-columns: 1fr; }
             .vote-actions { grid-template-columns: 1fr; }
             .detail-header-top { flex-direction: column; }
+            .process-flow { flex-direction: column; gap: 40px; }
+            .process-flow::before { display: none; }
         }
     </style>
 </head>
@@ -780,6 +964,92 @@
                 <div class="hero-stat">
                     <div class="hero-stat-value">89</div>
                     <div class="hero-stat-label">Ideen umgesetzt</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Process Flow -->
+        <div class="process-section">
+            <div class="process-header">
+                <h2>Von der Idee zum Produkt</h2>
+                <p>So funktioniert die Ideenschmiede</p>
+            </div>
+            
+            <div class="process-flow">
+                <div class="process-step step-1">
+                    <div class="step-icon">
+                        💡
+                        <span class="step-number">1</span>
+                    </div>
+                    <div class="step-title">Idee posten</div>
+                    <div class="step-desc">Jeder kann Ideen einreichen. Die Community diskutiert und bewertet.</div>
+                </div>
+                
+                <div class="process-step step-2">
+                    <div class="step-icon">
+                        🗳️
+                        <span class="step-number">2</span>
+                    </div>
+                    <div class="step-title">Community-Abstimmung</div>
+                    <div class="step-desc">8 Tage Voting. >25% Downvotes = Ablehnung. Sonst: Genehmigt.</div>
+                </div>
+                
+                <div class="process-step step-3">
+                    <div class="step-icon">
+                        👥
+                        <span class="step-number">3</span>
+                    </div>
+                    <div class="step-title">Teams bilden</div>
+                    <div class="step-desc">Mehrere Teams können parallel arbeiten. Investoren wählen frei.</div>
+                </div>
+                
+                <div class="process-step step-4">
+                    <div class="step-icon">
+                        🚀
+                        <span class="step-number">4</span>
+                    </div>
+                    <div class="step-title">Umsetzung & Erfolg</div>
+                    <div class="step-desc">Teams bauen, Umsatz wird 50/50 aufgeteilt. Bei Verkauf: Alle profitieren.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graveyard Section -->
+        <div class="graveyard-section">
+            <div class="graveyard-header">
+                <h2>🪦 Ideen-Friedhof</h2>
+                <p>Nicht jede Idee findet Unterstützung. Hier ruhen die abgelehnten Konzepte - als Lernmaterial für die Community.</p>
+            </div>
+            
+            <div class="graveyard-grid">
+                <div class="graveyard-card">
+                    <span class="graveyard-reason reason-rejected">❌ Abgelehnt (42% Downvotes)</span>
+                    <div class="graveyard-title">Zentrale Social-Media-Plattform</div>
+                    <div class="graveyard-desc">Eine weitere Twitter-Alternative. Die Community sah keinen Mehrwert.</div>
+                    <div class="graveyard-meta">
+                        <span>@social_guru</span>
+                        <span>Vor 15 Tagen</span>
+                    </div>
+                </div>
+
+                <div class="graveyard-card">
+                    <span class="graveyard-reason reason-no-team">⏱️ Kein Team gefunden</span>
+                    <div class="graveyard-title">Quantencomputer für Privatanwender</div>
+                    <div class="graveyard-desc">Interessante Idee, aber kein Team mit entsprechendem Know-how hat sich gefunden.</div>
+                    <div class="graveyard-meta">
+                        <span>@quantum_dreamer</span>
+                        <span>Vor 45 Tagen</span>
+                    </div>
+                </div>
+
+                <div class="graveyard-card">
+                    <span class="graveyard-reason reason-timeout">💤 Inaktivität</span>
+                    <div class="graveyard-title">Dezentrales Versicherungsprotokoll</div>
+                    <div class="graveyard-desc">Nach Genehmigung wurde das Projekt nicht weiter verfolgt.</div>
+                    <div class="graveyard-meta">
+                        <span>@defi_builder</span>
+                        <span>Vor 62 Tagen</span>
+                    </div>
                 </div>
             </div>
         </div>
