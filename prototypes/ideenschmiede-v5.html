@@ -181,6 +181,63 @@
             cursor: pointer;
         }
 
+        /* Wallet Connection */
+        .wallet-connect {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .wallet-connect:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .wallet-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .wallet-info {
+            text-align: left;
+        }
+
+        .wallet-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+
+        .wallet-address {
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Subscription Badge */
+        .sub-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(46, 204, 113, 0.2));
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+
         /* Main Content */
         .main {
             padding-top: 72px;
@@ -585,16 +642,16 @@
                 <a href="#" class="nav-link" onclick="showPage('teams')">Teams</a>
             </div>
             
-            <div style="display: flex; align-items: center;">
-                <a href="#" class="nav-cta" onclick="showPage('subscribe')">Upgrade</a>
-                
-                <div class="nav-user">
-                    <div class="nav-balance">
-                        <div class="nav-balance-amount">—</div>
-                        <div class="nav-balance-label">Free</div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="wallet-connect" onclick="showPage('wallet')">
+                    <div class="wallet-icon">₿</div>
+                    <div class="wallet-info">
+                        <div class="wallet-label">Wallet</div>
+                        <div class="wallet-address">Nicht verbunden</div>
                     </div>
-                    <div class="nav-avatar">G</div>
                 </div>
+                
+                <a href="#" class="nav-cta" onclick="showPage('subscribe')">Mitglied werden</a>
             </div>
         </div>
     </nav>
@@ -825,6 +882,140 @@
             </div>
         </div>
 
+        <!-- Wallet Connection Page -->
+        <div id="wallet" class="page">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h1 class="page-title">🔐 Wallet verbinden</h1>
+                    <p class="page-subtitle">Verbinde deine Bitcoin-Wallets für Investitionen und Auszahlungen</p>
+                </div>
+            </div>
+
+            <div class="content">
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <!-- Connected Wallets -->
+                    <div class="sidebar-section" style="margin-bottom: 24px;">
+                        <div class="sidebar-title">Verbundene Wallets (2)</div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: rgba(46, 204, 113, 0.05); border: 1px solid rgba(46, 204, 113, 0.2); border-radius: var(--radius-md);">
+                                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #f39c12, #e67e22); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px;">₿</div>
+                                
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <span style="font-weight: 600;">Haupt-Wallet</span>
+                                        <span class="sub-badge">⭐ Primär</span>
+                                    </div>
+                                    <div style="font-family: 'Courier New', monospace; font-size: 14px; color: var(--text-secondary);">bc1q...x0wlh</div>
+                                </div>
+                                
+                                <div style="text-align: right;">
+                                    <div style="font-weight: 600;">₿ 0.45</div>
+                                    <div style="font-size: 12px; color: var(--text-tertiary);">~$18,900</div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #9b59b6, #8e44ad); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px;">₿</div>
+                                
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; margin-bottom: 4px;">Projekt-Wallet</div>
+                                    <div style="font-family: 'Courier New', monospace; font-size: 14px; color: var(--text-secondary);">bc1q...9k2m4</div>
+                                </div>
+                                
+                                <div style="text-align: right;">
+                                    <div style="font-weight: 600;">₿ 0.12</div>
+                                    <div style="font-size: 12px; color: var(--text-tertiary);">~$5,040</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add New Wallet -->
+                    <div class="sidebar-section">
+                        <div class="sidebar-title">Neues Wallet hinzufügen</div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div>
+                                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Wallet-Name</label>
+                                <input type="text" class="form-input" placeholder="z.B. Spar-Wallet" style="width: 100%;">
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px;">Bitcoin-Adresse</label>
+                                <input type="text" class="form-input" placeholder="bc1q..." style="width: 100%; font-family: 'Courier New', monospace;">
+                            </div>
+
+                            <div style="display: flex; gap: 12px;">
+                                <button class="paywall-btn" style="flex: 1; background: var(--bg-elevated);">Abbrechen</button>
+                                <button class="paywall-btn" style="flex: 1;">Wallet verbinden</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(52, 152, 219, 0.05); border: 1px solid rgba(52, 152, 219, 0.2); border-radius: var(--radius-md); padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <span style="font-size: 20px;">ℹ️</span>
+                            <span style="font-weight: 600;">Warum mehrere Wallets?</span>
+                        </div>
+                        
+                        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.5;">
+                            Du kannst mehrere Wallets verbinden, um Einnahmen aus verschiedenen Projekten getrennt zu verwalten. 
+                            Wähle bei jeder Transaktion aus, welches Wallet du verwenden möchtest.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subscription Page (Simplified) -->
+        <div id="subscribe" class="page">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h1 class="page-title">🌟 Mitglied werden</h1>
+                    <p class="page-subtitle">Ein Preis. Voller Zugang. Alle Features.</p>
+                </div>
+            </div>
+
+            <div style="padding: 60px 32px;">
+                <div style="max-width: 480px; margin: 0 auto; text-align: center;">
+                    <div style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(46, 204, 113, 0.05)); border: 1px solid rgba(46, 204, 113, 0.3); border-radius: var(--radius-xl); padding: 40px; margin-bottom: 32px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">⭐</div>
+                        
+                        <h2 style="font-size: 28px; margin-bottom: 8px;">Vollmitgliedschaft</h2>
+                        
+                        <p style="color: var(--text-secondary); margin-bottom: 24px;">Alle Features. Keine Einschränkungen.</p>
+                        
+                        <div style="margin-bottom: 32px;">
+                            <div style="font-size: 48px; font-weight: 700;">$120</div>
+                            <div style="color: var(--text-tertiary);">pro Jahr</div>
+                            <div style="font-size: 14px; color: var(--accent-green); margin-top: 8px;">🎉 20% günstiger als monatlich</div>
+                        </div>
+                        
+                        <ul style="text-align: left; list-style: none; margin-bottom: 32px;">
+                            <li style="padding: 12px 0; border-bottom: 1px solid var(--border-color);">✅ Zugriff auf den Marktplatz</li>
+                            <li style="padding: 12px 0; border-bottom: 1px solid var(--border-color);">✅ Investiere in Teams</li>
+                            <li style="padding: 12px 0; border-bottom: 1px solid var(--border-color);">✅ Stimmrecht bei Abstimmungen</li>
+                            <li style="padding: 12px 0; border-bottom: 1px solid var(--border-color);">✅ Gründe eigene Teams</li>
+                            <li style="padding: 12px 0;">✅ Verdiene an erfolgreichen Projekten</li>
+                        </ul>
+                        
+                        <button class="paywall-btn" style="width: 100%; padding: 16px; font-size: 16px;">
+                            Mit Bitcoin bezahlen →
+                        </button>
+                        
+                        <div style="margin-top: 16px; font-size: 14px; color: var(--text-tertiary);">
+                            Oder <a href="#" style="color: var(--accent-primary);">$12/Monat</a> wählen
+                        </div>
+                    </div>
+                    
+                    <p style="font-size: 14px; color: var(--text-tertiary);">
+                        🔒 Sichere Zahlung via Bitcoin. Jederzeit kündbar.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <!-- Other Pages -->
         <div id="home" class="page">
             <div style="padding: 120px 32px; text-align: center;">
@@ -836,12 +1027,6 @@
         <div id="teams" class="page">
             <div style="padding: 120px 32px; text-align: center;">
                 <h2 style="font-size: 32px; margin-bottom: 16px;">Teams</h2>
-            </div>
-        </div>
-
-        <div id="subscribe" class="page">
-            <div style="padding: 120px 32px; text-align: center;">
-                <h2 style="font-size: 32px; margin-bottom: 16px;">Mitglied werden</h2>
             </div>
         </div>
     </main>
