@@ -1016,12 +1016,171 @@
             </div>
         </div>
 
-        <!-- Other Pages -->
+        <!-- Home Page -->
         <div id="home" class="page">
-            <div style="padding: 120px 32px; text-align: center;">
-                <h2 style="font-size: 32px; margin-bottom: 16px;">Startseite</h2>
-                <button class="paywall-btn" onclick="showPage('discussion')">Zur Diskussion →</button>
-            </div>
+            <section class="hero">
+                <div class="hero-badge">
+                    <span class="hero-badge-dot"></span>
+                    Jetzt in Beta
+                </div>
+                
+                <h1 class="hero-title">Der <span>Marktplatz</span><br>für Ideen</h1>
+                <p class="hero-subtitle">Von der ersten Idee bis zum erfolgreichen Produkt. Community-getrieben. Auf Bitcoin.</p>
+                
+                <div class="hero-actions">
+                    <button class="btn btn-primary" onclick="showPage('discussion')">
+                        Ideen entdecken →
+                    </button>
+                    <button class="btn btn-secondary" onclick="showPage('subscribe')">
+                        Mitglied werden
+                    </button>
+                </div>
+                
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">1,247</div>
+                        <div class="stat-label">Mitglieder</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">₿ 42.5</div>
+                        <div class="stat-label">Investiert</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">89</div>
+                        <div class="stat-label">Ideen umgesetzt</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">156</div>
+                        <div class="stat-label">Aktive Teams</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Two-System Explanation -->
+            <section class="process" style="background: var(--bg-secondary);">
+                <div class="section-header">
+                    <h2 class="section-title">Zwei Bereiche. Ein Ziel.</h2>
+                    <p class="section-subtitle">Jede Idee durchläuft eine Reise von der ersten Skizze bis zum erfolgreichen Produkt</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 1000px; margin: 0 auto;">
+                    <!-- Discussion -->
+                    <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 32px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <div style="width: 48px; height: 48px; background: rgba(52, 152, 219, 0.1); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px;">💡</div>
+                            <div>
+                                <div style="font-size: 12px; color: var(--accent-blue); font-weight: 600; text-transform: uppercase;">Kostenlos</div>
+                                <div style="font-size: 20px; font-weight: 700;">Ideen-Diskussion</div>
+                            </div>
+                        </div>
+                        
+                        <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6;">
+                            Jeder kann Ideen posten und Feedback geben. Hier entstehen Konzepte, werden diskutiert und verbessert.
+                        </p>
+                        
+                        <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px;">
+                            <li style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                <span style="color: var(--accent-green);">✓</span> Ideen posten
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                <span style="color: var(--accent-green);">✓</span> Kommentieren & diskutieren
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                <span style="color: var(--accent-green);">✓</span> Konzepte verbessern
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                <span style="color: var(--accent-green);">✓</span> Community-Feedback sammeln
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Marketplace -->
+                    <div style="background: var(--bg-tertiary); border: 1px solid rgba(233, 69, 96, 0.3); border-radius: var(--radius-xl); padding: 32px; position: relative;">
+                        <div style="position: absolute; top: -12px; right: 24px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; padding: 6px 16px; border-radius: 100px; font-size: 12px; font-weight: 600;">
+                            Mitglieder
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <div style="width: 48px; height: 48px; background: rgba(233, 69, 96, 0.1); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px;">🛒</div>
+                            <div>
+                                <div style="font-size: 12px; color: var(--accent-primary); font-weight: 600; text-transform: uppercase;">Mitgliedschaft</div>
+                                <div style="font-size: 20px; font-weight: 700;">Ideen-Marktplatz</div>
+                            </div>
+                        </div>
+                        
+                        <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6;">
+                            Reife Ideen werden hier umgesetzt. Investiere in Teams, stimme ab, werde Teilhaber.
+                        </p>
+                        
+                        <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px;">
+                            <li style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                <span style="color: var(--accent-green);">✓</span> In Teams investieren
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                <span style="color: var(--accent-green);">✓</span> Bei Abstimmungen abstimmen
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                <span style="color: var(--accent-green);">✓</span> Eigene Teams gründen
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                                <span style="color: var(--accent-green);">✓</span> An Gewinnen beteiligt werden
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 32px;">
+                    <p style="color: var(--text-secondary); font-size: 15px;">
+                        💡 <strong>So funktioniert's:</strong> Ideen starten in der Diskussion → werden verbessert → ziehen in den Marktplatz → Teams bilden sich → Investoren finanzieren → Produkte entstehen → Alle profitieren
+                    </p>
+                </div>
+            </section>
+
+            <!-- Process Steps -->
+            <section class="process">
+                <div class="section-header">
+                    <h2 class="section-title">Von der Idee zum Produkt</h2>
+                    <p class="section-subtitle">Der Weg einer erfolgreichen Idee durch die Ideenschmiede</p>
+                </div>
+                
+                <div class="process-steps">
+                    <div class="process-step step-1">
+                        <div class="step-number">
+                            💡
+                            <span class="step-badge">1</span>
+                        </div>
+                        <div class="step-title">Idee posten</div>
+                        <div class="step-desc">In der Diskussion. Kostenlos. Jeder kann mitmachen.</div>
+                    </div>
+                    
+                    <div class="process-step step-2">
+                        <div class="step-number">
+                            🗳️
+                            <span class="step-badge">2</span>
+                        </div>
+                        <div class="step-title">Community-Voting</div>
+                        <div class="step-desc">8 Tage Abstimmung. >25% Downvotes = Ablehnung.</div>
+                    </div>
+                    
+                    <div class="process-step step-3">
+                        <div class="step-number">
+                            👥
+                            <span class="step-badge">3</span>
+                        </div>
+                        <div class="step-title">Teams bilden</div>
+                        <div class="step-desc">Im Marktplatz. Mehrere Teams parallel möglich.</div>
+                    </div>
+                    
+                    <div class="process-step step-4">
+                        <div class="step-number">
+                            🚀
+                            <span class="step-badge">4</span>
+                        </div>
+                        <div class="step-title">Umsetzung & Erfolg</div>
+                        <div class="step-desc">50/50 Aufteilung. Bei Verkauf: Alle profitieren.</div>
+                    </div>
+                </div>
+            </section>
         </div>
 
         <div id="teams" class="page">
