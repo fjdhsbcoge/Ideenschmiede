@@ -10,10 +10,17 @@
 | **Ideator minimum investment** | 1% of valuation | Skin in the game |
 | **Total idea shares** | 100M | Fixed supply |
 | **Idea-share revenue split** | 50% | Of all team revenue goes to idea-share holders |
+| **Ideator ownership formula** | Outside Investment / Ideator Investment | Dynamic based on funding success |
 
 ---
 
 ## Scenario Table (15% / 5% / 80% Model)
+
+**Ideator Ownership = Outside Investment / Ideator Investment**
+
+The more outside investment an idea attracts, the higher the ideator's ownership percentage.
+
+---
 
 ### Low Valuation Ideas
 
@@ -22,20 +29,22 @@
 | **Ideator investment** | ₿ 0.001 | ₿ 0.005 | ₿ 0.01 |
 | **Self-set valuation** | ₿ 0.1 | ₿ 0.5 | ₿ 1.0 |
 | **Price per share** | 0.000001 ₿ | 0.000005 ₿ | 0.00001 ₿ |
-| **Ideator owns** | 1M shares (1%) | 1M shares (1%) | 1M shares (1%) |
-| **Outside investment needed for profit** | ₿ 0.0067 | ₿ 0.033 | ₿ 0.067 |
-| **At that investment:** | | | |
-| → Ideator immediate gain (15%) | ₿ 0.001 | ₿ 0.005 | ₿ 0.01 |
-| → Ideator net profit | ₿ 0 (break-even) | ₿ 0 (break-even) | ₿ 0 (break-even) |
-| → Team funding (80%) | ₿ 0.0053 | ₿ 0.0267 | ₿ 0.053 |
-| → Chain-of-thought (5%) | ₿ 0.00033 | ₿ 0.00167 | ₿ 0.0033 |
-| **For ₿ 0.01 profit, need investment of** | ₿ 0.073 | ₿ 0.10 | ₿ 0.113 |
-| **For ₿ 0.10 profit, need investment of** | ₿ 0.673 | ₿ 0.70 | ₿ 0.733 |
+| **Outside investment (example)** | ₿ 0.05 | ₿ 0.25 | ₿ 0.50 |
+| **Ideator ownership** | 50% (0.05/0.001) | 50% (0.25/0.005) | 50% (0.50/0.01) |
+| **Distribution of outside ₿:** | | | |
+| → Ideator immediate (15%) | ₿ 0.0075 | ₿ 0.0375 | ₿ 0.075 |
+| → Team funding (80%) | ₿ 0.04 | ₿ 0.20 | ₿ 0.40 |
+| → Chain-of-thought (5%) | ₿ 0.0025 | ₿ 0.0125 | ₿ 0.025 |
+| **Ideator position after funding:** | | | |
+| → Immediate gain | ₿ 0.0075 | ₿ 0.0375 | ₿ 0.075 |
+| → Net profit (vs investment) | +₿ 0.0065 | +₿ 0.0325 | +₿ 0.065 |
+| → Idea-shares owned | 50M (50%) | 50M (50%) | 50M (50%) |
 | **Future value (if 10x team revenue):** | | | |
-| → Total team revenue | ₿ 0.053 | ₿ 0.267 | ₿ 0.53 |
-| → Idea-share pool (50%) | ₿ 0.0265 | ₿ 0.133 | ₿ 0.265 |
-| → Ideator's share (1%) | ₿ 0.000265 | ₿ 0.00133 | ₿ 0.00265 |
-| → **Ideator total return** | ₿ 0.0013 | ₿ 0.0063 | ₿ 0.0127 |
+| → Team revenue | ₿ 0.40 | ₿ 2.0 | ₿ 4.0 |
+| → Idea-share pool (50%) | ₿ 0.20 | ₿ 1.0 | ₿ 2.0 |
+| → Ideator's share (50%) | ₿ 0.10 | ₿ 0.50 | ₿ 1.0 |
+| → **Total ideator return** | ₿ 0.1075 | ₿ 0.5375 | ₿ 1.075 |
+| → **Total ROI** | 107.5x | 107.5x | 107.5x |
 
 ---
 
@@ -46,20 +55,22 @@
 | **Ideator investment** | ₿ 0.05 | ₿ 0.10 | ₿ 0.25 |
 | **Self-set valuation** | ₿ 5.0 | ₿ 10.0 | ₿ 25.0 |
 | **Price per share** | 0.00005 ₿ | 0.0001 ₿ | 0.00025 ₿ |
-| **Ideator owns** | 1M shares (1%) | 1M shares (1%) | 1M shares (1%) |
-| **Outside investment needed for profit** | ₿ 0.333 | ₿ 0.667 | ₿ 1.667 |
-| **At that investment:** | | | |
-| → Ideator immediate gain (15%) | ₿ 0.05 | ₿ 0.10 | ₿ 0.25 |
-| → Ideator net profit | ₿ 0 (break-even) | ₿ 0 (break-even) | ₿ 0 (break-even) |
-| → Team funding (80%) | ₿ 0.267 | ₿ 0.533 | ₿ 1.333 |
-| → Chain-of-thought (5%) | ₿ 0.0167 | ₿ 0.033 | ₿ 0.083 |
-| **For ₿ 0.10 profit, need investment of** | ₿ 1.0 | ₿ 1.33 | ₿ 2.33 |
-| **For ₿ 1.0 profit, need investment of** | ₿ 7.0 | ₿ 7.33 | ₿ 8.33 |
+| **Outside investment (example)** | ₿ 0.50 | ₿ 1.0 | ₿ 2.5 |
+| **Ideator ownership** | 10% (0.5/0.05) | 10% (1.0/0.10) | 10% (2.5/0.25) |
+| **Distribution of outside ₿:** | | | |
+| → Ideator immediate (15%) | ₿ 0.075 | ₿ 0.15 | ₿ 0.375 |
+| → Team funding (80%) | ₿ 0.40 | ₿ 0.80 | ₿ 2.0 |
+| → Chain-of-thought (5%) | ₿ 0.025 | ₿ 0.05 | ₿ 0.125 |
+| **Ideator position after funding:** | | | |
+| → Immediate gain | ₿ 0.075 | ₿ 0.15 | ₿ 0.375 |
+| → Net profit (vs investment) | +₿ 0.025 | +₿ 0.05 | +₿ 0.125 |
+| → Idea-shares owned | 10M (10%) | 10M (10%) | 10M (10%) |
 | **Future value (if 10x team revenue):** | | | |
-| → Total team revenue | ₿ 2.67 | ₿ 5.33 | ₿ 13.33 |
-| → Idea-share pool (50%) | ₿ 1.335 | ₿ 2.665 | ₿ 6.665 |
-| → Ideator's share (1%) | ₿ 0.013 | ₿ 0.027 | ₿ 0.067 |
-| → **Ideator total return** | ₿ 0.063 | ₿ 0.127 | ₿ 0.317 |
+| → Team revenue | ₿ 4.0 | ₿ 8.0 | ₿ 20.0 |
+| → Idea-share pool (50%) | ₿ 2.0 | ₿ 4.0 | ₿ 10.0 |
+| → Ideator's share (10%) | ₿ 0.20 | ₿ 0.40 | ₿ 1.0 |
+| → **Total ideator return** | ₿ 0.275 | ₿ 0.55 | ₿ 1.375 |
+| → **Total ROI** | 5.5x | 5.5x | 5.5x |
 
 ---
 
@@ -70,20 +81,22 @@
 | **Ideator investment** | ₿ 0.5 | ₿ 1.0 | ₿ 2.5 |
 | **Self-set valuation** | ₿ 50.0 | ₿ 100.0 | ₿ 250.0 |
 | **Price per share** | 0.0005 ₿ | 0.001 ₿ | 0.0025 ₿ |
-| **Ideator owns** | 1M shares (1%) | 1M shares (1%) | 1M shares (1%) |
-| **Outside investment needed for profit** | ₿ 3.33 | ₿ 6.67 | ₿ 16.67 |
-| **At that investment:** | | | |
-| → Ideator immediate gain (15%) | ₿ 0.5 | ₿ 1.0 | ₿ 2.5 |
-| → Ideator net profit | ₿ 0 (break-even) | ₿ 0 (break-even) | ₿ 0 (break-even) |
-| → Team funding (80%) | ₿ 2.67 | ₿ 5.33 | ₿ 13.33 |
-| → Chain-of-thought (5%) | ₿ 0.167 | ₿ 0.333 | ₿ 0.833 |
-| **For ₿ 1.0 profit, need investment of** | ₿ 10.0 | ₿ 13.33 | ₿ 23.33 |
-| **For ₿ 10.0 profit, need investment of** | ₿ 70.0 | ₿ 73.33 | ₿ 83.33 |
+| **Outside investment (example)** | ₿ 5.0 | ₿ 10.0 | ₿ 25.0 |
+| **Ideator ownership** | 10% (5.0/0.5) | 10% (10.0/1.0) | 10% (25.0/2.5) |
+| **Distribution of outside ₿:** | | | |
+| → Ideator immediate (15%) | ₿ 0.75 | ₿ 1.50 | ₿ 3.75 |
+| → Team funding (80%) | ₿ 4.0 | ₿ 8.0 | ₿ 20.0 |
+| → Chain-of-thought (5%) | ₿ 0.25 | ₿ 0.50 | ₿ 1.25 |
+| **Ideator position after funding:** | | | |
+| → Immediate gain | ₿ 0.75 | ₿ 1.50 | ₿ 3.75 |
+| → Net profit (vs investment) | +₿ 0.25 | +₿ 0.50 | +₿ 1.25 |
+| → Idea-shares owned | 10M (10%) | 10M (10%) | 10M (10%) |
 | **Future value (if 10x team revenue):** | | | |
-| → Total team revenue | ₿ 26.7 | ₿ 53.3 | ₿ 133.3 |
-| → Idea-share pool (50%) | ₿ 13.35 | ₿ 26.65 | ₿ 66.65 |
-| → Ideator's share (1%) | ₿ 0.134 | ₿ 0.267 | ₿ 0.667 |
-| → **Ideator total return** | ₿ 0.634 | ₿ 1.267 | ₿ 3.167 |
+| → Team revenue | ₿ 40.0 | ₿ 80.0 | ₿ 200.0 |
+| → Idea-share pool (50%) | ₿ 20.0 | ₿ 40.0 | ₿ 100.0 |
+| → Ideator's share (10%) | ₿ 2.0 | ₿ 4.0 | ₿ 10.0 |
+| → **Total ideator return** | ₿ 2.75 | ₿ 5.50 | ₿ 13.75 |
+| → **Total ROI** | 5.5x | 5.5x | 5.5x |
 
 ---
 
@@ -137,31 +150,73 @@ With **1% ownership** and **50% revenue share** from teams:
 
 ---
 
+## Key Insights
+
+### 1. Dynamic Ownership Formula
+
+**Ideator Ownership % = Outside Investment / Ideator Investment**
+
+This creates powerful incentives:
+- **More outside investment → Higher ideator ownership**
+- Ideator is motivated to market their idea
+- Investors see ideator has real stake
+
+**Example:**
+- Ideator invests: ₿ 0.10
+- Outside investment: ₿ 1.0
+- Ideator ownership: 1.0 / 0.10 = **10%**
+
+### 2. Immediate Profit Guaranteed
+
+With 15% immediate cut, ideator makes **50% profit** immediately:
+
+| Ideator Invests | Outside Investment | Immediate Gain | Net Profit |
+|-----------------|-------------------|----------------|------------|
+| ₿ 0.01 | ₿ 0.10 | ₿ 0.015 | +₿ 0.005 (50%) |
+| ₿ 0.10 | ₿ 1.0 | ₿ 0.15 | +₿ 0.05 (50%) |
+| ₿ 1.0 | ₿ 10.0 | ₿ 1.50 | +₿ 0.50 (50%) |
+
+### 3. Low Valuation = Higher Ownership
+
+**Interesting dynamic:** Lower valuations give ideators higher ownership %
+
+| Scenario | Valuation | Ideator Invests | Outside | Ownership | Total ROI |
+|----------|-----------|-----------------|---------|-----------|-----------|
+| A2 | ₿ 0.5 | ₿ 0.005 | ₿ 0.25 | **50%** | **107.5x** |
+| B2 | ₿ 10.0 | ₿ 0.10 | ₿ 1.0 | **10%** | **5.5x** |
+| C2 | ₿ 100.0 | ₿ 1.0 | ₿ 10.0 | **10%** | **5.5x** |
+
+**Why A2 has higher ROI:**
+- 50% ownership means ideator captures half of all team revenue
+- Even with smaller absolute numbers, the percentage is huge
+- Encourages realistic valuations
+
+---
+
 ## Recommendation
 
-**For MVP (15% / 5% / 80% model):**
-- **Ideator minimum:** ₿ 0.01 (skin in game, accessible)
-- **Ideator ownership:** 5% (meaningful upside from revenue)
-- **Immediate cut:** 15% (compensates ideation work)
-- **Chain-of-thought:** 5% (rewards early engagement)
-- **Team funding:** 80% (builders get majority)
+**For MVP (15% / 5% / 80% model with dynamic ownership):**
 
-**Example outcome (B2 with 5% ownership):**
+**Key Formula:** Ideator Ownership = Outside Investment / Ideator Investment
+
+**Example outcome (B2 scenario):**
 - Ideator invests: ₿ 0.10
-- Outside investment: ₿ 0.667 (to break even)
-- Ideator immediate: ₿ 0.10 (15% of ₿ 0.667)
-- Team funding: ₿ 0.533 (80%)
-- If team generates 10x revenue → ₿ 5.33
-- Idea-share pool (50%): ₿ 2.67
-- Ideator's 5% share: ₿ 0.133
-- **Total return:** ₿ 0.233 (2.33x ROI)
+- Outside investment: ₿ 1.0
+- Ideator ownership: **10%** (1.0 / 0.10)
+- Ideator immediate (15%): ₿ 0.15
+- Net immediate profit: +₿ 0.05 (50% ROI)
+- Team funding (80%): ₿ 0.80
+- If team 10x revenue → ₿ 8.0
+- Idea-share pool (50%): ₿ 4.0
+- Ideator's 10% share: ₿ 0.40
+- **Total return:** ₿ 0.55 (5.5x ROI)
 
 This creates:
 - ✅ Ideator has real stake
-- ✅ Ideator compensated immediately (break-even possible)
+- ✅ **Immediate 50% profit** guaranteed
+- ✅ Higher ownership % with more outside investment
 - ✅ Teams well-funded (80%)
 - ✅ Early contributors rewarded (5%)
-- ✅ Meaningful upside from idea-shares (5% ownership)
 - ✅ Investors choose where money goes
 
 ---
