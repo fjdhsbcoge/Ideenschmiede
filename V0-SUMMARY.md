@@ -63,14 +63,14 @@ Ideator Ownership % = Ideator Investment / Outside Investment
 ### Idea-Shares (Red)
 - **What:** Ownership of the idea itself
 - **Earn from:** ALL teams building the idea
-- **Split:** 50% of team revenue goes to idea-share holders
-- **Buy:** During marketplace phase
+- **Split:** **20%** of profit to idea-share holders, **80%** to team-share holders
+- **Buy:** After voting approval, in marketplace
 
 ### Team-Shares (Orange)
 - **What:** Ownership of a specific team
 - **Earn from:** Only that team's revenue
-- **Split:** Team decides internal distribution
-- **Buy:** Directly from team
+- **Split:** Investment amount determines share ownership (investors only)
+- **Buy:** Directly into team of your choice
 
 ---
 
@@ -78,10 +78,10 @@ Ideator Ownership % = Ideator Investment / Outside Investment
 
 ```
 1. 💡 Idee posten        → Discussion (free)
-2. 🛒 In den Marktplatz  → Idea-Shares offered
-3. 🗳️ Community-Voting   → 8 days, >25% downvotes = reject
-4. 👥 Teams bilden       → Teams form, investors choose
-5. 🚀 Umsetzung          → Build, earn, share revenue
+2. 🗳️ Community-Voting   → 8 days, >25% downvotes = reject
+3. 🛒 In den Marktplatz  → After approval: Idea-Shares offered
+4. 👥 Teams bilden       → Teams form, investors choose & invest
+5. 🚀 Umsetzung          → Build, 20/80 profit split
 ```
 
 ---

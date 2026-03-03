@@ -460,29 +460,38 @@ Ideator Ownership % = Ideator Investment / Outside Investment
 
 ```
 Idea Shares (100M total):
-├── @solar_punk (Ideator): 55M shares (55%)
-├── @energy_whale: 20M shares (20%)
-├── @green_future: 15M shares (15%)
-└── @tech_savvy: 10M shares (10%)
-
-Team Pools:
-├── Team A (Battery-focused)
-│   ├── Funded by: @energy_whale, @green_future
-│   ├── Team equity: 50%
-│   └── Idea-share holders get: 50%
-│
-├── Team B (Grid-focused)
-│   ├── Funded by: @tech_savvy
-│   ├── Team equity: 50%
-│   └── Idea-share holders get: 50%
-│
-└── Team C (Software-only)
-    ├── Funded by: @green_future
-    ├── Team equity: 40% (negotiated)
-    └── Idea-share holders get: 60%
+├── @solar_punk (Ideator): 10M shares (10%)  ← Dynamic: 0.10 / 1.0
+├── @energy_whale: 40M shares (40%)
+├── @green_future: 30M shares (30%)
+└── @tech_savvy: 20M shares (20%)
 ```
 
-**Key rule:** Idea-share owners receive revenue from **every** team pool proportional to their share ownership.
+**Revenue Split (Profit Only):**
+- **20%** to Idea-Share holders (proportional to ownership)
+- **80%** to Team-Share holders (proportional to investment)
+
+**Exit Split (Company Sale):**
+- ⚠️ OPEN POINT: Same 20/80 or different?
+
+**Example Revenue Distribution:**
+- Team A generates: ₿ 1.0 profit
+- Idea-Share pool (20%): ₿ 0.20
+  - @solar_punk (10%): ₿ 0.02
+  - @energy_whale (40%): ₿ 0.08
+  - etc.
+- Team-Share pool (80%): ₿ 0.80
+  - Distributed to team investors by investment amount
+
+**Team-Share Structure:**
+- Only **investors** are stakeholders
+- Share ownership = Investment amount / Total team investment
+- No "team equity" for builders (they're compensated via idea-shares if they invested)
+
+**Example Team A:**
+- Total invested: ₿ 0.80
+- @energy_whale invested: ₿ 0.50 → 62.5% of team shares
+- @green_future invested: ₿ 0.30 → 37.5% of team shares
+- Revenue share proportional to investment
 
 ### 10.5 Team Selection (Investor Self-Selection)
 
@@ -496,18 +505,13 @@ Team Pools:
 
 **Multiple investments:** Investor can fund multiple teams for same idea (diversification).
 
-### 10.6 Revenue Split Default
+### 10.6 Revenue Split
 
 **Standard terms:**
-- Idea-share owners: 50%
-- Team-owners: 50%
+- Idea-share owners: **20%**
+- Team-share holders: **80%**
 
-**Negotiable range:** ±20% (40/60 to 60/40)
-
-**If no agreement:**
-- 30-day negotiation period
-- If still deadlocked: investor vote (weighted by shares)
-- If vote inconclusive: team can be replaced
+**Note:** Fixed 20/80 split. Not negotiable per team.
 
 ### 10.7 Revenue Sharing & Accountability
 
