@@ -1668,11 +1668,307 @@
             </div>
         </div>
 
+        <!-- Teams Page -->
         <div id="teams" class="page">
-            <div style="padding: 120px 32px; text-align: center;">
-                <h2 style="font-size: 32px; margin-bottom: 16px;">Teams</h2>
+            <!-- State: Not Logged In -->
+            <div id="teams-not-logged" style="padding: 120px 32px; text-align: center;">
+                <div style="max-width: 480px; margin: 0 auto;">
+                    <div style="font-size: 64px; margin-bottom: 24px;">🔒</div>
+                    <h2 style="font-size: 28px; margin-bottom: 16px;">Teams erfordern Anmeldung</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 32px;">
+                        Werde Mitglied, um Teams zu gründen, beizutreten oder zu verwalten.
+                    </p>
+                    <button class="btn btn-primary" onclick="showPage('subscribe')">Mitglied werden</button>
+                </div>
+            </div>
+
+            <!-- State: Logged In, No Team -->
+            <div id="teams-no-team" style="display: none;">
+                <div class="page-header">
+                    <div class="page-header-content">
+                        <h1 class="page-title">👥 Teams</h1>
+                        <p class="page-subtitle">Gründe ein Team oder trete einem bei</p>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div style="max-width: 800px; margin: 0 auto;">
+                        <!-- Create Team CTA -->
+                        <div class="sidebar-section" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(233, 69, 96, 0.1), rgba(233, 69, 96, 0.05)); border-color: rgba(233, 69, 96, 0.3);">
+                            <div style="display: flex; align-items: center; gap: 24px;">
+                                <div style="font-size: 48px;">🚀</div>
+                                <div style="flex: 1;">
+                                    <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 8px;">Eigenes Team gründen</h3>
+                                    <p style="color: var(--text-secondary); margin-bottom: 16px;">Du hast eine genehmigte Idee? Gründe ein Team und finde Mitstreiter.</p>
+                                    <button class="btn btn-primary" onclick="showCreateTeamModal()">Team gründen</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Available Teams -->
+                        <div class="sidebar-section">
+                            <h3 style="font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 16px;">Offene Teams (3)</h3>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 16px;">
+                                <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border-color);">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                        <div>
+                                            <div style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">Team SolarGrid</div>
+                                            <div style="font-size: 13px; color: var(--text-secondary);">Für: Dezentrale Energiespeicher-Community</div>
+                                        </div>
+                                        <span style="padding: 4px 12px; background: rgba(46, 204, 113, 0.1); color: var(--accent-green); border-radius: 100px; font-size: 12px; font-weight: 600;">3 offene Positionen</span>
+                                    </div>
+                                    <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Wir suchen: Full-Stack Dev, UI Designer, Smart Contract Engineer</p>
+                                    <button class="btn btn-secondary" style="width: 100%;" onclick="showApplyModal('SolarGrid')">Bewerben</button>
+                                </div>
+
+                                <div style="padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border-color);">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                        <div>
+                                            <div style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">Team PharmaData</div>
+                                            <div style="font-size: 13px; color: var(--text-secondary);">Für: Open-Source Medikamenten-Datenbank</div>
+                                        </div>
+                                        <span style="padding: 4px 12px; background: rgba(46, 204, 113, 0.1); color: var(--accent-green); border-radius: 100px; font-size: 12px; font-weight: 600;">2 offene Positionen</span>
+                                    </div>
+                                    <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Wir suchen: Backend Dev, Data Scientist</p>
+                                    <button class="btn btn-secondary" style="width: 100%;" onclick="showApplyModal('PharmaData')">Bewerben</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- State: Team Member -->
+            <div id="teams-member" style="display: none;">
+                <div class="page-header">
+                    <div class="page-header-content" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h1 class="page-title">👥 Team SolarGrid</h1>
+                            <p class="page-subtitle">Dezentrale Energiespeicher-Community • Du bist Mitglied</p>
+                        </div>
+                        <span style="padding: 8px 16px; background: rgba(52, 152, 219, 0.1); color: var(--accent-blue); border-radius: 100px; font-size: 14px; font-weight: 600;">👤 Mitglied</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="content-grid" style="grid-template-columns: 2fr 1fr;">
+                        <!-- Main Content -->
+                        <div>
+                            <!-- Team Stats -->
+                            <div class="sidebar-section" style="margin-bottom: 24px;">
+                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+                                    <div style="text-align: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                                        <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary); margin-bottom: 4px;">4</div>
+                                        <div style="font-size: 12px; color: var(--text-tertiary);">Mitglieder</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                                        <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary); margin-bottom: 4px;">₿ 0.15</div>
+                                        <div style="font-size: 12px; color: var(--text-tertiary);">Funded</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                                        <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary); margin-bottom: 4px;">12</div>
+                                        <div style="font-size: 12px; color: var(--text-tertiary);">Investoren</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                                        <div style="font-size: 24px; font-weight: 700; color: var(--accent-green); margin-bottom: 4px;">Active</div>
+                                        <div style="font-size: 12px; color: var(--text-tertiary);">Status</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Team Members -->
+                            <div class="sidebar-section" style="margin-bottom: 24px;">
+                                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Team Mitglieder</h3>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); display: flex; align-items: center; justify-content: center; font-weight: 600;">JD</div>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 600;">@john_dev</div>
+                                            <div style="font-size: 13px; color: var(--text-secondary);">Team Leader • Full-Stack Dev</div>
+                                        </div>
+                                        <span style="padding: 4px 12px; background: rgba(243, 156, 18, 0.1); color: var(--accent-orange); border-radius: 100px; font-size: 12px; font-weight: 600;">Leader</span>
+                                    </div>
+
+                                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), #2980b9); display: flex; align-items: center; justify-content: center; font-weight: 600;">AS</div>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 600;">@alice_design</div>
+                                            <div style="font-size: 13px; color: var(--text-secondary);">UI/UX Designer</div>
+                                        </div>
+                                        <span style="padding: 4px 12px; background: rgba(46, 204, 113, 0.1); color: var(--accent-green); border-radius: 100px; font-size: 12px; font-weight: 600;">Aktiv</span>
+                                    </div>
+
+                                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(52, 152, 219, 0.3);">
+                                        <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #9b59b6, #8e44ad); display: flex; align-items: center; justify-content: center; font-weight: 600;">DU</div>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 600;">@dein_name</div>
+                                            <div style="font-size: 13px; color: var(--text-secondary);">Backend Developer</div>
+                                        </div>
+                                        <span style="padding: 4px 12px; background: rgba(52, 152, 219, 0.1); color: var(--accent-blue); border-radius: 100px; font-size: 12px; font-weight: 600;">Du</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Recent Activity -->
+                            <div class="sidebar-section">
+                                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Letzte Aktivität</h3>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">vor 2 Stunden</div>
+                                        <div>@john_dev hat das MVP-Design hochgeladen</div>
+                                    </div>
+                                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">vor 5 Stunden</div>
+                                        <div>Neuer Investor: @crypto_whale hat ₿ 0.05 investiert</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sidebar -->
+                        <div>
+                            <!-- Your Role -->
+                            <div class="sidebar-section" style="margin-bottom: 24px;">
+                                <h3 style="font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 16px;">Deine Rolle</h3>
+                                
+                                <div style="text-align: center; padding: 20px; background: rgba(52, 152, 219, 0.05); border-radius: 12px; border: 1px solid rgba(52, 152, 219, 0.2);">
+                                    <div style="font-size: 32px; margin-bottom: 8px;">👤</div>
+                                    <div style="font-weight: 600; margin-bottom: 4px;">Backend Developer</div>
+                                    <div style="font-size: 13px; color: var(--text-secondary);">Seit 3 Tagen im Team</div>
+                                </div>
+                            </div>
+
+                            <!-- Your Shares -->
+                            <div class="sidebar-section" style="margin-bottom: 24px;">
+                                <h3 style="font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 16px;">Deine Team-Shares</h3>
+                                
+                                <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                                    <div style="font-size: 32px; font-weight: 700; color: var(--accent-primary); margin-bottom: 4px;">8%</div>
+                                    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">Dein Anteil</div>
+                                    <div style="font-size: 12px; color: var(--text-tertiary);">Geschätzter Wert: ₿ 0.012</div>
+                                </div>
+                            </div>
+
+                            <!-- Quick Actions -->
+                            <div class="sidebar-section">
+                                <h3 style="font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 16px;">Aktionen</h3>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <button class="btn btn-secondary" style="width: 100%; justify-content: center;">📁 Dateien</button>
+                                    <button class="btn btn-secondary" style="width: 100%; justify-content: center;">💬 Chat</button>
+                                    <button class="btn btn-secondary" style="width: 100%; justify-content: center;">⚙️ Einstellungen</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- State: Team Leader -->
+            <div id="teams-leader" style="display: none;">
+                <div class="page-header">
+                    <div class="page-header-content" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h1 class="page-title">👑 Team SolarGrid</h1>
+                            <p class="page-subtitle">Du bist Team-Leader</p>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <span style="padding: 8px 16px; background: rgba(243, 156, 18, 0.1); color: var(--accent-orange); border-radius: 100px; font-size: 14px; font-weight: 600;">👑 Leader</span>
+                            <button class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">⚙️ Verwalten</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="content-grid" style="grid-template-columns: 2fr 1fr;">
+                        <div>
+                            <!-- Applications Alert -->
+                            <div class="sidebar-section" style="margin-bottom: 24px; background: rgba(243, 156, 18, 0.1); border-color: rgba(243, 156, 18, 0.3);">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="font-size: 24px;">📬</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; margin-bottom: 4px;">3 neue Bewerbungen</div>
+                                        <div style="font-size: 13px; color: var(--text-secondary);">Warte auf deine Überprüfung</div>
+                                    </div>
+                                    <button class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">Ansehen</button>
+                                </div>
+                            </div>
+
+                            <!-- Management Tools -->
+                            <div class="sidebar-section" style="margin-bottom: 24px;">
+                                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Team-Verwaltung</h3>
+                                
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <button class="btn btn-secondary" style="justify-content: center;">👥 Mitglieder</button>
+                                    <button class="btn btn-secondary" style="justify-content: center;">📬 Bewerbungen</button>
+                                    <button class="btn btn-secondary" style="justify-content: center;">💰 Finanzen</button>
+                                    <button class="btn btn-secondary" style="justify-content: center;">⚙️ Einstellungen</button>
+                                </div>
+                            </div>
+
+                            <!-- Equity Distribution -->
+                            <div class="sidebar-section">
+                                <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Equity-Aufteilung (vorgeschlagen)</h3>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="flex: 1;">@john_dev (Leader)</div>
+                                        <div style="width: 100px;">
+                                            <input type="range" min="0" max="100" value="30" style="width: 100%;">
+                                        </div>
+                                        <div style="width: 50px; text-align: right; font-weight: 600;">30%</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="flex: 1;">@alice_design</div>
+                                        <div style="width: 100px;">
+                                            <input type="range" min="0" max="100" value="25" style="width: 100%;">
+                                        </div>
+                                        <div style="width: 50px; text-align: right; font-weight: 600;">25%</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="flex: 1;">@dein_name</div>
+                                        <div style="width: 100px;">
+                                            <input type="range" min="0" max="100" value="20" style="width: 100%;">
+                                        </div>
+                                        <div style="width: 50px; text-align: right; font-weight: 600;">20%</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                                        <div style="flex: 1; color: var(--text-tertiary);">Verbleibend für neue Mitglieder</div>
+                                        <div style="width: 50px; text-align: right; font-weight: 600; color: var(--accent-orange);">25%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="sidebar-section">
+                                <h3 style="font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 16px;">Team-Status</h3>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                        <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px;">Gesamt-Funding</div>
+                                        <div style="font-size: 20px; font-weight: 700;">₿ 0.15</div>
+                                    </div>
+                                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                        <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px;">Investoren</div>
+                                        <div style="font-size: 20px; font-weight: 700;">12</div>
+                                    </div>
+                                    <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                        <div style="font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px;">Monatlicher Umsatz</div>
+                                        <div style="font-size: 20px; font-weight: 700; color: var(--accent-green);">₿ 0.002</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <div id="teams-placeholder" class="page" style="display: none;">
     </main>
 
     <script>
