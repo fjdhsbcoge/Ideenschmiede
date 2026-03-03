@@ -416,7 +416,45 @@ Once an idea passes voting, it enters the **Implementation Phase**. This is wher
        - Platform reserve: 15%
 ```
 
-### 10.4 Equity Pool Structure
+### 10.4 Investment Flow & Ideator Ownership
+
+**New Investment Model (v0.4):**
+
+When investor buys Idea-Shares, funds are split:
+
+```
+Investor sends: ₿ 1.0
+├── 15% (₿ 0.15) → Ideator wallet (immediate compensation)
+├── 5%  (₿ 0.05) → Chain-of-thought pool (early contributors)
+└── 80% (₿ 0.80) → Team of investor's choice (building funds)
+```
+
+**Ideator Ownership Formula:**
+```
+Ideator Ownership % = Ideator Investment / Outside Investment
+```
+
+**Example:**
+- Ideator invests: ₿ 0.10
+- Outside investment: ₿ 1.0
+- Ideator ownership: 0.10 / 1.0 = **10%**
+
+**Key Properties:**
+1. **Immediate ideator profit:** 15% cut means 50% ROI immediately (₿ 0.15 received vs ₿ 0.10 invested)
+2. **Dynamic ownership:** Higher ideator investment relative to outside = higher ownership %
+3. **Team funding:** 80% goes directly to builders
+4. **Early contributor rewards:** 5% to Discussion phase participants
+
+**Why this works:**
+- Ideator has skin in the game (must invest)
+- Ideator compensated immediately for ideation work
+- Investors see exactly where money goes
+- Teams get majority of funds (80%)
+- Low valuations reward ideators with higher ownership %
+
+---
+
+### 10.5 Equity Pool Structure
 
 **Example:** Idea "Decentralized Energy Storage"
 

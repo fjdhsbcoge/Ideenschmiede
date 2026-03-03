@@ -26,6 +26,38 @@ A decentralized marketplace for ideas built on Bitcoin. Ideas are validated thro
 
 ---
 
+## Investment Model (v0.4)
+
+### Where Your Investment Goes
+
+When you buy Idea-Shares, your Bitcoin is split:
+
+| Destination | % | Purpose |
+|-------------|---|---------|
+| **Ideator** | 15% | Immediate compensation for ideation |
+| **Chain-of-thought** | 5% | Rewards early Discussion contributors |
+| **Team** | 80% | Funds the team you choose |
+
+**Example:** You invest ₿ 1.0
+- ₿ 0.15 → Ideator (immediate)
+- ₿ 0.05 → Early commenters/voters
+- ₿ 0.80 → Team SolarGrid (your choice)
+
+### Ideator Ownership Formula
+
+```
+Ideator Ownership % = Ideator Investment / Outside Investment
+```
+
+**Example:**
+- Ideator invests: ₿ 0.10
+- Outside investment: ₿ 1.0
+- **Ideator owns: 10%** (0.10 / 1.0)
+
+**Key insight:** Ideator makes **50% immediate profit** from the 15% cut, plus future revenue share from their ownership %.
+
+---
+
 ## The Two Share Types
 
 ### Idea-Shares (Red)
@@ -103,6 +135,8 @@ A decentralized marketplace for ideas built on Bitcoin. Ideas are validated thro
 | Team selection | Investor self-selection | No central gatekeeper |
 | Revenue enforcement | Transparency + milestones | Practical, not legal |
 | Storage | Minimal + external links | Cost control |
+| **Investment split** | **15/5/80** | Ideator compensated, teams funded |
+| **Ideator ownership** | **Invested/Outside** | Skin in game, dynamic stake |
 
 ---
 
