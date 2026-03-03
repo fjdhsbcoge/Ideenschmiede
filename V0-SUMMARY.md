@@ -131,7 +131,7 @@ Ideator Ownership % = Ideator Investment / Outside Investment
 | Aspect | Decision | Rationale |
 |--------|----------|-----------|
 | Voting threshold | >25% downvotes = reject | Stricter quality control |
-| Equity default | 50/50 team/idea-owners | Fair compensation for builders |
+| **Revenue split** | **20/80** Idea/Team | Builders get majority |
 | Team selection | Investor self-selection | No central gatekeeper |
 | Revenue enforcement | Transparency + milestones | Practical, not legal |
 | Storage | Minimal + external links | Cost control |

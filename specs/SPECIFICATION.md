@@ -27,7 +27,7 @@
 |--------|-----------|----------------------|-----------|
 | **Voting threshold** | >50% negative = reject | >25% downvotes = reject | Stricter quality control for tech-savvy community |
 | **Access control** | Open for registered users | $120/year subscription | Prevent spam, ensure serious participants |
-| **Equity default** | Ideator sets, holds 100% | 50/50 team/idea-owners | Fair compensation for builders |
+| **Equity default** | Ideator sets, holds 100% | **20/80** team/idea-owners | Builders get majority |
 | **Server funding** | Transaction fees | Subscription fees | Predictable revenue model |
 | **File storage** | Unlimited uploads | Minimal (links preferred) | Cost control, teams use own tools |
 | **Revenue accountability** | Smart contracts | Transparency + milestones | Practical enforcement without legal overhead |
@@ -405,15 +405,14 @@ Once an idea passes voting, it enters the **Implementation Phase**. This is wher
 5. REVENUE SHARING
    └── Each team generates revenue independently
    └── Revenue split per team:
-       - 50% to idea-share owners (all investors + ideator)
-       - 50% to team-owners
+       - **20%** to idea-share owners (all investors + ideator)
+       - **80%** to team-share holders (investors only)
    
 6. EXIT (Company Sale)
    └── Sale proceeds distributed:
-       - Idea-share owners: 40%
-       - Team-owners: 40%
-       - Chain-of-thought pool: 5%
-       - Platform reserve: 15%
+       - Idea-share owners: **20%**
+       - Team-share holders: **80%**
+       - (Same 20/80 split as revenue)
 ```
 
 ### 10.4 Investment Flow & Ideator Ownership
