@@ -29,6 +29,8 @@
 | **Access control** | Open for registered users | $120/year subscription | Prevent spam, ensure serious participants |
 | **Equity default** | Ideator sets, holds 100% | 50/50 team/idea-owners | Fair compensation for builders |
 | **Server funding** | Transaction fees | Subscription fees | Predictable revenue model |
+| **File storage** | Unlimited uploads | Minimal (links preferred) | Cost control, teams use own tools |
+| **Revenue accountability** | Smart contracts | Transparency + milestones | Practical enforcement without legal overhead |
 
 ### Missing Features (Future Implementation)
 - Patent research tools
@@ -469,7 +471,48 @@ Team Pools:
 - If still deadlocked: investor vote (weighted by shares)
 - If vote inconclusive: team can be replaced
 
-### 10.7 Chain-of-Thought Rewards
+### 10.7 Revenue Sharing & Accountability
+
+**Core Challenge:** Teams work externally but must share revenue with idea-share holders.
+
+**Enforcement Approach:** Transparency + Milestone Gates (not legal contracts)
+
+#### Accountability Mechanism
+
+**1. Public Revenue Reporting**
+- Teams report revenue monthly
+- Public dashboard shows all reports
+- Historical data builds reputation
+- Missing reports = red flag for future investors
+
+**2. Milestone-Based Funding**
+- Investor funds released in tranches
+- Each tranche requires:
+  - Proof of progress (deliverables)
+  - Revenue report from previous period
+  - Team attestation of continued commitment
+- Natural checkpoint for accountability
+
+**3. Reputation System**
+- Teams with consistent reporting gain "Verified" badge
+- Investors can filter by reputation tier
+- Poor performers excluded from featured listings
+- Community can flag suspicious behavior
+
+**4. Social Pressure**
+- Revenue reports are public and permanent
+- Future funding depends on track record
+- Community discussion around team performance
+- Transparent equity split visible to all
+
+**Explicitly NOT Used:**
+- Legal contracts (expensive, jurisdiction-dependent)
+- Revenue oracles (complex, adds friction)
+- Mandatory platform integration (teams resist)
+
+**Rationale:** Teams that want to cheat will find a way. The goal is attracting legitimate teams who value transparency and reputation.
+
+### 10.8 Chain-of-Thought Rewards
 
 **Purpose:** Reward early contributors who helped refine the idea.
 
@@ -569,7 +612,39 @@ Top contributors:
 
 **Note:** Social contracts + reputation for MVP. Legal documents optional.
 
-### 15.4 Derivative Ideas System
+### 15.4 Storage Policy
+**Philosophy:** Integration over storage. Teams use their own tools.
+
+**Storage Limits:**
+| Content Type | Limit | Rationale |
+|-------------|-------|-----------|
+| Team profile/logo | 2 MB | Small PNG/SVG |
+| Idea attachments | 5 MB total | PDF whitepaper, mockups |
+| Discussion images | 1 MB each | Compressed, auto-resize |
+| Per-user total | 50 MB | Abuse prevention |
+
+**What Ideenschmiede Stores:**
+- Team metadata (members, equity split, funding status)
+- Investment records (Bitcoin transactions)
+- Voting data
+- Reputation/verification proofs
+
+**What Teams Handle Externally:**
+- Source code → GitHub/GitLab
+- Design files → Figma
+- Documents → Notion/Google Drive
+- Communication → Discord/Slack
+- Project management → Linear/Jira
+
+**External Tool Links:**
+Teams can connect their external tools via URL:
+```
+GitHub: https://github.com/team/repo
+Discord: https://discord.gg/invite-code
+Figma: https://figma.com/file/...
+```
+
+### 15.5 Derivative Ideas System
 **Purpose:** Handle forks, extensions, and copies
 **Logic:**
 - Copy detection (community flagging)
