@@ -1,13 +1,41 @@
 # Ideenschmiede Living Specification
 
-**Version:** 0.2.0  
-**Last Updated:** 2026-02-22  
+**Version:** 0.3.0  
+**Last Updated:** 2026-03-03  
 **Author:** Kimi Claw (AI Assistant)  
 **Status:** Draft - Open for Review
 
 **Changelog:**
+- v0.3.0: Added missing features roadmap, DeepL translation, divergence tracking
 - v0.2.0: Added Implementation Phase, Team Selection, Revenue Sharing, Chain-of-Thought rewards
 - v0.1.0: Initial specification with Voting, DLC, and Share Tracking
+
+---
+
+## 0. Divergence Tracking (From Original Whitepaper)
+
+### Core Vision Preserved ✅
+- Marketplace for ideas
+- Community voting on ideas
+- Multiple competing teams per idea
+- Bitcoin-native payments
+- Open source ethos
+
+### Intentional Divergences ⚠️
+
+| Aspect | Whitepaper | Current Implementation | Rationale |
+|--------|-----------|----------------------|-----------|
+| **Voting threshold** | >50% negative = reject | >25% downvotes = reject | Stricter quality control for tech-savvy community |
+| **Access control** | Open for registered users | $120/year subscription | Prevent spam, ensure serious participants |
+| **Equity default** | Ideator sets, holds 100% | 50/50 team/idea-owners | Fair compensation for builders |
+| **Server funding** | Transaction fees | Subscription fees | Predictable revenue model |
+
+### Missing Features (Future Implementation)
+- Patent research tools
+- Accounting integrations  
+- Legally secure documents
+- Derivative idea logic
+- Decentralized storage
 
 ---
 
@@ -509,47 +537,115 @@ Top contributors:
 
 ---
 
-## 12. Implementation Phases
+## 15. Missing Features Roadmap (From Whitepaper)
+
+### 15.1 Patent Research Tools
+**Purpose:** Help ideators check patent landscape before investing time
+**Features:**
+- Patent search by keywords/classification
+- Prior art detection
+- Freedom-to-operate analysis
+- Integration with patent databases (USPTO, EPO, etc.)
+
+**Implementation:** Phase 2+ (post-MVP)
+
+### 15.2 Accounting Integrations
+**Purpose:** Automated bookkeeping for teams
+**Features:**
+- Expense tracking
+- Revenue recognition
+- Tax document generation
+- Multi-currency support (BTC + fiat)
+
+**Implementation:** Phase 2+ (post-MVP)
+
+### 15.3 Legally Secure Documents
+**Purpose:** Standardized contracts for team formation
+**Templates:**
+- Team formation agreement
+- Equity distribution contract
+- Revenue sharing agreement
+- IP assignment (if applicable)
+
+**Note:** Social contracts + reputation for MVP. Legal documents optional.
+
+### 15.4 Derivative Ideas System
+**Purpose:** Handle forks, extensions, and copies
+**Logic:**
+- Copy detection (community flagging)
+- Fork approval (original ideator consent)
+- Attribution chain (link to original)
+- Equity negotiation (original ideator can negotiate stake in forks)
+
+**Implementation:** Phase 2
+
+---
+
+## 16. Internationalization
+
+### 16.1 Machine Translation
+**Service:** DeepL API
+**Coverage:**
+- All user-generated content (ideas, comments, team descriptions)
+- UI elements (static strings)
+- Real-time translation toggle
+
+**Implementation:**
+- Detect user language preference
+- Store original + translated versions
+- Allow users to contribute human translations for rewards
+
+### 16.2 Language Priority
+1. German (original)
+2. English (primary international)
+3. Other languages (community-driven)
+
+---
+
+## 17. Implementation Phases (Updated)
 
 ### Phase 1: MVP (Current)
 - [x] Idea card prototype
-- [x] Living specification v0.2.0
+- [x] Living specification v0.3.0
 - [ ] Subscription system ($12/mo, $120/yr)
-- [ ] DLC implementation (basic)
-- [ ] Federated oracle (2-of-3)
-- [ ] Simple share tracking
+- [ ] Basic voting (no oracle needed)
+- [ ] Team formation UI
+- [ ] Direct investment flow
 - [ ] Web interface
 
 ### Phase 2: Enhanced
-- [ ] Team formation & selection
-- [ ] Parallel team support
+- [ ] DeepL translation integration
+- [ ] Patent research tools (basic)
+- [ ] Accounting dashboard
+- [ ] Derivative ideas system
 - [ ] Revenue sharing contracts
 - [ ] Chain-of-thought tracking
-- [ ] Sybil resistance mechanism
-- [ ] RGB protocol integration
 - [ ] Secondary market
 
 ### Phase 3: Decentralized
 - [ ] Permissionless oracle federation
 - [ ] DAO governance
+- [ ] Decentralized storage
 - [ ] Cross-platform integration
 
 ---
 
-## 13. References
+## 18. References
 
 - [DLC Specification](https://github.com/discreetlogcontracts/dlcspecs)
 - [RGB Protocol](https://rgb.info/)
 - [Bitcoin Script](https://en.bitcoin.it/wiki/Script)
 - [Schnorr Signatures (BIP-340)](https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki)
+- [DeepL API Documentation](https://www.deepl.com/docs-api)
 
 ---
 
-## 14. Changelog
+## 19. Changelog
 
 | Date | Version | Changes |
 |------|---------|---------|
-| 2026-02-22 | 0.2.0 | Added Implementation Phase, Team Selection, Revenue Sharing, Chain-of-Thought rewards, Exit distribution |
+| 2026-03-03 | 0.3.0 | Added divergence tracking, missing features roadmap, DeepL translation |
+| 2026-02-22 | 0.2.0 | Added Implementation Phase, Team Selection, Revenue Sharing, Chain-of-Thought rewards |
 | 2026-02-22 | 0.1.0 | Initial specification draft |
 
 ---
