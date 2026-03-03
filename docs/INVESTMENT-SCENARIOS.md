@@ -10,7 +10,7 @@
 | **Ideator minimum investment** | 1% of valuation | Skin in the game |
 | **Total idea shares** | 100M | Fixed supply |
 | **Idea-share revenue split** | 50% | Of all team revenue goes to idea-share holders |
-| **Ideator ownership formula** | Outside Investment / Ideator Investment | Dynamic based on funding success |
+| **Ideator ownership formula** | Ideator Investment / Outside Investment | Dynamic based on funding success |
 
 ---
 
@@ -30,7 +30,7 @@ The more outside investment an idea attracts, the higher the ideator's ownership
 | **Self-set valuation** | ₿ 0.1 | ₿ 0.5 | ₿ 1.0 |
 | **Price per share** | 0.000001 ₿ | 0.000005 ₿ | 0.00001 ₿ |
 | **Outside investment (example)** | ₿ 0.05 | ₿ 0.25 | ₿ 0.50 |
-| **Ideator ownership** | 50% (0.05/0.001) | 50% (0.25/0.005) | 50% (0.50/0.01) |
+| **Ideator ownership** | 2% (0.001/0.05) | 2% (0.005/0.25) | 2% (0.01/0.50) |
 | **Distribution of outside ₿:** | | | |
 | → Ideator immediate (15%) | ₿ 0.0075 | ₿ 0.0375 | ₿ 0.075 |
 | → Team funding (80%) | ₿ 0.04 | ₿ 0.20 | ₿ 0.40 |
@@ -56,7 +56,7 @@ The more outside investment an idea attracts, the higher the ideator's ownership
 | **Self-set valuation** | ₿ 5.0 | ₿ 10.0 | ₿ 25.0 |
 | **Price per share** | 0.00005 ₿ | 0.0001 ₿ | 0.00025 ₿ |
 | **Outside investment (example)** | ₿ 0.50 | ₿ 1.0 | ₿ 2.5 |
-| **Ideator ownership** | 10% (0.5/0.05) | 10% (1.0/0.10) | 10% (2.5/0.25) |
+| **Ideator ownership** | 10% (0.05/0.50) | 10% (0.10/1.0) | 10% (0.25/2.5) |
 | **Distribution of outside ₿:** | | | |
 | → Ideator immediate (15%) | ₿ 0.075 | ₿ 0.15 | ₿ 0.375 |
 | → Team funding (80%) | ₿ 0.40 | ₿ 0.80 | ₿ 2.0 |
@@ -82,7 +82,7 @@ The more outside investment an idea attracts, the higher the ideator's ownership
 | **Self-set valuation** | ₿ 50.0 | ₿ 100.0 | ₿ 250.0 |
 | **Price per share** | 0.0005 ₿ | 0.001 ₿ | 0.0025 ₿ |
 | **Outside investment (example)** | ₿ 5.0 | ₿ 10.0 | ₿ 25.0 |
-| **Ideator ownership** | 10% (5.0/0.5) | 10% (10.0/1.0) | 10% (25.0/2.5) |
+| **Ideator ownership** | 10% (0.5/5.0) | 10% (1.0/10.0) | 10% (2.5/25.0) |
 | **Distribution of outside ₿:** | | | |
 | → Ideator immediate (15%) | ₿ 0.75 | ₿ 1.50 | ₿ 3.75 |
 | → Team funding (80%) | ₿ 4.0 | ₿ 8.0 | ₿ 20.0 |
@@ -154,17 +154,17 @@ With **1% ownership** and **50% revenue share** from teams:
 
 ### 1. Dynamic Ownership Formula
 
-**Ideator Ownership % = Outside Investment / Ideator Investment**
+**Ideator Ownership % = Ideator Investment / Outside Investment**
 
 This creates powerful incentives:
-- **More outside investment → Higher ideator ownership**
-- Ideator is motivated to market their idea
-- Investors see ideator has real stake
+- **Higher ideator investment → Higher ownership %**
+- Ideator is motivated to invest more in their own idea
+- Investors see ideator has meaningful stake
 
 **Example:**
 - Ideator invests: ₿ 0.10
 - Outside investment: ₿ 1.0
-- Ideator ownership: 1.0 / 0.10 = **10%**
+- Ideator ownership: 0.10 / 1.0 = **10%**
 
 ### 2. Immediate Profit Guaranteed
 
@@ -182,14 +182,14 @@ With 15% immediate cut, ideator makes **50% profit** immediately:
 
 | Scenario | Valuation | Ideator Invests | Outside | Ownership | Total ROI |
 |----------|-----------|-----------------|---------|-----------|-----------|
-| A2 | ₿ 0.5 | ₿ 0.005 | ₿ 0.25 | **50%** | **107.5x** |
-| B2 | ₿ 10.0 | ₿ 0.10 | ₿ 1.0 | **10%** | **5.5x** |
-| C2 | ₿ 100.0 | ₿ 1.0 | ₿ 10.0 | **10%** | **5.5x** |
+| A2 | ₿ 0.5 | ₿ 0.005 | ₿ 0.25 | **2%** | **10.5x** |
+| B2 | ₿ 10.0 | ₿ 0.10 | ₿ 1.0 | **10%** | **4.5x** |
+| C2 | ₿ 100.0 | ₿ 1.0 | ₿ 10.0 | **10%** | **4.5x** |
 
-**Why A2 has higher ROI:**
-- 50% ownership means ideator captures half of all team revenue
-- Even with smaller absolute numbers, the percentage is huge
-- Encourages realistic valuations
+**Why B2/C2 have same ownership:**
+- Both have 10:1 ratio of outside to ideator investment
+- A2 has 50:1 ratio → lower ownership % (2%)
+- **Higher ideator investment relative to outside = higher ownership**
 
 ---
 
@@ -197,12 +197,12 @@ With 15% immediate cut, ideator makes **50% profit** immediately:
 
 **For MVP (15% / 5% / 80% model with dynamic ownership):**
 
-**Key Formula:** Ideator Ownership = Outside Investment / Ideator Investment
+**Key Formula:** Ideator Ownership = Ideator Investment / Outside Investment
 
 **Example outcome (B2 scenario):**
 - Ideator invests: ₿ 0.10
 - Outside investment: ₿ 1.0
-- Ideator ownership: **10%** (1.0 / 0.10)
+- Ideator ownership: **10%** (0.10 / 1.0)
 - Ideator immediate (15%): ₿ 0.15
 - Net immediate profit: +₿ 0.05 (50% ROI)
 - Team funding (80%): ₿ 0.80
@@ -214,7 +214,7 @@ With 15% immediate cut, ideator makes **50% profit** immediately:
 This creates:
 - ✅ Ideator has real stake
 - ✅ **Immediate 50% profit** guaranteed
-- ✅ Higher ownership % with more outside investment
+- ✅ Higher ownership % with higher ideator investment
 - ✅ Teams well-funded (80%)
 - ✅ Early contributors rewarded (5%)
 - ✅ Investors choose where money goes
