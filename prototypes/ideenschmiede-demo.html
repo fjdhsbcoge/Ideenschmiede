@@ -140,7 +140,6 @@
                 <div class="page-header-content">
                     <h1 class="page-title">💡 Diskussion</h1>
                     <p class="page-subtitle">Entdecke neue Ideen, gib Feedback, hilf bei der Entwicklung. Kostenlos für alle.</p>
-                    <button class="btn btn-primary" style="margin-top: 16px;" onclick="openModal('create-idea-modal')">+ Neue Idee posten</button>
                 </div>
             </div>
             <div class="content" id="discussion-content">
@@ -357,9 +356,36 @@
 
         function renderDiscussion() {
             const container = document.getElementById('discussion-content');
+            
+            // Show login prompt if not logged in
+            if (!State.user) {
+                container.innerHTML = `
+                    <div class="card" style="text-align: center; padding: 48px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
+                        <h3 style="margin-bottom: 16px;">Anmeldung erforderlich</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 24px;">
+                            Melde dich an um Ideen zu posten, zu kommentieren und abzustimmen.
+                        </p>
+                        <button class="btn btn-primary" onclick="showLogin()">Einloggen</button>
+                    </div>
+                `;
+                return;
+            }
+            
             const ideas = State.ideas.filter(i => i.phase === 'discussion');
             
-            container.innerHTML = ideas.map(idea => `
+            let html = '';
+            
+            // Add create button for logged in users
+            html += `
+                <div style="margin-bottom: 24px;">
+                    <button class="btn btn-primary" onclick="openModal('create-idea-modal')">
+                        + Neue Idee posten
+                    </button>
+                </div>
+            `;
+            
+            html += ideas.map(idea => `
                 <div class="card">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                         <span class="badge badge-discussion">💬 In Diskussion</span>
@@ -374,6 +400,8 @@
                     </div>
                 </div>
             `).join('') || '<p style="color: var(--text-secondary);">Noch keine Ideen in der Diskussion.</p>';
+            
+            container.innerHTML = html;
         }
 
         function renderMarketplace() {
