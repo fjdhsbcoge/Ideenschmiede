@@ -94,14 +94,62 @@ Ideenschmiede is the marketplace where ideas become reality through community va
 - **Split:** 20% of all team revenue
 - **Exit:** Same 20% on company sale
 - **Who can buy:** Subscribed members
-- **Price:** Set by market dynamics
+- **Price:** Dynamic, based on investment ratio
+
+**Share Pricing Formula:**
+```
+Share Price = Outside Investment / Ideator Investment (in satoshis)
+Ideator Ownership = Ideator Investment / Total Investment
+```
+
+**Example:**
+- Ideator invests: ₿ 0.10 (10M sats) → creates 10M shares
+- Investor 1 invests: ₿ 0.10 → share price: 1 sat/share
+  - Ideator: 50%, Investor 1: 50%
+- Investor 2 invests: ₿ 0.30 → share price: 4 sats/share
+  - Ideator: 20%, Investor 1: 20%, Investor 2: 60%
+
+**Key insight:** Early investors get better price and higher ownership %. Ideator is incentivized to promote the idea to increase share price and receive more immediate income (15% cut).
 
 ### Team-Shares (Orange)
 - **What:** Ownership of a specific team
-- **Earn from:** Only that team's revenue
-- **Split:** 80% of team revenue (distributed by investment)
-- **Who can buy:** Anyone (but only investors are stakeholders)
-- **Price:** Set by team leader
+- **Earn from:** 80% of that team's revenue (distributed by ownership)
+- **Who can buy:** Anyone
+- **Price:** Same dynamic formula as Idea-Shares
+- **When:** Available after team formation, buyable at any time
+
+**Team Formation Flow:**
+1. **Team Leader Application** - Posts proposal with:
+   - Skin-in-game investment (required)
+   - Roadmap with milestones
+   - Budget breakdown
+   - Focus area and team composition
+   - Minimum funding goal
+
+2. **Investor Team Selection** - Idea-Share investors choose which team(s) to fund:
+   - Their portion of the 80% pool goes to chosen team(s)
+   - Can diversify across multiple teams
+   - **Non-refundable** once committed
+
+3. **Ongoing Team Funding** - Anyone can buy Team-Shares:
+   - Price determined by same formula
+   - Funds go directly to team
+   - Available at any point in the process
+
+**Team Funding Safeguards:**
+- **Minimum Threshold:** Team sets funding goal + timeline
+  - If not reached → automatic refund to investors
+- **Milestone-Based Release:** Funds released in tranches
+  - Team defines milestones in proposal
+  - Investors vote on milestone completion
+  - If milestone failed → vote to continue or refund remainder
+- **Team Leader Reputation:** Track record visible, stake at risk
+
+**Why these safeguards:**
+- Protects investors from bad actors
+- Ensures only viable teams get funded
+- Aligns team incentives with delivery
+- Maintains investor confidence in the platform
 
 ---
 
