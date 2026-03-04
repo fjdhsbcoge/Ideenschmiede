@@ -64,6 +64,7 @@ Ideator Ownership % = Ideator Investment / Outside Investment
 - **What:** Ownership of the idea itself
 - **Earn from:** ALL teams building the idea
 - **Split:** **20%** of profit to idea-share holders, **80%** to team-share holders
+- **Exit:** Same 20/80 split for company sales
 - **Buy:** After voting approval, in marketplace
 
 ### Team-Shares (Orange)
@@ -71,6 +72,24 @@ Ideator Ownership % = Ideator Investment / Outside Investment
 - **Earn from:** Only that team's revenue
 - **Split:** Investment amount determines share ownership (investors only)
 - **Buy:** Directly into team of your choice
+
+---
+
+## Chain-of-Thought Rewards
+
+**Purpose:** Reward early contributors who helped refine the idea
+
+**Scoring:**
+```
+Score = (Comments × 1) + (Upvotes × 2) + (Referrals)
+Minimum: 3 points to qualify
+```
+
+**Example:**
+- 2 comments + 5 upvotes = 12 points ✓
+- 1 comment + 0 upvotes = 1 point ✗
+
+**Reward:** 5% of investment, distributed immediately
 
 ---
 
@@ -138,11 +157,15 @@ Ideator Ownership % = Ideator Investment / Outside Investment
 |--------|----------|-----------|
 | Voting threshold | >25% downvotes = reject | Stricter quality control |
 | **Revenue split** | **20/80** Idea/Team | Builders get majority |
+| **Exit split** | **20/80** (same as revenue) | Consistency |
 | Team selection | Investor self-selection | No central gatekeeper |
 | Revenue enforcement | Transparency + milestones | Practical, not legal |
 | Storage | Minimal + external links | Cost control |
 | **Investment split** | **15/5/80** | Ideator compensated, teams funded |
 | **Ideator ownership** | **Invested/Outside** | Skin in game, dynamic stake |
+| **Sybil resistance** | **Subscription ($120/year)** | Sufficient for MVP |
+| **Share tracking** | **Database → RGB later** | Fast MVP, decentralize later |
+| **Chain-of-thought** | **Comments + Upvotes score** | Simple engagement metric |
 
 ---
 

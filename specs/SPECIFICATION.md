@@ -478,7 +478,30 @@ Idea Shares (100M total):
 - **80%** to Team-Share holders (proportional to investment)
 
 **Exit Split (Company Sale):**
-- ⚠️ OPEN POINT: Same 20/80 or different?
+- **20%** to Idea-Share holders
+- **80%** to Team-Share holders
+- Same split as revenue ✅
+
+**Share Representation (MVP):**
+- **Phase 1:** Database tracking (centralized, fast to implement)
+- **Phase 2:** RGB Protocol (decentralized, Bitcoin-native)
+
+**Why database first:**
+- Validate product-market fit
+- Easy iteration
+- Users prioritize UX over technical decentralization initially
+- RGB still maturing
+
+**Sybil Resistance:**
+- **Primary:** $120/year subscription
+- **Sufficient for MVP** ✅
+- Future: Web-of-trust if needed
+
+**Oracle:**
+- **Not needed** with current model
+- Voting is one-person-one-vote via subscription
+- Revenue sharing is social contract + transparency
+- Simple platform attestation if needed later
 
 **Example Revenue Distribution:**
 - Team A generates: ₿ 1.0 profit
@@ -566,27 +589,38 @@ Idea Shares (100M total):
 **Purpose:** Reward early contributors who helped refine the idea.
 
 **Qualifying contributions:**
-- Substantive comments that improved the idea
-- Voting participation (either direction)
-- Sharing/amplification (tracked via referrals)
+- Comments on idea
+- Upvotes received on comments
+- Referrals (tracked via invite links)
 
-**Reward pool:** 5% of exit value
+**Engagement Score Formula:**
+```
+Score = (Comment count × 1) + (Upvotes received × 2) + (Referral bonus)
+
+Minimum threshold: 3 points to qualify
+```
+
+**Example:**
+- 2 comments + 5 upvotes = 2 + 10 = 12 points ✓
+- 1 comment + 0 upvotes = 1 point ✗
+
+**Reward pool:** 5% of investment (immediate, not at exit)
 
 **Distribution:**
 - Proportional to engagement score
-- Minimum threshold to prevent spam
-- Paid at exit (company sale or liquidation)
+- Paid immediately when investment happens
+- Prevents spam via minimum threshold
 
 **Example:**
 ```
-Exit value: $1,000,000
-Chain-of-thought pool: $50,000 (5%)
+Investment: ₿ 1.0
+Chain-of-thought pool: ₿ 0.05 (5%)
 
 Top contributors:
-- @energy_whale (5 comments, early voter): $15,000
-- @green_future (3 comments, refined concept): $10,000
-- @random_user (1 comment, shared widely): $5,000
-- Others: $20,000 distributed
+- @energy_whale (12 points): ₿ 0.015
+- @green_future (8 points): ₿ 0.010
+- @random_user (5 points): ₿ 0.006
+- Others: ₿ 0.019 distributed
 ```
 
 ### 10.8 Dispute Resolution
