@@ -389,7 +389,7 @@
                 <div class="card">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                         <span class="badge badge-discussion">💬 In Diskussion</span>
-                        ${State.user === idea.author ? `<button class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;" onclick="moveToMarketplace(${idea.id})">🛒 Zum Marktplatz</button>` : ''}
+                        ${State.member && State.user === idea.author ? `<button class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;" onclick="moveToMarketplace(${idea.id})">🛒 Zum Marktplatz</button>` : ''}
                     </div>
                     <h3 style="font-size: 20px; margin-bottom: 8px;">${idea.title}</h3>
                     <p style="color: var(--text-secondary); margin-bottom: 16px;">${idea.desc}</p>
