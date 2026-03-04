@@ -864,7 +864,7 @@
                 <a href="#" class="nav-link" onclick="showPage('teams')">Teams</a>
             </div>
             
-            <div style="display: flex; align-items: center; gap: 16px;">
+            <div id="auth-section" style="display: flex; align-items: center; gap: 16px;">
                 <div class="wallet-connect" onclick="showPage('wallet')">
                     <div class="wallet-icon">₿</div>
                     <div class="wallet-info">
@@ -873,7 +873,7 @@
                     </div>
                 </div>
                 
-                <a href="#" class="nav-cta" onclick="showPage('subscribe')">Mitglied werden</a>
+                <a href="#" class="nav-cta" onclick="openLoginModal()">Einloggen</a>
             </div>
         </div>
     </nav>
@@ -2084,6 +2084,71 @@
                       'Wähle dein Wallet und bestätige die Transaktion.');
             }
         }
+
+        // ===== INTERACTIVE STATE MANAGEMENT =====
+        const AppState = {
+            currentUser: localStorage.getItem('ids_user') || null,
+            isMember: localStorage.getItem('ids_member') === 'true',
+            
+            login(username, member = false) {
+                this.currentUser = username;
+                this.isMember = member;
+                localStorage.setItem('ids_user', username);
+                localStorage.setItem('ids_member', member);
+                updateAuthUI();
+                showToast(`Eingeloggt als ${username}${member ? ' (Member)' : ''}`, 'success');
+            },
+            
+            logout() {
+                this.currentUser = null;
+                this.isMember = false;
+                localStorage.removeItem('ids_user');
+                localStorage.removeItem('ids_member');
+                updateAuthUI();
+                showToast('Ausgeloggt', 'success');
+            }
+        };
+
+        function updateAuthUI() {
+            const authSection = document.getElementById('auth-section') || document.querySelector('.nav-container > div:last-child');
+            if (AppState.currentUser) {
+                authSection.innerHTML = `
+                    <span style="color: var(--text-secondary); margin-right: 12px;">
+                        ${AppState.isMember ? '⭐' : '👤'} ${AppState.currentUser}
+                    </span>
+                    <button class="btn btn-secondary" onclick="AppState.logout()">Ausloggen</button>
+                `;
+            } else {
+                authSection.innerHTML = `
+                    <button class="nav-cta" onclick="openLoginModal()">Einloggen</button>
+                `;
+            }
+        }
+
+        function openLoginModal() {
+            const username = prompt('Demo Login:\n\n1. Type "user" for free user\n2. Type "member" for paid member ($120/year)\n\nUsername:');
+            if (username === 'user') {
+                AppState.login('demo_user', false);
+            } else if (username === 'member') {
+                AppState.login('demo_member', true);
+            } else if (username) {
+                alert('Invalid. Use "user" or "member"');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.style.cssText = 'position: fixed; top: 100px; right: 20px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 20px; min-width: 300px; z-index: 3000; animation: slideIn 0.3s ease;';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAuthUI();
+        });
     </script>
 </body>
 </html>
