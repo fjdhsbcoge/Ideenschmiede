@@ -1,0 +1,70 @@
+            if (location === 'marketplace' && !AppState.isMember) {
+                showToast('Mitgliedschaft erforderlich für Marktplatz', 'error');
+                return;
+            }
+            
+            AppState.createIdea(title, description, location);
+            closeModal('create-idea-modal');
+            showToast('Idee erfolgreich gepostet!', 'success');
+            
+            // Clear form
+            document.getElementById('idea-title').value = '';
+            document.getElementById('idea-desc').value = '';
+        }
+
+        function moveToMarketplace(ideaId) {
+            if (!AppState.isMember) {
+                showToast('Mitgliedschaft erforderlich', 'error');
+                openModal('login-modal');
+                return;
+            }
+            
+            if (AppState.moveToMarketplace(ideaId)) {
+                showToast('Idee wurde in den Marktplatz verschoben!', 'success');
+            }
+        }
+
+        function confirmInvest() {
+            const ideaId = parseInt(document.getElementById('invest-modal').dataset.ideaId);
+            const amount = parseFloat(document.getElementById('invest-amount').value);
+            
+            if (!amount || amount <= 0) {
+                showToast('Bitte gültigen Betrag eingeben', 'error');
+                return;
+            }
+            
+            AppState.invest(ideaId, amount, 'idea');
+            closeModal('invest-modal');
+            showToast(`Erfolgreich ₿ ${amount} investiert!`, 'success');
+        }
+
+        // Toast Notifications
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            AppState.init();
+        });
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
