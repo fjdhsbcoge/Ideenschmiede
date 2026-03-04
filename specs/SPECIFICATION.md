@@ -67,16 +67,24 @@ Ideenschmiede is a decentralized marketplace for ideas built on Bitcoin. Ideas a
 ### 2.2 Lifecycle of an Idea
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   OPEN EXCHANGE │───▶│ VOTING PHASE    │───▶│  TRADING PHASE  │
-│   (Discussion)  │    │ (8 days + DLC)  │    │ (Live trading)  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-        │                       │                       │
-        ▼                       ▼                       ▼
-   Ideas refined          Vote decides:           Shares trade
-   Pledges made           - PASS: Funded          Secondary market
-                          - FAIL: Refunded
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   DISCUSSION    │───▶│   MARKETPLACE   │───▶│ VOTING PHASE    │───▶│  TRADING PHASE  │
+│     (Free)      │    │  (Subscription) │    │ (8 days)        │    │ (Live trading)  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+        │                       │                       │                       │
+        ▼                       ▼                       ▼                       ▼
+   Ideas posted           Ideas refined          Vote decides:           Shares trade
+   Feedback gathered      Idea-Shares offered    - PASS: Funded          Secondary market
+   Community building     (by ideator anytime)   - FAIL: Refunded
 ```
+
+**Discussion → Marketplace:**
+- Ideator can move idea to marketplace **at any time**
+- Requires **subscription** ($120/year)
+- Subscribed users can also **post directly** to marketplace (skip discussion)
+
+**Discussion purpose:** Generate interest, gather feedback, build community (free)
+**Marketplace purpose:** Refined ideas, voting, investment (subscription required)
 
 ---
 

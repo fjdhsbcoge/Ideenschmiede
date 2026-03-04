@@ -77,12 +77,15 @@ Ideator Ownership % = Ideator Investment / Outside Investment
 ## Process Flow (5 Steps)
 
 ```
-1. 💡 Idee posten        → Discussion (free)
-2. 🗳️ Community-Voting   → 8 days, >25% downvotes = reject
-3. 🛒 In den Marktplatz  → After approval: Idea-Shares offered
-4. 👥 Teams bilden       → Teams form, investors choose & invest
+1. 💡 Idee posten        → Discussion (free) OR Marketplace (member)
+2. 🛒 In den Marktplatz  → Ideator moves anytime (subscription required)
+3. 🗳️ Community-Voting   → 8 days in marketplace, >25% downvotes = reject
+4. 👥 Teams bilden       → After approval: teams form, investors choose
 5. 🚀 Umsetzung          → Build, 20/80 profit split
 ```
+
+**Discussion purpose:** Generate interest, gather feedback, build community (free)
+**Marketplace purpose:** Refined ideas, voting, investment (subscription required)
 
 ---
 
@@ -91,7 +94,10 @@ Ideator Ownership % = Ideator Investment / Outside Investment
 | Feature | Free | Paid ($120/year) |
 |---------|------|------------------|
 | Discussion (post ideas, comment) | ✅ | ✅ |
-| Marketplace (vote, invest, teams) | ❌ | ✅ |
+| **Move idea to marketplace** | ❌ | ✅ |
+| **Post directly to marketplace** | ❌ | ✅ |
+| Voting | ❌ | ✅ |
+| Invest in ideas/teams | ❌ | ✅ |
 | Create/join teams | ❌ | ✅ |
 
 ---
