@@ -190,6 +190,21 @@
         </div>
     </div>
 
+    <!-- Idea Detail Page -->
+    <div id="idea-detail" class="page">
+        <div class="page-header">
+            <div class="page-header-content">
+                <div id="idea-detail-header"></div>
+            </div>
+        </div>
+        <div class="content">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                <div id="idea-detail-main"></div>
+                <div id="idea-detail-sidebar"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Invest Modal -->
     <div class="modal" id="invest-modal">
         <div class="modal-content">
@@ -386,10 +401,10 @@
             `;
             
             html += ideas.map(idea => `
-                <div class="card">
+                <div class="card" style="cursor: pointer;" onclick="showIdeaDetail(${idea.id})">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                         <span class="badge badge-discussion">💬 In Diskussion</span>
-                        ${State.member && State.user === idea.author ? `<button class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;" onclick="moveToMarketplace(${idea.id})">🛒 Zum Marktplatz</button>` : ''}
+                        ${State.member && State.user === idea.author ? `<button class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;" onclick="event.stopPropagation(); moveToMarketplace(${idea.id})">🛒 Zum Marktplatz</button>` : ''}
                     </div>
                     <h3 style="font-size: 20px; margin-bottom: 8px;">${idea.title}</h3>
                     <p style="color: var(--text-secondary); margin-bottom: 16px;">${idea.desc}</p>
@@ -442,7 +457,7 @@
                             ${ideas.map(idea => {
                                 const ownership = idea.outsideInvestment > 0 ? (idea.ideatorInvestment / idea.outsideInvestment * 100).toFixed(1) : 0;
                                 return `
-                                <div class="card" style="margin-bottom: 24px;">
+                                <div class="card" style="margin-bottom: 24px; cursor: pointer;" onclick="showIdeaDetail(${idea.id})">
                                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                                         <span class="badge badge-marketplace">🛒 Im Marktplatz</span>
                                         <span style="font-size: 13px; color: var(--text-secondary);">Ideator-Anteil: <strong style="color: var(--accent-primary);">${ownership}%</strong></span>
@@ -585,6 +600,165 @@
             showToast(`Erfolgreich ₿ ${amount} investiert!`, 'success');
             updateUI();
             renderMarketplace();
+        }
+
+        // Idea Detail Page Functions
+        function showIdeaDetail(ideaId) {
+            const idea = State.ideas.find(i => i.id === ideaId);
+            if (!idea) return;
+
+            // Hide all pages, show idea detail
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('idea-detail').classList.add('active');
+
+            const ownership = idea.outsideInvestment > 0 
+                ? (idea.ideatorInvestment / idea.outsideInvestment * 100).toFixed(1) 
+                : 0;
+
+            // Header
+            document.getElementById('idea-detail-header').innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <span class="badge ${idea.phase === 'discussion' ? 'badge-discussion' : 'badge-marketplace'}">
+                        ${idea.phase === 'discussion' ? '💬 In Diskussion' : '🛒 Im Marktplatz'}
+                    </span>
+                    ${idea.phase === 'marketplace' ? `<span style="font-size: 14px; color: var(--text-secondary);">Ideator-Anteil: <strong style="color: var(--accent-primary);">${ownership}%</strong></span>` : ''}
+                </div>
+                <h1 class="page-title">${idea.title}</h1>
+                <p style="color: var(--text-secondary);">Von @${idea.author}</p>
+            `;
+
+            // Main content
+            let mainContent = `
+                <div class="card" style="margin-bottom: 24px;">
+                    <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Beschreibung</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.7;">${idea.desc}</p>
+                </div>
+            `;
+
+            // Voting section (only in marketplace)
+            if (idea.phase === 'marketplace') {
+                mainContent += `
+                    <div class="card" style="margin-bottom: 24px; background: rgba(243, 156, 18, 0.05); border: 1px solid rgba(243, 156, 18, 0.2);">
+                        <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: var(--accent-orange);">🗳️ Community-Abstimmung</h3>
+                        <div style="margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                                <span>Aktuelles Ergebnis</span>
+                                <span style="color: var(--text-tertiary);">Schwelle: >25% Downvotes = Ablehnung</span>
+                            </div>
+                            <div style="height: 32px; background: rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden; display: flex;">
+                                <div style="width: 89%; background: linear-gradient(90deg, var(--accent-green), #27ae60); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">👍 89%</div>
+                                <div style="width: 11%; background: linear-gradient(90deg, #e74c3c, #c0392b); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px;">11%</div>
+                            </div>
+                        </div>
+                        ${State.member ? `
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <button class="btn" style="background: linear-gradient(135deg, var(--accent-green), #27ae60); color: white;" onclick="showToast('Abgestimmt: 👍', 'success')">👍 Unterstützen</button>
+                                <button class="btn" style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white;" onclick="showToast('Abgestimmt: 👎', 'success')">👎 Ablehnen</button>
+                            </div>
+                        ` : '<p style="color: var(--text-tertiary); font-size: 14px;">Nur Mitglieder können abstimmen.</p>'}
+                    </div>
+                `;
+            }
+
+            // Comments section
+            mainContent += `
+                <div class="card">
+                    <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">💬 Diskussion (${idea.comments} Kommentare)</h3>
+                    ${State.user ? `
+                        <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0;">DU</div>
+                            <input type="text" class="form-input" placeholder="Deine Meinung zur Idee..." style="flex: 1;" onkeypress="if(event.key==='Enter'){showToast('Kommentar gepostet!', 'success'); this.value=''; idea.comments++; State.save(); showIdeaDetail(${idea.id});">
+                        </div>
+                    ` : '<p style="color: var(--text-tertiary); margin-bottom: 16px;">Melde dich an um zu kommentieren.</p>'}
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div style="display: flex; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), #2980b9); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; flex-shrink: 0;">EW</div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                    <span style="font-weight: 600;">@energy_whale</span>
+                                    <span style="font-size: 12px; color: var(--text-tertiary);">• vor 2 Stunden</span>
+                                </div>
+                                <p style="color: var(--text-secondary); font-size: 15px; line-height: 1.5;">Die regulatorischen Hürden in Deutschland könnten ein Problem sein. Hast du dich schon mit dem Bundesnetzagentur auseinandergesetzt?</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-green), #27ae60); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; flex-shrink: 0;">GF</div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                    <span style="font-weight: 600;">@green_future</span>
+                                    <span style="font-size: 12px; color: var(--text-tertiary);">• vor 5 Stunden</span>
+                                </div>
+                                <p style="color: var(--text-secondary); font-size: 15px; line-height: 1.5;">Super Konzept! Ich habe ähnliche Gedanken für Windenergie.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('idea-detail-main').innerHTML = mainContent;
+
+            // Sidebar
+            let sidebarContent = `
+                <div class="card" style="margin-bottom: 24px;">
+                    <h3 style="font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 16px;">Statistiken</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div style="text-align: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary); margin-bottom: 4px;">${idea.votes.up}</div>
+                            <div style="font-size: 12px; color: var(--text-tertiary);">Unterstützer</div>
+                        </div>
+                        <div style="text-align: center; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                            <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary); margin-bottom: 4px;">${idea.comments}</div>
+                            <div style="font-size: 12px; color: var(--text-tertiary);">Kommentare</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Investment card (only in marketplace)
+            if (idea.phase === 'marketplace') {
+                sidebarContent += `
+                    <div class="card" style="margin-bottom: 24px; background: rgba(233, 69, 96, 0.05); border-color: rgba(233, 69, 96, 0.2);">
+                        <h3 style="font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--accent-primary); margin-bottom: 16px;">📊 Idea-Shares</h3>
+                        <div style="margin-bottom: 16px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="font-size: 14px;">Preis pro Share</span>
+                                <span style="font-weight: 600;">₿ ${idea.sharePrice}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-tertiary);">
+                                <span>Ideator-Anteil</span>
+                                <span>${ownership}%</span>
+                            </div>
+                        </div>
+                        ${State.member ? `
+                            <button class="btn btn-primary" style="width: 100%;" onclick="openInvestModal(${idea.id})">💰 Idea-Shares kaufen</button>
+                        ` : '<button class="btn btn-secondary" style="width: 100%;" disabled>⭐ Mitgliedschaft erforderlich</button>'}
+                    </div>
+
+                    <div class="card">
+                        <h3 style="font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 16px;">👥 Aktive Teams</h3>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                <div style="font-weight: 600; margin-bottom: 4px;">Team SolarGrid</div>
+                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Fokus: Deutsche Märkte</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 12px; color: var(--accent-green);">80% Team / 20% Idea</span>
+                                    <span style="font-size: 12px; color: var(--text-tertiary);">₿ 0.15</span>
+                                </div>
+                            </div>
+                            <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px;">
+                                <div style="font-weight: 600; margin-bottom: 4px;">Team EnergyShare</div>
+                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Fokus: Europa</div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 12px; color: var(--accent-green);">80% Team / 20% Idea</span>
+                                    <span style="font-size: 12px; color: var(--text-tertiary);">₿ 0.08</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('idea-detail-sidebar').innerHTML = sidebarContent;
         }
 
         function showToast(message, type = 'success') {
