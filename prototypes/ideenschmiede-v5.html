@@ -1079,28 +1079,8 @@
                 </div>
             </div>
 
-            <div style="padding: 120px 32px; text-align: center;">
-                <div style="max-width: 480px; margin: 0 auto;">
-                    <div style="font-size: 64px; margin-bottom: 24px;">🔒</div>
-                    <h2 style="font-size: 28px; margin-bottom: 16px;">Marktplatz ist für Mitglieder</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 32px;">Schalte den vollen Zugang frei, um in Ideen zu investieren, abzustimmen und Teams zu bilden.</p>
-                    
-                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px;">
-                        <div style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">$12 / Monat</div>
-                        <div style="color: var(--text-tertiary); font-size: 14px; margin-bottom: 20px;">oder $120 / Jahr (20% sparen)</div>
-                        
-                        <ul style="text-align: left; list-style: none; margin-bottom: 24px;">
-                            <li style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">✅ Zugriff auf alle Marktplatz-Ideen</li>
-                            <li style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">✅ Investiere in Teams</li>
-                            <li style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">✅ Stimmrecht bei Abstimmungen</li>
-                            <li style="padding: 8px 0;">✅ Gründe eigene Teams</li>
-                        </ul>
-                        
-                        <button class="paywall-btn" style="width: 100%;">Mitglied werden</button>
-                    </div>
-                    
-                    <p style="font-size: 14px; color: var(--text-tertiary);">Bereits Mitglied? <a href="#" style="color: var(--accent-primary);">Anmelden</a></p>
-                </div>
+            <div id="marketplace-content">
+                <!-- Content injected by JavaScript -->
             </div>
         </div>
 
@@ -2096,6 +2076,7 @@
                 localStorage.setItem('ids_user', username);
                 localStorage.setItem('ids_member', member);
                 updateAuthUI();
+                updateMarketplaceView();
                 showToast(`Eingeloggt als ${username}${member ? ' (Member)' : ''}`, 'success');
             },
             
@@ -2105,6 +2086,7 @@
                 localStorage.removeItem('ids_user');
                 localStorage.removeItem('ids_member');
                 updateAuthUI();
+                updateMarketplaceView();
                 showToast('Ausgeloggt', 'success');
             }
         };
@@ -2148,7 +2130,107 @@
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
             updateAuthUI();
+            updateMarketplaceView();
         });
+
+        function updateMarketplaceView() {
+            const container = document.getElementById('marketplace-content');
+            if (!container) return;
+
+            if (AppState.isMember) {
+                // Show marketplace content for members
+                container.innerHTML = `
+                    <div class="content">
+                        <div class="content-grid" style="grid-template-columns: 2fr 1fr;">
+                            <div>
+                                <div class="idea-card" style="margin-bottom: 24px;">
+                                    <div class="idea-header">
+                                        <span class="idea-phase phase-marketplace">🛒 Im Marktplatz</span>
+                                        <span style="font-size: 14px; color: var(--text-tertiary);">Noch 5 Tage Voting</span>
+                                    </div>
+                                    
+                                    <h3 class="idea-title">Dezentrale Energiespeicher-Community</h3>
+                                    <p class="idea-desc">Hausbesitzer mit Solaranlagen verbinden, um überschüssige Energie gemeinsam zu speichern und zu handeln.</p>
+                                    
+                                    <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; margin: 16px 0;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                            <span style="font-size: 14px;">Preis pro Share</span>
+                                            <span style="font-weight: 600;">₿ 0.0001</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                            <span style="font-size: 14px;">Ideator-Anteil</span>
+                                            <span style="font-weight: 600; color: var(--accent-primary);">10%</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span style="font-size: 14px;">Investiert (Extern)</span>
+                                            <span style="font-weight: 600;">₿ 1.25</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <button class="btn btn-primary" onclick="showInvestModal('idea')">💰 In Idea-Shares investieren</button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="sidebar-section">
+                                    <h3 style="font-size: 14px; font-weight: 600; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 16px;">👥 Aktive Teams (2)</h3>
+                                    
+                                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                                        <div style="padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border-color);">
+                                            <div style="font-weight: 600; margin-bottom: 4px;">Team SolarGrid</div>
+                                            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Fokus auf deutsche Märkte</div>
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                <span style="font-size: 13px; color: var(--accent-green);">80% Team / 20% Idea</span>
+                                                <span style="font-size: 12px; color: var(--text-tertiary);">₿ 0.15 funded</span>
+                                            </div>
+                                            <button class="btn btn-secondary" style="width: 100%; padding: 8px; font-size: 13px;" onclick="showInvestModal('team', 'SolarGrid')">💰 Team-Shares kaufen</button>
+                                        </div>
+                                        
+                                        <div style="padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border-color);">
+                                            <div style="font-weight: 600; margin-bottom: 4px;">Team EnergyShare</div>
+                                            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Europäische Expansion</div>
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                <span style="font-size: 13px; color: var(--accent-green);">80% Team / 20% Idea</span>
+                                                <span style="font-size: 12px; color: var(--text-tertiary);">₿ 0.08 funded</span>
+                                            </div>
+                                            <button class="btn btn-secondary" style="width: 100%; padding: 8px; font-size: 13px;" onclick="showInvestModal('team', 'EnergyShare')">💰 Team-Shares kaufen</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Show paywall for non-members
+                container.innerHTML = `
+                    <div style="padding: 120px 32px; text-align: center;">
+                        <div style="max-width: 480px; margin: 0 auto;">
+                            <div style="font-size: 64px; margin-bottom: 24px;">🔒</div>
+                            <h2 style="font-size: 28px; margin-bottom: 16px;">Marktplatz ist für Mitglieder</h2>
+                            <p style="color: var(--text-secondary); margin-bottom: 32px;">Schalte den vollen Zugang frei, um in Ideen zu investieren, abzustimmen und Teams zu bilden.</p>
+                            
+                            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px;">
+                                <div style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">$12 / Monat</div>
+                                <div style="color: var(--text-tertiary); font-size: 14px; margin-bottom: 20px;">oder $120 / Jahr (20% sparen)</div>
+                                
+                                <ul style="text-align: left; list-style: none; margin-bottom: 24px;">
+                                    <li style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">✅ Zugriff auf alle Marktplatz-Ideen</li>
+                                    <li style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">✅ Investiere in Teams</li>
+                                    <li style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">✅ Stimmrecht bei Abstimmungen</li>
+                                    <li style="padding: 8px 0;">✅ Gründe eigene Teams</li>
+                                </ul>
+                                
+                                ${AppState.currentUser ? 
+                                    `<button class="paywall-btn" style="width: 100%;" onclick="showToast('Demo: Mitgliedschaft aktiviert!', 'success'); AppState.isMember = true; localStorage.setItem('ids_member', 'true'); updateAuthUI(); updateMarketplaceView();">Jetzt Mitglied werden</button>` :
+                                    `<button class="paywall-btn" style="width: 100%;" onclick="openLoginModal()">Einloggen um Mitglied zu werden</button>`
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
     </script>
 </body>
 </html>
