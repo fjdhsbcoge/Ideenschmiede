@@ -108,7 +108,7 @@ Investor 2: 30000 sat = 30% Idea shares
 Investor 3: 50000 sat = 50% Idea shares
 
 
-### Team-Shares (Orange)
+### Team-Shares 
 - **What:** Ownership of a specific team
 - **Earn from:** 80% of that team's revenue/exit (distributed by ownership)
 - **Who can buy:** Anyone
