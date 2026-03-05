@@ -268,216 +268,176 @@
                 {
                     num: '1',
                     icon: '💡',
-                    title: 'Post Idea to Discussion',
-                    duration: 'Free to start',
-                    description: 'Share your concept with the community. Gather feedback and refine your idea.',
-                    action: 'You post idea, respond to feedback, refine concept',
-                    outcome: 'Idea gains community interest',
-                    money: null
+                    title: 'Post Idea',
+                    lines: [
+                        'Share concept, gather feedback, refine',
+                        'Free to post in Discussion',
+                        'Build community interest'
+                    ]
                 },
                 {
                     num: '2',
                     icon: '🗳️',
-                    title: 'Community Voting',
-                    duration: '8 days',
-                    description: 'Community votes on whether idea should proceed to marketplace.',
-                    action: 'You promote your idea, answer questions',
-                    outcome: 'If >25% downvotes: rejected. If passes: unlocks marketplace',
-                    money: null
+                    title: 'Voting',
+                    lines: [
+                        'Community votes 8 days',
+                        'Promote idea, answer questions',
+                        'Pass: >25% upvotes → Marketplace unlocked'
+                    ]
                 },
                 {
                     num: '3',
                     icon: '🛒',
-                    title: 'Marketplace Opens',
-                    duration: '14 days',
-                    description: 'Idea-Shares sold (10M fixed supply). Teams apply simultaneously.',
-                    action: 'You receive 15% of all investments immediately',
-                    outcome: 'Funds raised, teams selected',
-                    money: {
-                        from: 'Investors',
-                        to: 'You: 15% | Early Contributors: 5% | Team Pool: 80%',
-                        example: '₿ 1.0 invested → You get ₿ 0.15 immediately'
-                    }
+                    title: 'Marketplace',
+                    lines: [
+                        '14 days: Idea-Shares sold + Teams apply',
+                        'You receive 15% of all investments immediately',
+                        'Example: ₿ 1.0 raised → You get ₿ 0.15'
+                    ]
                 },
                 {
                     num: '4',
                     icon: '👥',
-                    title: 'Teams Form & Build',
-                    duration: 'Ongoing',
-                    description: 'Selected teams receive funding and start building.',
-                    action: 'You advise teams (optional), promote the project',
-                    outcome: 'Product built, revenue generated',
-                    money: null
+                    title: 'Teams Build',
+                    lines: [
+                        'Teams receive funding, start building',
+                        'You advise teams (optional)',
+                        'Products built, revenue generated'
+                    ]
                 },
                 {
                     num: '5',
                     icon: '💰',
-                    title: 'Revenue & Exit',
-                    duration: 'Ongoing',
-                    description: 'Teams generate revenue. All Idea-Share holders earn from ALL teams.',
-                    action: 'You receive passive income from your Idea-Shares',
-                    outcome: '20% of ALL team revenue to Idea-Share holders (proportional to ownership)',
-                    money: {
-                        from: 'Team Revenue',
-                        to: 'Idea-Share Holders: 20% | Team-Share Holders: 80%',
-                        example: 'Team earns ₿ 10 → Idea-Share pool: ₿ 2 (distributed by share %)'
-                    }
+                    title: 'Revenue',
+                    lines: [
+                        '20% of ALL team revenue → Idea-Share holders',
+                        'You earn based on your Idea-Share %',
+                        'Example: Team earns ₿ 10 → ₿ 2 to Idea-Share pool'
+                    ]
                 }
             ],
             investor: [
                 {
                     num: '1',
                     icon: '🔍',
-                    title: 'Browse Ideas',
-                    duration: 'Anytime',
-                    description: 'Explore ideas in Discussion and Marketplace.',
-                    action: 'You research ideas, read comments, evaluate potential',
-                    outcome: 'You identify promising ideas',
-                    money: null
+                    title: 'Browse',
+                    lines: [
+                        'Explore ideas in Discussion',
+                        'Research, read comments, evaluate',
+                        'Identify promising opportunities'
+                    ]
                 },
                 {
                     num: '2',
                     icon: '🗳️',
-                    title: 'Vote on Ideas',
-                    duration: '8 days per idea',
-                    description: 'Subscription required. One person, one vote.',
-                    action: 'You vote on which ideas pass to marketplace',
-                    outcome: 'Quality ideas get validated',
-                    money: null
+                    title: 'Vote',
+                    lines: [
+                        'Subscription required',
+                        'One person, one vote',
+                        'Quality ideas pass to Marketplace'
+                    ]
                 },
                 {
                     num: '3',
                     icon: '🛒',
                     title: 'Buy Idea-Shares',
-                    duration: '14 days per idea',
-                    description: '10M shares, fixed supply. Early = better price.',
-                    action: 'You buy shares at current price',
-                    outcome: 'You own % of the idea',
-                    money: {
-                        from: 'Your Wallet',
-                        to: 'Ideator: 15% | Early Contributors: 5% | Team Pool: 80%',
-                        example: 'Early: ₿ 0.10 → 5M shares (50%) | Late: ₿ 0.30 → 2.5M shares (25%)'
-                    }
+                    lines: [
+                        '10M shares, fixed supply, bonding curve',
+                        'Early = better price',
+                        'Example: Early ₿ 0.10 → 50% | Late ₿ 0.30 → 25%'
+                    ]
                 },
                 {
                     num: '4',
                     icon: '👥',
-                    title: 'Fund Teams (Series A)',
-                    duration: '7 days per team',
-                    description: 'Idea-Share holders get first right. Fixed price.',
-                    action: 'You choose which team(s) to fund',
-                    outcome: 'You get Team-Shares in selected teams',
-                    money: {
-                        from: 'Your Wallet',
-                        to: 'Team directly',
-                        example: '₿ 0.10 → Team-Shares in Team SolarGrid'
-                    }
+                    title: 'Fund Teams',
+                    lines: [
+                        'Choose team(s) to fund (Series A)',
+                        '7 days, fixed price, Idea-Share holders only',
+                        'Get Team-Shares in selected teams'
+                    ]
                 },
                 {
                     num: '5',
                     icon: '📊',
-                    title: 'Vote on Milestones',
-                    duration: 'Ongoing',
-                    description: 'Release funds as teams hit milestones.',
-                    action: 'You vote on milestone completion',
-                    outcome: 'Funds released or team replaced',
-                    money: null
+                    title: 'Vote Milestones',
+                    lines: [
+                        'Vote on milestone completion',
+                        'Release funds or replace team',
+                        'Protect your investment'
+                    ]
                 },
                 {
                     num: '6',
                     icon: '💰',
-                    title: 'Earn Returns',
-                    duration: 'Ongoing',
-                    description: 'Two income streams from your investments.',
-                    action: 'You receive revenue shares',
-                    outcome: 'Passive income from Idea-Shares + Team-Shares',
-                    money: {
-                        from: 'Team Revenue',
-                        to: 'Idea-Shares: 20% | Team-Shares: 80%',
-                        example: 'Team earns ₿ 10 → Idea-Share pool: ₿ 2 | Team-Share pool: ₿ 8'
-                    }
+                    title: 'Earn',
+                    lines: [
+                        'Two income streams',
+                        'Idea-Shares: 20% of ALL teams',
+                        'Team-Shares: 80% of specific team'
+                    ]
                 }
             ],
             builder: [
                 {
                     num: '1',
                     icon: '🔍',
-                    title: 'Browse Marketplace',
-                    duration: 'Anytime',
-                    description: 'Find validated ideas that need teams.',
-                    action: 'You research ideas, find good fit for your skills',
-                    outcome: 'You identify ideas to build',
-                    money: null
+                    title: 'Browse',
+                    lines: [
+                        'Find validated ideas in Marketplace',
+                        'Research, find good fit',
+                        'Identify opportunities'
+                    ]
                 },
                 {
                     num: '2',
                     icon: '📝',
-                    title: 'Apply as Team Leader',
-                    duration: 'During 14-day marketplace',
-                    description: 'Post proposal with roadmap, budget, milestones.',
-                    action: 'You create detailed proposal, invest skin-in-game',
-                    outcome: 'Investors see your proposal',
-                    money: {
-                        from: 'Your Wallet',
-                        to: 'Your Team Shares (you become first shareholder)',
-                        example: '₿ 0.05 invested → 5M Team-Shares (50%)'
-                    }
+                    title: 'Apply',
+                    lines: [
+                        'Post proposal with roadmap, budget, milestones',
+                        'Invest skin-in-game',
+                        'Become first Team-Share holder'
+                    ]
                 },
                 {
                     num: '3',
                     icon: '💰',
-                    title: 'Series A Funding',
-                    duration: '7 days',
-                    description: 'Idea-Share holders buy Team-Shares at fixed price.',
-                    action: 'You promote your team to Idea-Share holders',
-                    outcome: 'If minimum reached: funded! If not: try again',
-                    money: {
-                        from: 'Idea-Share Holders',
-                        to: 'Your Team Treasury',
-                        example: 'Goal: ₿ 0.50 → You receive funds to build'
-                    }
+                    title: 'Get Funded',
+                    lines: [
+                        'Series A: Idea-Share holders buy Team-Shares',
+                        '7 days, fixed price',
+                        'If minimum reached: funded!'
+                    ]
                 },
                 {
                     num: '4',
                     icon: '🔨',
-                    title: 'Build & Deliver',
-                    duration: 'Ongoing',
-                    description: 'Execute roadmap, hit milestones.',
-                    action: 'You build product, get customers, generate revenue',
-                    outcome: 'Milestones completed, funds released',
-                    money: {
-                        from: 'Team Treasury',
-                        to: 'Salaries, tools, marketing',
-                        example: 'Milestone 1 complete → Next tranche released'
-                    }
+                    title: 'Build',
+                    lines: [
+                        'Execute roadmap, hit milestones',
+                        'Funds released by milestone',
+                        'Build product, get customers'
+                    ]
                 },
                 {
                     num: '5',
                     icon: '📈',
-                    title: 'Series B (Optional)',
-                    duration: 'If needed',
-                    description: 'Public can buy remaining Team-Shares.',
-                    action: 'You raise more funds if needed',
-                    outcome: 'Additional capital for growth',
-                    money: {
-                        from: 'Public Investors',
-                        to: 'Your Team Treasury',
-                        example: 'Higher price than Series A'
-                    }
+                    title: 'Series B',
+                    lines: [
+                        'Optional: raise more if needed',
+                        'Public can buy remaining Team-Shares',
+                        'Higher price than Series A'
+                    ]
                 },
                 {
                     num: '6',
                     icon: '💰',
-                    title: 'Profit Distribution',
-                    duration: 'Ongoing',
-                    description: 'Team generates revenue, everyone profits.',
-                    action: 'You report revenue transparently',
-                    outcome: '80% to Team-Share holders, 20% to Idea-Share holders',
-                    money: {
-                        from: 'Company Revenue',
-                        to: 'Team-Shares: 80% | Idea-Shares: 20%',
-                        example: '₿ 10 profit → Team-Share pool: ₿ 8 (you get % based on your shares)'
-                    }
+                    title: 'Profit',
+                    lines: [
+                        'Report revenue transparently',
+                        '80% to Team-Share holders',
+                        'You earn based on your Team-Share %'
+                    ]
                 }
             ]
         };
@@ -504,30 +464,7 @@
                             <span>${phase.icon}</span>
                             ${phase.title}
                         </div>
-                        <div class="phase-duration">⏱️ ${phase.duration}</div>
-                        <p style="color: var(--text-secondary); margin-bottom: 16px;">${phase.description}</p>
-                        
-                        <div class="action-box">
-                            <div class="action-title">
-                                <span>▶</span> Your Action
-                            </div>
-                            <p>${phase.action}</p>
-                        </div>
-                        
-                        ${phase.money ? `
-                        <div class="money-flow">
-                            <span>💰 ${phase.money.from}</span>
-                            <span class="money-arrow">→</span>
-                            <span>${phase.money.to}</span>
-                        </div>
-                        <div style="margin-top: 8px; padding: 12px; background: rgba(46, 204, 113, 0.1); border-radius: 8px; font-size: 13px; color: var(--text-secondary);">
-                            📊 Example: ${phase.money.example}
-                        </div>
-                        ` : ''}
-                        
-                        <div style="margin-top: 16px; padding: 12px; background: rgba(52, 152, 219, 0.1); border-radius: 8px; font-size: 14px;">
-                            <strong>Outcome:</strong> ${phase.outcome}
-                        </div>
+                        ${phase.lines.map(line => `<p style="color: var(--text-secondary); margin-bottom: 8px;">${line}</p>`).join('')}
                     </div>
                 </div>
             `).join('');
