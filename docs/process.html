@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ideenschmiede - Process Visualization</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-tertiary: #606070;
+            --accent-primary: #e94560;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #f39c12;
+            --accent-purple: #9b59b6;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: var(--bg-primary); 
+            color: var(--text-primary); 
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px; }
+        
+        /* Header */
+        .header { text-align: center; margin-bottom: 48px; }
+        .header h1 { font-size: 42px; margin-bottom: 16px; }
+        .header p { color: var(--text-secondary); font-size: 18px; }
+        
+        /* Perspective Switcher */
+        .perspective-switcher {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 48px;
+        }
+        .perspective-btn {
+            padding: 16px 32px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .perspective-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+        .perspective-btn.active {
+            background: linear-gradient(135deg, var(--accent-primary), #ff6b6b);
+            border-color: var(--accent-primary);
+            color: white;
+        }
+        
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-green));
+        }
+        
+        /* Phase */
+        .phase {
+            position: relative;
+            margin-bottom: 48px;
+            opacity: 0.4;
+            transition: opacity 0.5s;
+        }
+        .phase.active {
+            opacity: 1;
+        }
+        .phase-marker {
+            position: absolute;
+            left: -40px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        .phase.active .phase-marker {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+        .phase-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .phase-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .phase-duration {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 16px;
+        }
+        
+        /* Action Box */
+        .action-box {
+            background: rgba(233, 69, 96, 0.1);
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        .action-box.ideator { background: rgba(233, 69, 96, 0.1); border-color: rgba(233, 69, 96, 0.3); }
+        .action-box.investor { background: rgba(52, 152, 219, 0.1); border-color: rgba(52, 152, 219, 0.3); }
+        .action-box.builder { background: rgba(46, 204, 113, 0.1); border-color: rgba(46, 204, 113, 0.3); }
+        
+        .action-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .action-title.ideator { color: var(--accent-primary); }
+        .action-title.investor { color: var(--accent-blue); }
+        .action-title.builder { color: var(--accent-green); }
+        
+        /* Money Flow */
+        .money-flow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .money-arrow {
+            color: var(--accent-green);
+            font-size: 20px;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+        
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 48px;
+            padding: 24px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .legend-dot.ideator { background: var(--accent-primary); }
+        .legend-dot.investor { background: var(--accent-blue); }
+        .legend-dot.builder { background: var(--accent-green); }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .perspective-switcher { flex-direction: column; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .legend { flex-direction: column; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Ideenschmiede Process</h1>
+            <p>From idea to profit - see the journey from your perspective</p>
+        </div>
+        
+        <div class="perspective-switcher">
+            <button class="perspective-btn active" onclick="setPerspective('ideator')">
+                💡 Ideator
+            </button>
+            <button class="perspective-btn" onclick="setPerspective('investor')">
+                💰 Investor
+            </button>
+            <button class="perspective-btn" onclick="setPerspective('builder')">
+                🔨 Builder
+            </button>
+        </div>
+        
+        <div class="timeline" id="timeline">
+            <!-- Phases will be inserted here -->
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot ideator"></div>
+                <span>Ideator Action</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot investor"></div>
+                <span>Investor Action</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot builder"></div>
+                <span>Builder Action</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const phases = {
+            ideator: [
+                {
+                    num: '1',
+                    icon: '💡',
+                    title: 'Post Idea to Discussion',
+                    duration: 'Free to start',
+                    description: 'Share your concept with the community. Gather feedback and refine your idea.',
+                    action: 'You post idea, respond to feedback, refine concept',
+                    outcome: 'Idea gains community interest',
+                    money: null
+                },
+                {
+                    num: '2',
+                    icon: '🗳️',
+                    title: 'Community Voting',
+                    duration: '8 days',
+                    description: 'Community votes on whether idea should proceed to marketplace.',
+                    action: 'You promote your idea, answer questions',
+                    outcome: 'If >25% downvotes: rejected. If passes: unlocks marketplace',
+                    money: null
+                },
+                {
+                    num: '3',
+                    icon: '🛒',
+                    title: 'Marketplace Opens',
+                    duration: '14 days',
+                    description: 'Idea-Shares sold (10M fixed supply). Teams apply simultaneously.',
+                    action: 'You receive 15% of all investments immediately',
+                    outcome: 'Funds raised, teams selected',
+                    money: {
+                        from: 'Investors',
+                        to: 'You: 15% | Early Contributors: 5% | Team Pool: 80%',
+                        example: '₿ 1.0 invested → You get ₿ 0.15 immediately'
+                    }
+                },
+                {
+                    num: '4',
+                    icon: '👥',
+                    title: 'Teams Form & Build',
+                    duration: 'Ongoing',
+                    description: 'Selected teams receive funding and start building.',
+                    action: 'You advise teams (optional), promote the project',
+                    outcome: 'Product built, revenue generated',
+                    money: null
+                },
+                {
+                    num: '5',
+                    icon: '💰',
+                    title: 'Revenue & Exit',
+                    duration: 'Ongoing',
+                    description: 'Teams generate revenue. You earn from ALL teams.',
+                    action: 'You receive passive income from idea-shares',
+                    outcome: '20% of ALL team revenue forever',
+                    money: {
+                        from: 'Team Revenue',
+                        to: 'You: 20% of all teams | Teams: 80%',
+                        example: 'Team earns ₿ 10 → You get ₿ 2'
+                    }
+                }
+            ],
+            investor: [
+                {
+                    num: '1',
+                    icon: '🔍',
+                    title: 'Browse Ideas',
+                    duration: 'Anytime',
+                    description: 'Explore ideas in Discussion and Marketplace.',
+                    action: 'You research ideas, read comments, evaluate potential',
+                    outcome: 'You identify promising ideas',
+                    money: null
+                },
+                {
+                    num: '2',
+                    icon: '🗳️',
+                    title: 'Vote on Ideas',
+                    duration: '8 days per idea',
+                    description: 'Subscription required. One person, one vote.',
+                    action: 'You vote on which ideas pass to marketplace',
+                    outcome: 'Quality ideas get validated',
+                    money: null
+                },
+                {
+                    num: '3',
+                    icon: '🛒',
+                    title: 'Buy Idea-Shares',
+                    duration: '14 days per idea',
+                    description: '10M shares, fixed supply. Early = better price.',
+                    action: 'You buy shares at current price',
+                    outcome: 'You own % of the idea',
+                    money: {
+                        from: 'Your Wallet',
+                        to: 'Ideator: 15% | Early Contributors: 5% | Team Pool: 80%',
+                        example: 'Early: ₿ 0.10 → 5M shares (50%) | Late: ₿ 0.30 → 2.5M shares (25%)'
+                    }
+                },
+                {
+                    num: '4',
+                    icon: '👥',
+                    title: 'Fund Teams (Series A)',
+                    duration: '7 days per team',
+                    description: 'Idea-Share holders get first right. Fixed price.',
+                    action: 'You choose which team(s) to fund',
+                    outcome: 'You get Team-Shares in selected teams',
+                    money: {
+                        from: 'Your Wallet',
+                        to: 'Team directly',
+                        example: '₿ 0.10 → Team-Shares in Team SolarGrid'
+                    }
+                },
+                {
+                    num: '5',
+                    icon: '📊',
+                    title: 'Vote on Milestones',
+                    duration: 'Ongoing',
+                    description: 'Release funds as teams hit milestones.',
+                    action: 'You vote on milestone completion',
+                    outcome: 'Funds released or team replaced',
+                    money: null
+                },
+                {
+                    num: '6',
+                    icon: '💰',
+                    title: 'Earn Returns',
+                    duration: 'Ongoing',
+                    description: 'Two income streams from your investments.',
+                    action: 'You receive revenue shares',
+                    outcome: 'Passive income from Idea-Shares + Team-Shares',
+                    money: {
+                        from: 'Team Revenue',
+                        to: 'Idea-Shares: 20% | Team-Shares: 80%',
+                        example: 'Team earns ₿ 10 → Idea-Share pool: ₿ 2 | Team-Share pool: ₿ 8'
+                    }
+                }
+            ],
+            builder: [
+                {
+                    num: '1',
+                    icon: '🔍',
+                    title: 'Browse Marketplace',
+                    duration: 'Anytime',
+                    description: 'Find validated ideas that need teams.',
+                    action: 'You research ideas, find good fit for your skills',
+                    outcome: 'You identify ideas to build',
+                    money: null
+                },
+                {
+                    num: '2',
+                    icon: '📝',
+                    title: 'Apply as Team Leader',
+                    duration: 'During 14-day marketplace',
+                    description: 'Post proposal with roadmap, budget, milestones.',
+                    action: 'You create detailed proposal, invest skin-in-game',
+                    outcome: 'Investors see your proposal',
+                    money: {
+                        from: 'Your Wallet',
+                        to: 'Your Team Shares (you become first shareholder)',
+                        example: '₿ 0.05 invested → 5M Team-Shares (50%)'
+                    }
+                },
+                {
+                    num: '3',
+                    icon: '💰',
+                    title: 'Series A Funding',
+                    duration: '7 days',
+                    description: 'Idea-Share holders buy Team-Shares at fixed price.',
+                    action: 'You promote your team to Idea-Share holders',
+                    outcome: 'If minimum reached: funded! If not: try again',
+                    money: {
+                        from: 'Idea-Share Holders',
+                        to: 'Your Team Treasury',
+                        example: 'Goal: ₿ 0.50 → You receive funds to build'
+                    }
+                },
+                {
+                    num: '4',
+                    icon: '🔨',
+                    title: 'Build & Deliver',
+                    duration: 'Ongoing',
+                    description: 'Execute roadmap, hit milestones.',
+                    action: 'You build product, get customers, generate revenue',
+                    outcome: 'Milestones completed, funds released',
+                    money: {
+                        from: 'Team Treasury',
+                        to: 'Salaries, tools, marketing',
+                        example: 'Milestone 1 complete → Next tranche released'
+                    }
+                },
+                {
+                    num: '5',
+                    icon: '📈',
+                    title: 'Series B (Optional)',
+                    duration: 'If needed',
+                    description: 'Public can buy remaining Team-Shares.',
+                    action: 'You raise more funds if needed',
+                    outcome: 'Additional capital for growth',
+                    money: {
+                        from: 'Public Investors',
+                        to: 'Your Team Treasury',
+                        example: 'Higher price than Series A'
+                    }
+                },
+                {
+                    num: '6',
+                    icon: '💰',
+                    title: 'Profit Distribution',
+                    duration: 'Ongoing',
+                    description: 'Team generates revenue, everyone profits.',
+                    action: 'You report revenue transparently',
+                    outcome: '80% to Team-Share holders, 20% to Idea-Share holders',
+                    money: {
+                        from: 'Company Revenue',
+                        to: 'Team-Shares: 80% | Idea-Shares: 20%',
+                        example: '₿ 10 profit → Team-Share pool: ₿ 8 (you get % based on your shares)'
+                    }
+                }
+            ]
+        };
+
+        function setPerspective(perspective) {
+            // Update buttons
+            document.querySelectorAll('.perspective-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Render timeline
+            renderTimeline(phases[perspective]);
+        }
+
+        function renderTimeline(phaseData) {
+            const timeline = document.getElementById('timeline');
+            
+            timeline.innerHTML = phaseData.map((phase, index) => `
+                <div class="phase active" style="animation-delay: ${index * 0.1}s">
+                    <div class="phase-marker">${phase.num}</div>
+                    <div class="phase-content">
+                        <div class="phase-title">
+                            <span>${phase.icon}</span>
+                            ${phase.title}
+                        </div>
+                        <div class="phase-duration">⏱️ ${phase.duration}</div>
+                        <p style="color: var(--text-secondary); margin-bottom: 16px;">${phase.description}</p>
+                        
+                        <div class="action-box">
+                            <div class="action-title">
+                                <span>▶</span> Your Action
+                            </div>
+                            <p>${phase.action}</p>
+                        </div>
+                        
+                        ${phase.money ? `
+                        <div class="money-flow">
+                            <span>💰 ${phase.money.from}</span>
+                            <span class="money-arrow">→</span>
+                            <span>${phase.money.to}</span>
+                        </div>
+                        <div style="margin-top: 8px; padding: 12px; background: rgba(46, 204, 113, 0.1); border-radius: 8px; font-size: 13px; color: var(--text-secondary);">
+                            📊 Example: ${phase.money.example}
+                        </div>
+                        ` : ''}
+                        
+                        <div style="margin-top: 16px; padding: 12px; background: rgba(52, 152, 219, 0.1); border-radius: 8px; font-size: 14px;">
+                            <strong>Outcome:</strong> ${phase.outcome}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initial render
+        renderTimeline(phases.ideator);
+    </script>
+</body>
+</html>
