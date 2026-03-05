@@ -1,18 +1,38 @@
 # Ideenschmiede
 
-**Der Marktplatz für Ideen**
+**The Marketplace for Ideas**
+
+*Where ideas become reality through community validation and decentralized funding*
 
 ---
 
 ## 📝 About This Repository
 
-This repository contains the development of **Ideenschmiede**, a decentralized marketplace for ideas.
+This repository contains the development of **Ideenschmiede**, a decentralized marketplace for ideas built on Bitcoin.
 
 **Important Transparency Notice:**
 - This repository was created and is maintained by **Kimi Claw**, an AI assistant
 - All commits marked with "Kimi Claw" are authored by an AI, not a human
 - The human collaborator is @senator-thunfisch (project owner)
 - This is an AI-human collaborative project
+
+---
+
+## 🎯 What is Ideenschmiede?
+
+Ideenschmiede is a platform where:
+- **Ideators** post ideas and earn from their success
+- **Investors** discover and fund validated ideas
+- **Builders** form teams and bring ideas to life
+
+### Core Principles
+- **Bitcoin-only** - No other blockchains, no tokens
+- **20/80 Revenue Split** - 20% to idea-owners, 80% to builders
+- **Community Validation** - One person, one vote
+- **Parallel Teams** - Multiple teams can build the same idea
+- **No Legal Contracts** - Social contracts + transparency
+
+---
 
 ## 🤖 AI-Human Collaboration
 
@@ -22,21 +42,123 @@ This project follows an **AI-first specification approach**:
 3. AI refines based on feedback
 4. Future AI agents can use these specifications to implement
 
-## 📁 Structure
+---
+
+## 📁 Repository Structure
 
 ```
-prototypes/          # Visual mockups and UI prototypes
-specs/              # Living specification documents (coming soon)
-docs/               # Architecture decisions and documentation
+├── prototypes/          # UI prototypes and mockups
+│   ├── ideenschmiede-demo.html    # v0.1 - Basic flow demo
+│   ├── ideenschmiede-v2.html      # v0.2 - Stage visualization + profile
+│   └── process-visualization.html # Interactive process view
+│
+├── docs/                # GitHub Pages deployment
+│   ├── index.html       # Main demo (v0.1)
+│   ├── v2.html          # v0.2 demo
+│   ├── process.html     # Process visualization
+│   └── stages.html      # Stage browser
+│
+├── specs/               # Specification documents
+│   └── SPECIFICATION.md # Living spec (v0.3.0)
+│
+├── VISION.md            # Ideal version - core principles & decisions
+├── BUILD.md             # Building manual - step-by-step implementation
+├── README.md            # This file
+└── AGENTS.md            # Workspace conventions for AI agents
 ```
 
-## 🚀 Current Status
+---
 
-- [x] Initial prototype: Idea Card
+## 🚀 Live Demos
+
+| Version | Description | Link |
+|---------|-------------|------|
+| v0.1 | Basic flow: login → post → invest | [Live Demo](https://fjdhsbcoge.github.io/Ideenschmiede) |
+| v0.2 | Stage visualization + profile page | [Live Demo](https://fjdhsbcoge.github.io/Ideenschmiede/v2.html) |
+| Process | Interactive 3-perspective view | [Live Demo](https://fjdhsbcoge.github.io/Ideenschmiede/process.html) |
+
+---
+
+## 📊 Project Status
+
+### Completed ✅
+- [x] Vision document (VISION.md)
+- [x] Build manual (BUILD.md)
+- [x] v0.1 prototype - Basic user flow
+- [x] v0.2 prototype - 6-stage lifecycle visualization
+- [x] Process visualization - Ideator/Investor/Builder perspectives
+- [x] Profile page specification
+
+### In Progress 🚧
+- [ ] v0.3 prototype - Team formation flow
 - [ ] Living specification document
 - [ ] Technical architecture
-- [ ] Implementation
+
+### Planned 📋
+- [ ] Real comment system
+- [ ] Investment portfolio tracking
+- [ ] Revenue reporting UI
+- [ ] Chain-of-thought scoring
+- [ ] RGB Protocol integration (Phase 2)
+
+---
+
+## 📖 Key Documents
+
+| Document | Purpose |
+|----------|---------|
+| [VISION.md](VISION.md) | Ideal version - core principles, user flows, decisions |
+| [BUILD.md](BUILD.md) | Building manual - step-by-step implementation guide |
+| [AGENTS.md](AGENTS.md) | Workspace conventions for AI agents |
+
+---
+
+## 🏗️ The 6 Stages of an Idea
+
+```
+1. Discussion    → Post idea, gather feedback (free)
+2. Voting        → Community validates (8 days)
+3. Idea-Shares   → Fixed supply sale (14 days)
+4. Teams         → Builders apply, investors choose
+5. Building      → Milestone-based development
+6. Revenue       → 20/80 split to shareholders
+```
+
+---
+
+## 💰 Revenue Flow
+
+### Investment Split
+```
+100% Investment
+├── 15% → Ideator (immediate)
+├── 5%  → Early contributors
+└── 80% → Team building pool
+```
+
+### Revenue Split
+```
+100% Team Revenue
+├── 20% → Idea-Share holders (all teams)
+└── 80% → Team-Share holders (specific team)
+```
+
+---
+
+## 🔗 Links
+
+- **Live Demo:** https://fjdhsbcoge.github.io/Ideenschmiede
+- **Process View:** https://fjdhsbcoge.github.io/Ideenschmiede/process.html
+- **v0.2 Demo:** https://fjdhsbcoge.github.io/Ideenschmiede/v2.html
+
+---
 
 ## 📜 License
 
 To be determined by project owner.
+
+---
+
+*Authored by Kimi Claw (AI Assistant) in collaboration with @senator-thunfisch*
+
+> "Don't worry. Even if the world forgets, I'll remember for you."
