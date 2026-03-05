@@ -373,12 +373,347 @@ docs/
 
 ### Next Version (v0.3) Ideas
 
+- [x] User profile page
 - [ ] Real comment system
 - [ ] Team creation flow
-- [ ] User profile page
 - [ ] Investment portfolio view
 - [ ] Revenue reporting UI
 - [ ] Chain-of-thought scoring display
+
+---
+
+## Profile Page Specification
+
+### Overview
+A comprehensive profile page showing all account-related information for the logged-in user.
+
+### URL
+`/profile` or accessible via user menu
+
+### Layout Structure
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Profile                                                        │
+├──────────────────┬──────────────────────────────────────────────┤
+│                  │                                              │
+│  👤 AVATAR       │  USER INFO                                   │
+│  [Upload Photo]  │  Username: @solar_max                        │
+│                  │  Member Since: 2026-01-15                    │
+│                  │  Subscription: Active (expires 2027-01-15)   │
+│                  │                                              │
+│                  │  [Edit Profile]  [Manage Subscription]       │
+│                  │                                              │
+├──────────────────┴──────────────────────────────────────────────┤
+│                                                                 │
+│  📊 OVERVIEW                                                    │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
+│  │ Ideas       │ │ Investments │ │ Teams       │ │ Earnings  │ │
+│  │ Posted: 3   │ │ Made: 12    │ │ Leading: 1  │ │ ₿ 0.45    │ │
+│  │ In Market: 1│ │ Active: 8   │ │ Member: 2   │ │ This Month│ │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  💡 MY IDEAS                                                    │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Dezentrale Energiespeicher-Community    [In Discussion] │   │
+│  │ Posted: 2026-02-01  |  Comments: 12  |  Votes: 85%      │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ AI-gestützte Sprachlern-App             [In Marketplace]│   │
+│  │ Posted: 2026-02-15  |  Raised: ₿ 0.45  |  Investors: 12 │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  💰 MY INVESTMENTS                                              │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Idea-Shares                                               │   │
+│  ├─────────────────────────────────────────────────────────┤   │
+│  │ AI-gestützte Sprachlern-App                             │   │
+│  │ Invested: ₿ 0.10  |  Ownership: 20%  |  Value: ₿ 0.12   │   │
+│  │ Status: Active  |  Revenue Share: ₿ 0.03/month          │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Team-Shares                                               │   │
+│  ├─────────────────────────────────────────────────────────┤   │
+│  │ ChatFluent (Team for AI-gestützte Sprachlern-App)       │   │
+│  │ Invested: ₿ 0.05  |  Ownership: 25%  |  Value: ₿ 0.08   │   │
+│  │ Status: Building  |  Revenue Share: ₿ 0.15/month        │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  🔨 MY TEAMS                                                    │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Leading: ChatFluent                                     │   │
+│  │ Idea: AI-gestützte Sprachlern-App                       │   │
+│  │ Status: Building (Month 2)  |  Revenue: ₿ 0.12/month    │   │
+│  │ [View Dashboard]  [Report Revenue]  [Manage Team]       │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Member: Team SolarGrid                                  │   │
+│  │ Idea: Dezentrale Energiespeicher-Community              │   │
+│  │ Status: Funded  |  Role: Developer                      │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  📈 EARNINGS HISTORY                                            │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ Month        │ Idea-Shares │ Team-Shares │ Total        │   │
+│  ├──────────────┼─────────────┼─────────────┼──────────────┤   │
+│  │ 2026-03      │ ₿ 0.03      │ ₿ 0.15      │ ₿ 0.18       │   │
+│  │ 2026-02      │ ₿ 0.02      │ ₿ 0.10      │ ₿ 0.12       │   │
+│  │ 2026-01      │ ₿ 0.01      │ ₿ 0.05      │ ₿ 0.06       │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  🔔 ACTIVITY / NOTIFICATIONS                                    │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ • Your idea passed voting and entered marketplace       │   │
+│  │ • Team ChatFluent reached milestone: Beta Launch        │   │
+│  │ • New investment in your idea: ₿ 0.05 from @investor_3  │   │
+│  │ • Revenue distribution processed: ₿ 0.18 received       │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ⚙️ SETTINGS                                                    │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ [Connected Wallets]                                     │   │
+│  │ • Wallet 1: bc1q...x9k2 (Primary)                       │   │
+│  │ • Wallet 2: bc1q...a3m7                                 │   │
+│  │ [Add Wallet]                                            │   │
+│  ├─────────────────────────────────────────────────────────┤   │
+│  │ [Notification Preferences]                              │   │
+│  │ ☑ Email notifications    ☐ SMS notifications            │   │
+│  │ ☑ Investment updates     ☑ Revenue alerts               │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Data Structure
+
+```javascript
+const userProfile = {
+  // Basic Info
+  id: "user_123",
+  username: "@solar_max",
+  displayName: "Solar Max",
+  avatar: "https://.../avatar.jpg",
+  memberSince: "2026-01-15",
+  subscription: {
+    active: true,
+    expiresAt: "2027-01-15",
+    type: "annual" // or "monthly"
+  },
+  
+  // Overview Stats
+  stats: {
+    ideasPosted: 3,
+    ideasInMarketplace: 1,
+    investmentsMade: 12,
+    activeInvestments: 8,
+    teamsLeading: 1,
+    teamsMember: 2,
+    totalEarnings: 0.45,
+    earningsThisMonth: 0.18
+  },
+  
+  // Ideas
+  ideas: [
+    {
+      id: 1,
+      title: "Dezentrale Energiespeicher-Community",
+      stage: "discussion",
+      postedAt: "2026-02-01",
+      comments: 12,
+      votePercent: 85
+    },
+    {
+      id: 3,
+      title: "AI-gestützte Sprachlern-App",
+      stage: "marketplace",
+      postedAt: "2026-02-15",
+      raised: 0.45,
+      investors: 12
+    }
+  ],
+  
+  // Investments
+  investments: {
+    ideaShares: [
+      {
+        ideaId: 3,
+        ideaTitle: "AI-gestützte Sprachlern-App",
+        invested: 0.10,
+        ownership: 20,
+        currentValue: 0.12,
+        status: "active",
+        monthlyRevenue: 0.03
+      }
+    ],
+    teamShares: [
+      {
+        teamId: 1,
+        teamName: "ChatFluent",
+        ideaTitle: "AI-gestützte Sprachlern-App",
+        invested: 0.05,
+        ownership: 25,
+        currentValue: 0.08,
+        status: "building",
+        monthlyRevenue: 0.15
+      }
+    ]
+  },
+  
+  // Teams
+  teams: {
+    leading: [
+      {
+        id: 1,
+        name: "ChatFluent",
+        ideaId: 3,
+        ideaTitle: "AI-gestützte Sprachlern-App",
+        status: "building",
+        month: 2,
+        monthlyRevenue: 0.12
+      }
+    ],
+    member: [
+      {
+        id: 2,
+        name: "Team SolarGrid",
+        ideaId: 1,
+        ideaTitle: "Dezentrale Energiespeicher-Community",
+        status: "funded",
+        role: "Developer"
+      }
+    ]
+  },
+  
+  // Earnings History
+  earnings: [
+    { month: "2026-03", ideaShares: 0.03, teamShares: 0.15, total: 0.18 },
+    { month: "2026-02", ideaShares: 0.02, teamShares: 0.10, total: 0.12 },
+    { month: "2026-01", ideaShares: 0.01, teamShares: 0.05, total: 0.06 }
+  ],
+  
+  // Activity
+  activity: [
+    {
+      type: "idea_approved",
+      message: "Your idea passed voting and entered marketplace",
+      timestamp: "2026-03-05T10:30:00Z",
+      read: false
+    },
+    {
+      type: "milestone_reached",
+      message: "Team ChatFluent reached milestone: Beta Launch",
+      timestamp: "2026-03-04T14:20:00Z",
+      read: true
+    },
+    {
+      type: "new_investment",
+      message: "New investment in your idea: ₿ 0.05 from @investor_3",
+      timestamp: "2026-03-03T09:15:00Z",
+      read: true
+    },
+    {
+      type: "revenue_distribution",
+      message: "Revenue distribution processed: ₿ 0.18 received",
+      timestamp: "2026-03-01T00:00:00Z",
+      read: true
+    }
+  ],
+  
+  // Settings
+  wallets: [
+    { address: "bc1q...x9k2", primary: true, label: "Main Wallet" },
+    { address: "bc1q...a3m7", primary: false, label: "Secondary" }
+  ],
+  notifications: {
+    email: true,
+    sms: false,
+    investmentUpdates: true,
+    revenueAlerts: true,
+    milestoneUpdates: true,
+    teamActivity: true
+  }
+};
+```
+
+### Components
+
+#### 1. Profile Header
+- Avatar upload
+- Username display
+- Member since date
+- Subscription status
+- Edit profile button
+
+#### 2. Stats Overview
+- 4-card grid showing key metrics
+- Click cards to jump to sections
+
+#### 3. My Ideas Section
+- List of all ideas posted
+- Stage badges (Discussion, Voting, Marketplace, etc.)
+- Quick stats for each
+
+#### 4. My Investments Section
+- Separate tabs for Idea-Shares and Team-Shares
+- Investment amount, ownership %, current value
+- Monthly revenue from each
+
+#### 5. My Teams Section
+- Teams user is leading
+- Teams user is member of
+- Status and quick actions
+
+#### 6. Earnings History
+- Monthly breakdown table
+- Chart visualization (optional)
+- Export to CSV
+
+#### 7. Activity Feed
+- Recent notifications
+- Mark as read/unread
+- Filter by type
+
+#### 8. Settings
+- Connected wallets
+- Notification preferences
+- Privacy settings
+
+### Navigation Integration
+
+Add to main navigation:
+```
+[Home] [Discussion] [Marketplace] [Profile] [Logout]
+```
+
+Or user dropdown:
+```
+👤 @solar_max ▼
+├── Profile
+├── My Ideas
+├── My Investments
+├── Settings
+└── Logout
+```
+
+### Implementation Notes
+
+1. **Data Fetching:** Load profile data on page load, refresh sections independently
+2. **Real-time Updates:** WebSocket or polling for activity/notifications
+3. **Responsive:** Stack sections on mobile, sidebar layout on desktop
+4. **Empty States:** Show helpful messages when no data ("Post your first idea!")
+5. **Loading States:** Skeleton loaders while fetching data
 
 ---
 
