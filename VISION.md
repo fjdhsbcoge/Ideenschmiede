@@ -10,7 +10,7 @@
 
 Ideenschmiede is the marketplace where ideas become reality through community validation and decentralized funding. Built on Bitcoin, it enables anyone to propose ideas, the community to validate them, and teams to build them - with fair compensation for everyone involved.
 
-**Tagline:** *Der Marktplatz für Ideen*
+**Tagline:** *The Marketplace for Ideas*
 
 ---
 
@@ -51,11 +51,9 @@ Ideenschmiede is the marketplace where ideas become reality through community va
    ↓
 2. Gather feedback, refine concept
    ↓
-3. Subscribe ($120/year) and move to Marketplace
+3. Subscribe ($120/year) and move Idea to Marketplace
    ↓
 4. Receive immediate 15% of all investments
-   ↓
-5. Earn 20% of all team revenue forever
 ```
 
 ### For Investors
@@ -64,11 +62,11 @@ Ideenschmiede is the marketplace where ideas become reality through community va
    ↓
 2. Browse validated ideas
    ↓
-3. Buy Idea-Shares (earn from ALL teams)
+3. Buy Idea-Shares (earn from ALL teams, first to invest in Series A funding)
    ↓
 4. Or invest directly in specific teams (earn from ONE team)
    ↓
-5. Receive revenue share proportional to ownership
+5. Receive revenue share and exit share proportional to ownership
 ```
 
 ### For Builders
@@ -77,43 +75,42 @@ Ideenschmiede is the marketplace where ideas become reality through community va
    ↓
 2. Form team and post proposal
    ↓
-3. Receive investments directly (80% of funds)
+3. Receive investments, defined by milestones
    ↓
 4. Build and generate revenue
    ↓
-5. Share 20% with idea-owners, keep 80%
+5. Share 20% with idea-share-owners and keep 80% between team-share-owners
 ```
 
 ---
 
 ## The Two Share Types
 
-### Idea-Shares (Red)
+### Idea-Shares
 - **What:** Ownership of the idea itself
-- **Earn from:** ALL teams building the idea
+- **Earn from:** ALL teams based on the idea
 - **Split:** 20% of all team revenue
 - **Exit:** Same 20% on company sale
 - **Who can buy:** Subscribed members
 - **Price:** Dynamic, based on investment ratio
 
-**Share Pricing Formula:**
+**Share Percentage Formula:**
 ```
-Share Price = Outside Investment / Ideator Investment (in satoshis)
-Ideator Ownership = Ideator Investment / Total Investment
+Your Idea Shares: Your sat invested/ Total sat invested into Idea
+
 ```
 
 **Example:**
-- Ideator invests: ₿ 0.10 (10M sats) → creates 10M shares
-- Investor 1 invests: ₿ 0.10 → share price: 1 sat/share
-  - Ideator: 50%, Investor 1: 50%
-- Investor 2 invests: ₿ 0.30 → share price: 4 sats/share
-  - Ideator: 20%, Investor 1: 20%, Investor 2: 60%
+In total: 100000 sat Investment
 
-**Key insight:** Early investors get better price and higher ownership %. Ideator is incentivized to promote the idea to increase share price and receive more immediate income (15% cut).
+Investor 1: 20000 sat = 20% Idea shares
+Investor 2: 30000 sat = 30% Idea shares
+Investor 3: 50000 sat = 50% Idea shares
+
 
 ### Team-Shares (Orange)
 - **What:** Ownership of a specific team
-- **Earn from:** 80% of that team's revenue (distributed by ownership)
+- **Earn from:** 80% of that team's revenue/exit (distributed by ownership)
 - **Who can buy:** Anyone
 - **Price:** Same dynamic formula as Idea-Shares
 - **When:** Available after team formation, buyable at any time
@@ -172,28 +169,13 @@ Ideator Ownership = Ideator Investment / Total Investment
 
 ### Exit Split (Company sale)
 ```
-Same as revenue: 20% / 80%
+100% Company Exit
+├── 20% → Idea-Share holders (all investors in the idea)
+└── 80% → Team-Share holders (investors in this specific team)
+```
 ```
 
 ---
-
-## Ideator Ownership Formula
-
-**Dynamic ownership based on skin in the game:**
-
-```
-Ideator Ownership % = Ideator Investment / Outside Investment
-```
-
-**Example:**
-- Ideator invests: ₿ 0.10
-- Outside investment: ₿ 1.0
-- Ideator owns: 10% of idea-shares
-
-**Why this works:**
-- More ideator investment = higher ownership
-- Low valuations reward ideators with higher %
-- Immediate 50% ROI from 15% cut incentivizes posting
 
 ---
 
@@ -209,7 +191,7 @@ Minimum: 3 points to qualify
 
 **Distribution:**
 - 5% of each investment
-- Distributed immediately (not at exit)
+- Distributed after Team funding is finished
 - Proportional to engagement score
 
 ---
@@ -236,16 +218,14 @@ Minimum: 3 points to qualify
 ## Team Formation
 
 **Process:**
-1. Team leader posts proposal to marketplace idea
-2. Defines: focus area, milestone plan, funding goal
+1. Team leader posts proposal to build idea
+2. Defines: focus area, milestone plan, funding goal, "skin in the game" -investment
 3. Investors choose which team(s) to fund
 4. Multiple teams per idea allowed (competition)
 5. Teams work independently
 
 **Team internal structure:**
-- Only investors are stakeholders
 - Share ownership = Investment / Total team investment
-- No "team equity" for builders (they're compensated via idea-shares if they invested)
 
 ---
 
