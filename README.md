@@ -2,7 +2,7 @@
 
 **The Marketplace for Ideas**
 
-*Where ideas become reality through community validation and decentralized funding*
+*The idea-to-product value chain, rethought*
 
 ---
 

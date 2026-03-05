@@ -8,9 +8,11 @@
 
 ## Core Vision Statement
 
-Ideenschmiede is the marketplace where ideas become reality through community validation and decentralized funding. Built on Bitcoin, it enables anyone to propose ideas, the community to validate them, and teams to build them - with fair compensation for everyone involved.
+Ideenschmiede is the marketplace where ideas become reality through community validation and decentralized funding. It enables anyone to propose ideas, the community to validate them, and teams to build them—with fair compensation for everyone involved.
 
 **Tagline:** *The Marketplace for Ideas*
+
+**Subtitle:** *The idea-to-product value chain, rethought*
 
 ---
 
