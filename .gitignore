@@ -1,0 +1,22 @@
+# Personal files - do not upload to GitHub
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+AGENTS.md
+BOOTSTRAP.md
+
+# OpenClaw system files
+.openclaw/
+
+# Node modules (if any)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.log
