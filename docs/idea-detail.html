@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idee Details - Ideenschmiede</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-tertiary: #606070;
+            --accent-primary: #e94560;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #f39c12;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: var(--bg-primary); 
+            color: var(--text-primary); 
+            line-height: 1.6; 
+        }
+        
+        /* Navigation */
+        .main-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 15, 0.95);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            padding: 16px 24px;
+        }
+        .main-nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-primary), #ff6b6b);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+        
+        /* Content */
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 100px 24px 40px;
+        }
+        
+        /* Idea Header */
+        .idea-header {
+            margin-bottom: 32px;
+        }
+        .badge {
+            display: inline-flex;
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .badge-discussion {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--accent-blue);
+        }
+        .idea-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+        .idea-meta {
+            display: flex;
+            gap: 16px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        /* Idea Body */
+        .idea-body {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .idea-description {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+        .idea-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .tag {
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        /* Voting Section */
+        .voting-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .voting-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .voting-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .voting-stat {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+        }
+        .voting-stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .voting-stat-value.up { color: var(--accent-green); }
+        .voting-stat-value.down { color: var(--accent-primary); }
+        .voting-stat-label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+        .voting-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-up {
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+        }
+        .btn-down {
+            background: rgba(233, 69, 96, 0.1);
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), #ff6b6b);
+            color: white;
+        }
+        
+        /* Comments Section */
+        .comments-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .comments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .comments-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .comment-form {
+            margin-bottom: 24px;
+        }
+        .comment-input {
+            width: 100%;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            margin-bottom: 12px;
+        }
+        .comment {
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .comment:last-child {
+            border-bottom: none;
+        }
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .comment-author {
+            font-weight: 600;
+        }
+        .comment-time {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+        .comment-text {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.1), rgba(46, 204, 113, 0.1));
+            border: 1px solid var(--accent-primary);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+            text-align: center;
+        }
+        .cta-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .cta-text {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        
+        /* Mobile */
+        @media (max-width: 768px) {
+            .content { padding: 90px 16px 24px; }
+            .idea-title { font-size: 24px; }
+            .idea-body { padding: 24px; }
+            .voting-stats { grid-template-columns: 1fr; }
+            .voting-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <div class="main-nav-container">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon">⚡</div>
+                <span>Ideenschmiede</span>
+            </a>
+            <a href="discussion.html" class="back-link">← Zurück zur Diskussion</a>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <main class="content">
+        <!-- Idea Header -->
+        <div class="idea-header">
+            <span class="badge badge-discussion">💬 In Diskussion</span>
+            <h1 class="idea-title">AI-gestützte Sprachlern-App</h1>
+            <div class="idea-meta">
+                <span>👤 @linguist_dev</span>
+                <span>📅 Vor 3 Tagen</span>
+                <span>👁️ 234 Aufrufe</span>
+            </div>
+        </div>
+
+        <!-- Idea Body -->
+        <div class="idea-body">
+            <p class="idea-description">
+                Lerne Sprachen durch KI-gestützte Konversationen mit Muttersprachlern. 
+                Unsere App nutzt fortschrittliche Speech-to-Text und NLP-Technologie, 
+                um Echtzeit-Feedback zu geben und personalisierte Lernpfade zu erstellen.
+                <br><br>
+                <strong>Das Problem:</strong> Traditionelle Sprach-Apps fokussieren auf Vokabeln und Grammatik, 
+                aber nicht auf echte Konversation. Nutzer können jahrelang lernen, 
+                ohne fließend zu sprechen.
+                <br><br>
+                <strong>Unsere Lösung:</strong> Eine Plattform, die dich mit Muttersprachlern 
+                via Audio-Chat verbindet, unterstützt durch KI-gesteuerte 
+                Übungseinheiten und sofortiges Feedback.
+            </p>
+            
+            <div class="idea-tags">
+                <span class="tag">🤖 Künstliche Intelligenz</span>
+                <span class="tag">📚 Bildung</span>
+                <span class="tag">🌍 Sprachen</span>
+                <span class="tag">📱 Mobile App</span>
+            </div>
+        </div>
+
+        <!-- Voting Section -->
+        <div class="voting-section">
+            <h3 class="voting-title">🗳️ Community Voting</h3>
+            
+            <div class="voting-stats">
+                <div class="voting-stat">
+                    <div class="voting-stat-value up">85%</div>
+                    <div class="voting-stat-label">Zustimmung</div>
+                </div>
+                <div class="voting-stat">
+                    <div class="voting-stat-value">142</div>
+                    <div class="voting-stat-label">Stimmen</div>
+                </div>
+                <div class="voting-stat">
+                    <div class="voting-stat-value">5</div>
+                    <div class="voting-stat-label">Tage übrig</div>
+                </div>
+            </div>
+            
+            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+                Braucht >25% Zustimmung für den Marktplatz. Eine Stimme pro Person.
+            </p>
+            
+            <div class="voting-buttons">
+                <button class="btn btn-up">👍 Zustimmen</button>
+                <button class="btn btn-down">👎 Ablehnen</button>
+            </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="comments-section">
+            <div class="comments-header">
+                <h3 class="comments-title">💬 Kommentare (8)</h3>
+            </div>
+            
+            <div class="comment-form">
+                <textarea class="comment-input" placeholder="Dein Kommentar..."></textarea>
+                <button class="btn btn-primary">Kommentieren</button>
+            </div>
+            
+            <div class="comment">
+                <div class="comment-header">
+                    <span class="comment-author">@polyglot_sarah</span>
+                    <span class="comment-time">Vor 2 Stunden</span>
+                </div>
+                <p class="comment-text">
+                    Geniale Idee! Ich lerne seit Jahren Spanisch, aber die Konversation fehlt mir total. 
+                    Würde so eine App sofort nutzen.
+                </p>
+            </div>
+            
+            <div class="comment">
+                <div class="comment-header">
+                    <span class="comment-author">@tech_investor</span>
+                    <span class="comment-time">Vor 5 Stunden</span>
+                </div>
+                <p class="comment-text">
+                    Wie planst ihr die Muttersprachler zu incentivieren? 
+                    Das ist oft das größte Problem bei solchen Plattformen.
+                </p>
+            </div>
+            
+            <div class="comment">
+                <div class="comment-header">
+                    <span class="comment-author">@language_dev</span>
+                    <span class="comment-time">Vor 1 Tag</span>
+                </div>
+                <p class="comment-text">
+                    Habt ihr schon an Integration mit bestehenden NLP-APIs gedacht? 
+                    Könnte die Entwicklung beschleunigen.
+                </p>
+            </div>
+        </div>
+
+        <!-- CTA for Idea Owner -->
+        <div class="cta-section">
+            <h3 class="cta-title">🚀 Bereit für den nächsten Schritt?</h3>
+            <p class="cta-text">
+                Bei >25% Zustimmung kannst du deine Idee in den Marktplatz verschieben 
+                und mit der Funding-Phase beginnen.
+            </p>
+            <button class="btn btn-primary" onclick="alert('Funktion in v0.4 verfügbar')">
+                Zu Marktplatz verschieben
+            </button>
+        </div>
+    </main>
+</body>
+</html>
