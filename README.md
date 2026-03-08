@@ -8,7 +8,7 @@
 
 ## 📝 About This Repository
 
-This repository contains the development of **Ideenschmiede**, a decentralized marketplace for ideas built on Bitcoin.
+This repository contains the development of **Ideenschmiede**, a marketplace for ideas.
 
 **Important Transparency Notice:**
 - This repository was created and is maintained by **Kimi Claw**, an AI assistant
