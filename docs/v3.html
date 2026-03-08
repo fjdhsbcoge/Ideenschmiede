@@ -180,70 +180,138 @@
                 font-size: 14px !important;
                 margin-bottom: 40px;
             }
+
+            /* So profitierst du - THREE CARDS FIX */
+            #home > div:nth-child(2) {
+                padding: 40px 16px;
+            }
             
-            /* So profitierst du section */
             #home > div:nth-child(2) h2 {
-                font-size: 24px;
-                margin-bottom: 40px;
+                font-size: 22px;
+                margin-bottom: 24px;
+            }
+            
+            /* Make cards stack better */
+            #home > div:nth-child(2) > div > div {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
             }
             
             #home > div:nth-child(2) .card {
                 padding: 24px 20px;
+                margin-bottom: 0;
             }
             
             #home > div:nth-child(2) .card > div:first-child {
-                font-size: 48px;
+                font-size: 40px;
+                margin-bottom: 12px;
             }
             
             #home > div:nth-child(2) h3 {
-                font-size: 22px;
+                font-size: 20px;
+                margin-bottom: 8px;
             }
             
-            /* Timeline flow - stack vertically */
+            #home > div:nth-child(2) p {
+                font-size: 14px;
+                line-height: 1.5;
+            }
+            
+            #home > div:nth-child(2) .card > div:last-child {
+                margin-top: 16px;
+                padding: 12px;
+            }
+            
+            #home > div:nth-child(2) .card > div:last-child > div:first-child {
+                font-size: 20px;
+            }
+
+            /* Von der Idee zum Profit - TIMELINE FIX */
+            #home > div:nth-child(3) {
+                padding: 40px 16px;
+            }
+            
             #home > div:nth-child(3) h2 {
-                font-size: 24px;
-                margin-bottom: 40px;
-            }
-            
-            #home > div:nth-child(3) > div > div {
-                flex-direction: column !important;
-                text-align: center !important;
+                font-size: 22px;
                 margin-bottom: 32px;
             }
             
-            #home > div:nth-child(3) > div > div > div:first-child,
-            #home > div:nth-child(3) > div > div > div:last-child {
+            /* Timeline container */
+            #home > div:nth-child(3) > div {
+                position: relative;
+                padding-left: 40px;
+            }
+            
+            /* Timeline line on left */
+            #home > div:nth-child(3) > div > div:first-child {
+                display: block !important;
+                left: 15px !important;
+                right: auto !important;
+                top: 0;
+                bottom: 0;
+                width: 2px;
+                transform: none !important;
+            }
+            
+            /* Each step */
+            #home > div:nth-child(3) > div > div[style*="display: flex"] {
+                flex-direction: row !important;
+                align-items: flex-start !important;
+                text-align: left !important;
+                margin-bottom: 24px;
+                position: relative;
+            }
+            
+            #home > div:nth-child(3) > div > div[style*="display: flex"] > div:first-child,
+            #home > div:nth-child(3) > div > div[style*="display: flex"] > div:last-child {
+                flex: none !important;
                 padding: 0 !important;
-                text-align: center !important;
+                text-align: left !important;
             }
             
-            #home > div:nth-child(3) > div > div > div:nth-child(2) {
-                margin: 16px 0;
-                width: 50px;
-                height: 50px;
-                font-size: 20px;
+            #home > div:nth-child(3) > div > div[style*="display: flex"] > div:first-child:not([style*="width: 60px"]) {
+                flex: 1 !important;
+                padding-right: 16px !important;
             }
             
-            #home > div:nth-child(3) > div > div h3 {
-                font-size: 18px;
+            /* Number circle */
+            #home > div:nth-child(3) > div > div[style*="display: flex"] > div[style*="width: 60px"] {
+                width: 36px !important;
+                height: 36px !important;
+                min-width: 36px;
+                font-size: 14px !important;
+                margin: 0 !important;
+                margin-right: 16px !important;
+                order: -1;
             }
             
-            #home > div:nth-child(3) > div > div p {
+            #home > div:nth-child(3) h3 {
+                font-size: 16px;
+                margin-bottom: 4px;
+            }
+            
+            #home > div:nth-child(3) p {
                 font-size: 13px;
+                line-height: 1.4;
             }
-            
-            /* Hide timeline line on small screens */
-            #home > div:nth-child(3) > div > div:first-child + div {
-                display: none;
-            }
-            
+
             /* CTA Section */
+            #home > div:nth-child(4) {
+                padding: 40px 16px;
+            }
+            
             #home > div:nth-child(4) h2 {
-                font-size: 28px;
+                font-size: 24px;
             }
             
             #home > div:nth-child(4) > p {
                 font-size: 16px;
+                margin-bottom: 32px;
+            }
+            
+            #home > div:nth-child(4) > div {
+                gap: 16px;
             }
             
             #home > div:nth-child(4) .card {
@@ -251,18 +319,12 @@
             }
             
             #home > div:nth-child(4) .card > div:first-child {
-                font-size: 36px;
+                font-size: 32px;
+                margin-bottom: 12px;
             }
             
             #home > div:nth-child(4) h3 {
-                font-size: 18px;
-            }
-            
-            /* General spacing */
-            #home > div:nth-child(2),
-            #home > div:nth-child(3),
-            #home > div:nth-child(4) {
-                padding: 60px 16px;
+                font-size: 16px;
             }
             
             /* Touch targets */
