@@ -451,26 +451,96 @@ PUT    /api/v1/notifications/read-all
 GET    /api/v1/search?q=&filter=
 ```
 
-### 4.2 WebSocket Events
+### 4.2 WebSocket Events (Socket.io)
+
+**Two-way real-time communication for immediate user interaction.**
 
 ```typescript
-// Client → Server
+// Client → Server (User actions)
 interface ClientEvents {
+  // Subscription
   'subscribe:idea': (ideaId: string) => void;
   'subscribe:team': (teamId: string) => void;
   'subscribe:notifications': () => void;
+  
+  // Real-time user actions
+  'idea:comment': (data: { ideaId: string; content: string }) => void;
+  'idea:vote': (data: { ideaId: string; direction: 'up' | 'down' }) => void;
+  'investment:initiate': (data: { ideaId: string; amount: number }) => void;
+  'milestone:vote': (data: { milestoneId: string; approve: boolean }) => void;
+  'team:join_chat': (teamId: string) => void;
+  'team:send_message': (data: { teamId: string; message: string }) => void;
+  'user:typing': (data: { channel: string; typing: boolean }) => void;
 }
 
-// Server → Client
+// Server → Client (System updates)
 interface ServerEvents {
+  // Idea updates
   'idea:updated': (idea: Idea) => void;
-  'idea:new_investment': (data: { ideaId: string, amount: number }) => void;
+  'idea:new_investment': (data: { 
+    ideaId: string; 
+    amount: number;
+    investor: string;
+    totalRaised: number 
+  }) => void;
+  'idea:new_comment': (comment: Comment) => void;
+  'idea:vote_changed': (data: { 
+    ideaId: string; 
+    up: number; 
+    down: number 
+  }) => void;
+  
+  // Team updates
   'team:updated': (team: Team) => void;
-  'team:milestone_reached': (data: { teamId: string, milestone: Milestone }) => void;
-  'revenue:distributed': (data: { teamId: string, amount: number }) => void;
+  'team:new_member': (data: { teamId: string; user: User }) => void;
+  'team:milestone_reached': (data: { 
+    teamId: string; 
+    milestone: Milestone;
+    completedBy: string 
+  }) => void;
+  'team:chat_message': (data: { 
+    teamId: string; 
+    message: Message;
+    from: User 
+  }) => void;
+  'team:user_typing': (data: { 
+    teamId: string; 
+    user: string; 
+    typing: boolean 
+  }) => void;
+  
+  // Revenue
+  'revenue:reported': (data: { 
+    teamId: string; 
+    amount: number;
+    period: string 
+  }) => void;
+  'revenue:distributed': (data: { 
+    teamId: string; 
+    amount: number;
+    txHash: string 
+  }) => void;
+  
+  // Notifications
   'notification:new': (notification: Notification) => void;
+  
+  // Errors
+  'error': (error: { code: string; message: string }) => void;
 }
 ```
+
+**Why WebSocket:**
+- ✅ **Two-way:** Users send actions (vote, comment, invest) and receive updates
+- ✅ **Instant:** No polling delay, immediate feedback
+- ✅ **Interactive:** Chat, live collaboration, real-time notifications
+- ✅ **Efficient:** Single persistent connection vs. many HTTP requests
+
+**Use Cases:**
+1. **Live Voting** - See votes update in real-time as community votes
+2. **Investment Feed** - Watch funding progress live
+3. **Team Chat** - Shareholders and teams communicate directly
+4. **Milestone Tracking** - Instant updates when milestones completed
+5. **Revenue Alerts** - Immediate notification when payouts happen
 
 ---
 
@@ -871,7 +941,7 @@ for (const share of shares) {
 | **Subscription ($120/year)** | Dynamic BTC pricing | Rate calculated daily. Example: BTC $50k = 0.0024 BTC/year |
 | **Trust/Enforcement** | Social contracts + reputation | Platform never enforces. Reputation system + shareholder communication |
 | **IPFS Pinning** | Use pinning service (Pinata/Web3Storage) | Simple, reliable. Self-host later if needed |
-| **Real-time** | Server-Sent Events (SSE) | Simpler than WebSocket. One-way updates sufficient |
+| **Real-time** | WebSocket | Two-way communication. Users send actions, system responds immediately |
 | **Search** | PostgreSQL FTS | Good enough for MVP. Add Elasticsearch if scale requires |
 | **Multi-language** | Simple i18n in code | German + English first. Translation management later |
 | **Bitcoin Node** | None required | Use public APIs. Users run their own infrastructure |
