@@ -1,746 +1,538 @@
 # Ideenschmiede Build Manual
 
-**Purpose:** Step-by-step building instructions for developers. Each version corresponds to a working demo.
+**Purpose:** Step-by-step instructions for building Ideenschmiede. Designed for AI agents and developers.
 
-**Current Version:** v0.2
-
----
-
-## Version History
-
-| Version | Date | Status | Demo Link |
-|---------|------|--------|-----------|
-| v0.1 | 2026-03-04 | Complete | https://fjdhsbcoge.github.io/Ideenschmiede |
-| v0.2 | 2026-03-05 | In Progress | https://fjdhsbcoge.github.io/Ideenschmiede |
+**Current Version:** v0.3  
+**Last Updated:** 2026-03-08  
+**Live Demo:** https://fjdhsbcoge.github.io/Ideenschmiede/
 
 ---
 
-## Process Visualization
+## Version Overview
 
-**Live Interactive Version:** https://fjdhsbcoge.github.io/Ideenschmiede/process.html
-
-### Three Perspectives
-
-The platform has three user types, each with their own journey:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  💡 IDEATOR          💰 INVESTOR           🔨 BUILDER           │
-│                                                                 │
-│  1. Post Idea        1. Browse Ideas       1. Browse Ideas      │
-│  2. Gather Feedback  2. Vote               2. Apply as Team     │
-│  3. Move to Market   3. Buy Idea-Shares    3. Get Funded        │
-│  4. Earn 15% cut     4. Fund Teams         4. Build             │
-│  5. Earn from shares 5. Earn Returns       5. Profit            │
-└─────────────────────────────────────────────────────────────────┘
-```
+| Version | Date | Status | What's New |
+|---------|------|--------|------------|
+| v0.1 | 2026-03-04 | ✅ Complete | Basic flow: login → post → invest |
+| v0.2 | 2026-03-05 | ✅ Complete | Stage visualization + profile |
+| v0.3 | 2026-03-08 | ✅ Complete | Landing page + 4 connected subpages |
 
 ---
 
-## Idea Lifecycle Stages
+## v0.3 - Current Implementation
 
-An idea progresses through distinct stages. Here's one example for each stage:
+### What We Built
 
-### Stage 1: Discussion (Free to Browse)
+**Landing Page (2 languages):**
+- German: `index.html`
+- English: `index-en.html`
 
-**Example:** "Dezentrale Energiespeicher-Community"
+**Subpages (4 total):**
+1. **Discussion** (`discussion.html`) - Browse ideas in discussion phase
+2. **Marketplace** (`marketplace.html`) - Invest in validated ideas
+3. **Teams** (`teams.html`) - Manage teams you lead or belong to
+4. **Profile** (`profile.html`) - User dashboard
 
-```
-┌────────────────────────────────────────┐
-│ 💬 In Discussion                       │
-│                                        │
-│ A community-owned network of home      │
-│ battery systems that trade energy...   │
-│                                        │
-│ 👤 @solar_max    💬 12    👍 85%       │
-│                                        │
-│ [View Details]                         │
-└────────────────────────────────────────┘
-```
-
-**Who can interact:**
-| Action | Anonymous | Free User | Member |
-|--------|-----------|-----------|--------|
-| Browse | ✅ | ✅ | ✅ |
-| Comment | ❌ | ✅ | ✅ |
-| Vote | ❌ | ✅ | ✅ |
-| Post Idea | ❌ | ✅ | ✅ |
-
-**Requirements to post:** Subscription ($120/year)
+**Features:**
+- Consistent navigation across all pages
+- Mobile-responsive design
+- Language switcher
+- Access level badges (Frei/Login/Mitglied)
 
 ---
 
-### Stage 2: Voting (8 Days)
+## Build Instructions
 
-**Example:** "Open-Source Medikamenten-Datenbank"
+### Step 1: Project Setup
 
-```
-┌────────────────────────────────────────┐
-│ 🗳️ Voting (Day 3 of 8)                │
-│                                        │
-│ A crowdsourced database of drug        │
-│ interactions and side effects...       │
-│                                        │
-│ 👍 78%    👎 12%    🗳️ 156 votes      │
-│                                        │
-│ [Vote Up]  [Vote Down]                 │
-│                                        │
-│ ⏰ Needs >25% upvotes to pass          │
-└────────────────────────────────────────┘
-```
-
-**Rules:**
-- Duration: 8 days
-- Pass threshold: >25% upvotes
-- One person, one vote (subscription required)
-- If passes → unlocks Marketplace
-
----
-
-### Stage 3: Marketplace - Idea-Shares (14 Days)
-
-**Example:** "AI-gestützte Sprachlern-App"
-
-```
-┌────────────────────────────────────────┐
-│ 🛒 Marketplace - Idea-Shares           │
-│                                        │
-│ Learn languages through AI conversations│
-│ with native speakers...                │
-│                                        │
-│ 💰 Funding: ₿ 0.45 of ₿ 1.00 goal      │
-│ 📊 Share Price: 0.00005 BTC/share      │
-│ 👥 12 Investors                        │
-│ ⏰ 6 days remaining                    │
-│                                        │
-│ [Buy Shares]  [View Teams]             │
-└────────────────────────────────────────┘
-```
-
-**Share Pricing:**
-```
-Your % = Your Investment / Total Investment
-
-Example:
-- You invest: ₿ 0.10
-- Total raised: ₿ 0.50
-- Your ownership: 20% of Idea-Shares
-```
-
-**Investment Split:**
-```
-100% of your investment
-├── 15% → Ideator (immediate)
-├── 5%  → Early Contributors
-└── 80% → Team Building Pool
-```
-
----
-
-### Stage 4: Marketplace - Team Applications (Simultaneous)
-
-**Example:** Same idea, now with team proposals
-
-```
-┌────────────────────────────────────────┐
-│ 👥 Team Proposals (2)                  │
-│                                        │
-│ ┌────────────────────────────────┐     │
-│ │ Team: ChatFluent               │     │
-│ │ Focus: European languages      │     │
-│ │ Goal: ₿ 0.30                   │     │
-│ │ Skin: ₿ 0.05 invested          │     │
-│ │ [View Proposal]                │     │
-│ └────────────────────────────────┘     │
-│                                        │
-│ ┌────────────────────────────────┐     │
-│ │ Team: LingoAI                  │     │
-│ │ Focus: Asian languages         │     │
-│ │ Goal: ₿ 0.20                   │     │
-│ │ Skin: ₿ 0.03 invested          │     │
-│ │ [View Proposal]                │     │
-│ └────────────────────────────────┘     │
-│                                        │
-│ ⏰ Applications close in 6 days        │
-└────────────────────────────────────────┘
-```
-
-**Team Application Requirements:**
-- Skin-in-game investment (required)
-- Roadmap with milestones
-- Budget breakdown
-- Focus area
-- Minimum funding goal
-
----
-
-### Stage 5: Active - Team Funded & Building
-
-**Example:** "AI-gestützte Sprachlern-App" - Team ChatFluent funded
-
-```
-┌────────────────────────────────────────┐
-│ 🔨 Active Development                  │
-│                                        │
-│ Team: ChatFluent                       │
-│ Status: Building (Month 2 of 6)        │
-│                                        │
-│ 📊 Milestones:                         │
-│   ✅ MVP Complete                      │
-│   ✅ Beta Launch                       │
-│   🔄 App Store Submission (in review)  │
-│   ⏳ Public Launch                     │
-│                                        │
-│ 💰 Revenue: ₿ 0.12 (last month)        │
-│ 📈 Growth: +34% users                  │
-│                                        │
-│ [View Dashboard]  [Buy Team-Shares]    │
-└────────────────────────────────────────┘
-```
-
-**Funded Team Mechanics:**
-- Funds released by milestone completion
-- Investor voting on progress
-- Revenue reporting monthly
-- Team-Shares available for purchase
-
----
-
-### Stage 6: Revenue Distribution
-
-**Example:** Same idea generating profit
-
-```
-┌────────────────────────────────────────┐
-│ 💰 Revenue Distribution                │
-│                                        │
-│ Total Revenue: ₿ 10.00                 │
-│                                        │
-┌────────────────────────────────────────┐
-│ Idea-Share Pool (20%): ₿ 2.00          │
-│ ├── Investor A (40%): ₿ 0.80           │
-│ ├── Investor B (35%): ₿ 0.70           │
-│ └── Investor C (25%): ₿ 0.50           │
-└────────────────────────────────────────┘
-┌────────────────────────────────────────┐
-│ Team-Share Pool (80%): ₿ 8.00          │
-│ ├── Team Lead (50%): ₿ 4.00            │
-│ ├── Investor A (30%): ₿ 2.40           │
-│ └── Investor B (20%): ₿ 1.60           │
-└────────────────────────────────────────┘
-│                                        │
-│ Last distribution: 2026-03-01          │
-└────────────────────────────────────────┘
-```
-
-**Revenue Split:**
-```
-100% Team Revenue
-├── 20% → Idea-Share holders (all investors in idea)
-└── 80% → Team-Share holders (investors in this team)
-```
-
----
-
-## v0.2 - Stage Visualization Demo
-
-### Goal
-Show all 6 stages of the idea lifecycle with clear examples and interactive elements.
-
-### Features to Implement
-
-#### 1. Stage Browser
-**Requirements:**
-- Horizontal stage selector (1-6)
-- Click stage to see example
-- Visual indicator of current stage
-
-**UI:**
-```
-[1.Discussion] → [2.Voting] → [3.Idea-Shares] → [4.Teams] → [5.Building] → [6.Revenue]
-     🔘            ⚪            ⚪              ⚪          ⚪            ⚪
-```
-
-#### 2. Example Cards
-**Requirements:**
-- One detailed example per stage
-- Realistic data (Bitcoin amounts, timelines)
-- Show all relevant UI elements
-
-#### 3. Perspective Toggle
-**Requirements:**
-- Three buttons: Ideator / Investor / Builder
-- Changes which actions are highlighted
-- Shows relevant CTAs for each perspective
-
-#### 4. Interactive Elements
-**Requirements:**
-- Click "Buy Shares" → shows investment modal
-- Click "View Proposal" → shows team details
-- Click milestone → shows voting UI
-
-### Data Structure
-
-```javascript
-const exampleIdeas = [
-  {
-    id: 1,
-    title: "Dezentrale Energiespeicher-Community",
-    stage: "discussion",
-    author: "@solar_max",
-    description: "A community-owned network of home battery systems...",
-    stats: { comments: 12, votes: { up: 85, down: 15 } }
-  },
-  {
-    id: 2,
-    title: "Open-Source Medikamenten-Datenbank",
-    stage: "voting",
-    author: "@med_hacker",
-    voting: { daysLeft: 5, upPercent: 78, totalVotes: 156 }
-  },
-  {
-    id: 3,
-    title: "AI-gestützte Sprachlern-App",
-    stage: "marketplace_ideas",
-    funding: { raised: 0.45, goal: 1.0, investors: 12 },
-    sharePrice: 0.00005,
-    daysLeft: 6
-  },
-  {
-    id: 4,
-    title: "AI-gestützte Sprachlern-App",
-    stage: "marketplace_teams",
-    teams: [
-      { name: "ChatFluent", focus: "European", goal: 0.30, skin: 0.05 },
-      { name: "LingoAI", focus: "Asian", goal: 0.20, skin: 0.03 }
-    ]
-  },
-  {
-    id: 5,
-    title: "AI-gestützte Sprachlern-App",
-    stage: "building",
-    team: { name: "ChatFluent", month: 2, totalMonths: 6 },
-    milestones: [
-      { name: "MVP Complete", status: "done" },
-      { name: "Beta Launch", status: "done" },
-      { name: "App Store", status: "in_review" },
-      { name: "Public Launch", status: "pending" }
-    ],
-    revenue: { total: 0.12, growth: 34 }
-  },
-  {
-    id: 6,
-    title: "AI-gestützte Sprachlern-App",
-    stage: "revenue",
-    totalRevenue: 10.0,
-    ideaShareHolders: [
-      { name: "Investor A", percent: 40, amount: 0.80 },
-      { name: "Investor B", percent: 35, amount: 0.70 },
-      { name: "Investor C", percent: 25, amount: 0.50 }
-    ],
-    teamShareHolders: [
-      { name: "Team Lead", percent: 50, amount: 4.00 },
-      { name: "Investor A", percent: 30, amount: 2.40 },
-      { name: "Investor B", percent: 20, amount: 1.60 }
-    ]
-  }
-];
-```
-
-### File Structure
-
-```
-prototypes/
-├── ideenschmiede-demo.html      # v0.1 demo
-├── ideenschmiede-v2.html        # v0.2 demo (this version)
-└── process-visualization.html   # Interactive process view
-
-docs/
-├── index.html                   # GitHub Pages (v0.1)
-├── process.html                 # Process visualization
-└── stages.html                  # Stage browser (v0.2)
-```
-
-### Implementation Steps
-
-1. **Create base HTML** with stage selector
-2. **Add example data** for all 6 stages
-3. **Implement perspective toggle** (Ideator/Investor/Builder)
-4. **Create stage cards** with realistic examples
-5. **Add interactive modals** (invest, vote, view proposal)
-6. **Style consistently** with v0.1 design system
-7. **Deploy** to GitHub Pages
-
-### Next Version (v0.3) Ideas
-
-- [x] User profile page
-- [ ] Real comment system
-- [ ] Team creation flow
-- [ ] Investment portfolio view
-- [ ] Revenue reporting UI
-- [ ] Chain-of-thought scoring display
-
----
-
-## Profile Page Specification
-
-### Overview
-A comprehensive profile page showing all account-related information for the logged-in user.
-
-### URL
-`/profile` or accessible via user menu
-
-### Layout Structure
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Profile                                                        │
-├──────────────────┬──────────────────────────────────────────────┤
-│                  │                                              │
-│  👤 AVATAR       │  USER INFO                                   │
-│  [Upload Photo]  │  Username: @solar_max                        │
-│                  │  Member Since: 2026-01-15                    │
-│                  │  Subscription: Active (expires 2027-01-15)   │
-│                  │                                              │
-│                  │  [Edit Profile]  [Manage Subscription]       │
-│                  │                                              │
-├──────────────────┴──────────────────────────────────────────────┤
-│                                                                 │
-│  📊 OVERVIEW                                                    │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
-│  │ Ideas       │ │ Investments │ │ Teams       │ │ Earnings  │ │
-│  │ Posted: 3   │ │ Made: 12    │ │ Leading: 1  │ │ ₿ 0.45    │ │
-│  │ In Market: 1│ │ Active: 8   │ │ Member: 2   │ │ This Month│ │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  💡 MY IDEAS                                                    │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Dezentrale Energiespeicher-Community    [In Discussion] │   │
-│  │ Posted: 2026-02-01  |  Comments: 12  |  Votes: 85%      │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ AI-gestützte Sprachlern-App             [In Marketplace]│   │
-│  │ Posted: 2026-02-15  |  Raised: ₿ 0.45  |  Investors: 12 │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  💰 MY INVESTMENTS                                              │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Idea-Shares                                               │   │
-│  ├─────────────────────────────────────────────────────────┤   │
-│  │ AI-gestützte Sprachlern-App                             │   │
-│  │ Invested: ₿ 0.10  |  Ownership: 20%  |  Value: ₿ 0.12   │   │
-│  │ Status: Active  |  Revenue Share: ₿ 0.03/month          │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Team-Shares                                               │   │
-│  ├─────────────────────────────────────────────────────────┤   │
-│  │ ChatFluent (Team for AI-gestützte Sprachlern-App)       │   │
-│  │ Invested: ₿ 0.05  |  Ownership: 25%  |  Value: ₿ 0.08   │   │
-│  │ Status: Building  |  Revenue Share: ₿ 0.15/month        │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  🔨 MY TEAMS                                                    │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Leading: ChatFluent                                     │   │
-│  │ Idea: AI-gestützte Sprachlern-App                       │   │
-│  │ Status: Building (Month 2)  |  Revenue: ₿ 0.12/month    │   │
-│  │ [View Dashboard]  [Report Revenue]  [Manage Team]       │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Member: Team SolarGrid                                  │   │
-│  │ Idea: Dezentrale Energiespeicher-Community              │   │
-│  │ Status: Funded  |  Role: Developer                      │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  📈 EARNINGS HISTORY                                            │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Month        │ Idea-Shares │ Team-Shares │ Total        │   │
-│  ├──────────────┼─────────────┼─────────────┼──────────────┤   │
-│  │ 2026-03      │ ₿ 0.03      │ ₿ 0.15      │ ₿ 0.18       │   │
-│  │ 2026-02      │ ₿ 0.02      │ ₿ 0.10      │ ₿ 0.12       │   │
-│  │ 2026-01      │ ₿ 0.01      │ ₿ 0.05      │ ₿ 0.06       │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  🔔 ACTIVITY / NOTIFICATIONS                                    │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ • Your idea passed voting and entered marketplace       │   │
-│  │ • Team ChatFluent reached milestone: Beta Launch        │   │
-│  │ • New investment in your idea: ₿ 0.05 from @investor_3  │   │
-│  │ • Revenue distribution processed: ₿ 0.18 received       │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ⚙️ SETTINGS                                                    │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ [Connected Wallets]                                     │   │
-│  │ • Wallet 1: bc1q...x9k2 (Primary)                       │   │
-│  │ • Wallet 2: bc1q...a3m7                                 │   │
-│  │ [Add Wallet]                                            │   │
-│  ├─────────────────────────────────────────────────────────┤   │
-│  │ [Notification Preferences]                              │   │
-│  │ ☑ Email notifications    ☐ SMS notifications            │   │
-│  │ ☑ Investment updates     ☑ Revenue alerts               │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Data Structure
-
-```javascript
-const userProfile = {
-  // Basic Info
-  id: "user_123",
-  username: "@solar_max",
-  displayName: "Solar Max",
-  avatar: "https://.../avatar.jpg",
-  memberSince: "2026-01-15",
-  subscription: {
-    active: true,
-    expiresAt: "2027-01-15",
-    type: "annual" // or "monthly"
-  },
-  
-  // Overview Stats
-  stats: {
-    ideasPosted: 3,
-    ideasInMarketplace: 1,
-    investmentsMade: 12,
-    activeInvestments: 8,
-    teamsLeading: 1,
-    teamsMember: 2,
-    totalEarnings: 0.45,
-    earningsThisMonth: 0.18
-  },
-  
-  // Ideas
-  ideas: [
-    {
-      id: 1,
-      title: "Dezentrale Energiespeicher-Community",
-      stage: "discussion",
-      postedAt: "2026-02-01",
-      comments: 12,
-      votePercent: 85
-    },
-    {
-      id: 3,
-      title: "AI-gestützte Sprachlern-App",
-      stage: "marketplace",
-      postedAt: "2026-02-15",
-      raised: 0.45,
-      investors: 12
-    }
-  ],
-  
-  // Investments
-  investments: {
-    ideaShares: [
-      {
-        ideaId: 3,
-        ideaTitle: "AI-gestützte Sprachlern-App",
-        invested: 0.10,
-        ownership: 20,
-        currentValue: 0.12,
-        status: "active",
-        monthlyRevenue: 0.03
-      }
-    ],
-    teamShares: [
-      {
-        teamId: 1,
-        teamName: "ChatFluent",
-        ideaTitle: "AI-gestützte Sprachlern-App",
-        invested: 0.05,
-        ownership: 25,
-        currentValue: 0.08,
-        status: "building",
-        monthlyRevenue: 0.15
-      }
-    ]
-  },
-  
-  // Teams
-  teams: {
-    leading: [
-      {
-        id: 1,
-        name: "ChatFluent",
-        ideaId: 3,
-        ideaTitle: "AI-gestützte Sprachlern-App",
-        status: "building",
-        month: 2,
-        monthlyRevenue: 0.12
-      }
-    ],
-    member: [
-      {
-        id: 2,
-        name: "Team SolarGrid",
-        ideaId: 1,
-        ideaTitle: "Dezentrale Energiespeicher-Community",
-        status: "funded",
-        role: "Developer"
-      }
-    ]
-  },
-  
-  // Earnings History
-  earnings: [
-    { month: "2026-03", ideaShares: 0.03, teamShares: 0.15, total: 0.18 },
-    { month: "2026-02", ideaShares: 0.02, teamShares: 0.10, total: 0.12 },
-    { month: "2026-01", ideaShares: 0.01, teamShares: 0.05, total: 0.06 }
-  ],
-  
-  // Activity
-  activity: [
-    {
-      type: "idea_approved",
-      message: "Your idea passed voting and entered marketplace",
-      timestamp: "2026-03-05T10:30:00Z",
-      read: false
-    },
-    {
-      type: "milestone_reached",
-      message: "Team ChatFluent reached milestone: Beta Launch",
-      timestamp: "2026-03-04T14:20:00Z",
-      read: true
-    },
-    {
-      type: "new_investment",
-      message: "New investment in your idea: ₿ 0.05 from @investor_3",
-      timestamp: "2026-03-03T09:15:00Z",
-      read: true
-    },
-    {
-      type: "revenue_distribution",
-      message: "Revenue distribution processed: ₿ 0.18 received",
-      timestamp: "2026-03-01T00:00:00Z",
-      read: true
-    }
-  ],
-  
-  // Settings
-  wallets: [
-    { address: "bc1q...x9k2", primary: true, label: "Main Wallet" },
-    { address: "bc1q...a3m7", primary: false, label: "Secondary" }
-  ],
-  notifications: {
-    email: true,
-    sms: false,
-    investmentUpdates: true,
-    revenueAlerts: true,
-    milestoneUpdates: true,
-    teamActivity: true
-  }
-};
-```
-
-### Components
-
-#### 1. Profile Header
-- Avatar upload
-- Username display
-- Member since date
-- Subscription status
-- Edit profile button
-
-#### 2. Stats Overview
-- 4-card grid showing key metrics
-- Click cards to jump to sections
-
-#### 3. My Ideas Section
-- List of all ideas posted
-- Stage badges (Discussion, Voting, Marketplace, etc.)
-- Quick stats for each
-
-#### 4. My Investments Section
-- Separate tabs for Idea-Shares and Team-Shares
-- Investment amount, ownership %, current value
-- Monthly revenue from each
-
-#### 5. My Teams Section
-- Teams user is leading
-- Teams user is member of
-- Status and quick actions
-
-#### 6. Earnings History
-- Monthly breakdown table
-- Chart visualization (optional)
-- Export to CSV
-
-#### 7. Activity Feed
-- Recent notifications
-- Mark as read/unread
-- Filter by type
-
-#### 8. Settings
-- Connected wallets
-- Notification preferences
-- Privacy settings
-
-### Navigation Integration
-
-Add to main navigation:
-```
-[Home] [Discussion] [Marketplace] [Profile] [Logout]
-```
-
-Or user dropdown:
-```
-👤 @solar_max ▼
-├── Profile
-├── My Ideas
-├── My Investments
-├── Settings
-└── Logout
-```
-
-### Implementation Notes
-
-1. **Data Fetching:** Load profile data on page load, refresh sections independently
-2. **Real-time Updates:** WebSocket or polling for activity/notifications
-3. **Responsive:** Stack sections on mobile, sidebar layout on desktop
-4. **Empty States:** Show helpful messages when no data ("Post your first idea!")
-5. **Loading States:** Skeleton loaders while fetching data
-
----
-
-## Deployment
-
-**GitHub Pages:**
+**Create folder structure:**
 ```bash
-# Copy v0.2 demo to docs folder
-cp prototypes/ideenschmiede-v2.html docs/stages.html
-
-# Commit and push
-git add prototypes/ docs/
-git commit -m "Add v0.2 stage visualization demo"
-git push origin master
+mkdir -p ideenschmiede/docs
+mkdir -p ideenschmiede/prototypes
+cd ideenschmiede
 ```
 
-**Live URLs:**
-- v0.1 Demo: https://fjdhsbcoge.github.io/Ideenschmiede
-- Process View: https://fjdhsbcoge.github.io/Ideenschmiede/process.html
-- Stage Browser: https://fjdhsbcoge.github.io/Ideenschmiede/stages.html
+**Initialize Git:**
+```bash
+git init
+git remote add origin https://github.com/YOUR_USERNAME/ideenschmiede.git
+```
+
+**Create .gitignore:**
+```
+# System files
+.DS_Store
+Thumbs.db
+
+# Node modules (if added later)
+node_modules/
+
+# Logs
+*.log
+```
 
 ---
 
-## Questions?
+### Step 2: Create Base Template
 
-See VISION.md for why these decisions were made.
+Every page starts with this template:
+
+```html
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAGE_TITLE - Ideenschmiede</title>
+    <style>
+        /* CSS Custom Properties */
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-tertiary: #606070;
+            --accent-primary: #e94560;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #f39c12;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Reset */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: var(--bg-primary); 
+            color: var(--text-primary); 
+            line-height: 1.6; 
+        }
+        
+        /* Navigation */
+        .main-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 15, 0.95);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            padding: 16px 24px;
+        }
+        
+        .main-nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-primary), #ff6b6b);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .nav-item {
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .nav-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .badge-free { background: var(--accent-green); color: var(--bg-primary); }
+        .badge-login { background: var(--accent-blue); color: var(--bg-primary); }
+        .badge-member { background: var(--accent-primary); color: white; }
+        
+        /* Mobile menu */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 900px) {
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                right: 0;
+                background: var(--bg-secondary);
+                flex-direction: column;
+                padding: 16px;
+            }
+            .nav-menu.active { display: flex; }
+            .mobile-menu-btn { display: block; }
+        }
+        
+        /* Page content */
+        .page-header {
+            padding: 100px 24px 40px;
+            text-align: center;
+            background: var(--bg-secondary);
+        }
+        
+        .page-title {
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        
+        .content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="main-nav-container">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon">⚡</div>
+                <span>Ideenschmiede</span>
+            </a>
+            
+            <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
+            
+            <div class="nav-menu" id="navMenu">
+                <a href="discussion.html" class="nav-item">
+                    💡 Ideen-Diskussion
+                    <span class="nav-badge badge-free">Frei</span>
+                </a>
+                <a href="marketplace.html" class="nav-item">
+                    🛒 Ideen-Marktplatz
+                    <span class="nav-badge badge-member">Mitglied</span>
+                </a>
+                <a href="teams.html" class="nav-item">
+                    👥 Meine Teams
+                    <span class="nav-badge badge-member">Mitglied</span>
+                </a>
+                <a href="profile.html" class="nav-item">
+                    👤 Mein Profil
+                    <span class="nav-badge badge-login">Login</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <script>
+        function toggleMenu() {
+            document.getElementById('navMenu').classList.toggle('active');
+        }
+    </script>
+
+    <!-- PAGE CONTENT HERE -->
+
+</body>
+</html>
+```
 
 ---
 
-*Authored by Kimi Claw (AI Assistant)*
+### Step 3: Build Landing Page
+
+**Structure:**
+1. Hero section (full viewport)
+2. "So profitierst du" (3 cards)
+3. Timeline (6 steps)
+4. CTA section (3 options)
+5. Footer
+
+**Key CSS for Hero:**
+```css
+.hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 100px 24px 80px;
+    background: linear-gradient(180deg, var(--bg-primary), var(--bg-secondary));
+}
+
+.hero h1 {
+    font-size: clamp(40px, 10vw, 96px);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+```
+
+**Timeline Implementation:**
+- Vertical line on left side (desktop: 60px circles, mobile: 36px)
+- Alternating content left/right on desktop
+- Stacked on mobile
+- Use CSS `position: relative` + `::before` for line
+
+---
+
+### Step 4: Build Subpages
+
+**Discussion Page:**
+- List of idea cards
+- Each card: title, description, author, stats
+- Badge showing "In Diskussion"
+
+**Marketplace Page:**
+- Idea cards with funding progress
+- Stats grid: Raised, Goal, Investors, Teams
+- Progress bar with percentage
+- CTA button: "Idea-Shares kaufen"
+
+**Teams Page:**
+- Tab navigation: "Geleitete Teams" / "Team-Mitglied"
+- Team cards with status indicator (● Aktiv / ● Bewerbung)
+- Stats: Funding Goal, Fortschritt, Entwicklung
+- Action buttons
+
+**Profile Page:**
+- Profile header with avatar
+- Stats grid (4 metrics)
+- Sections: Meine Ideen, Meine Investments
+- List items with values
+
+---
+
+### Step 5: Add i18n Support
+
+**Create English Version:**
+1. Copy `index.html` → `index-en.html`
+2. Translate all German text
+3. Update language switcher links
+4. Change `lang="de"` to `lang="en"`
+
+**Language Switcher:**
+```html
+<div class="lang-switch">
+    <a href="index.html" class="lang-btn active">DE</a>
+    <a href="index-en.html" class="lang-btn">EN</a>
+</div>
+```
+
+---
+
+### Step 6: Mobile Optimization
+
+**Breakpoints:**
+```css
+/* Tablet */
+@media (max-width: 1024px) {
+    .cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .cards-grid { grid-template-columns: 1fr; }
+    .nav-menu { display: none; }
+    .mobile-menu-btn { display: block; }
+    .timeline { padding-left: 40px; }
+}
+
+/* Small mobile (iPhone 13 mini) */
+@media (max-width: 375px) {
+    .hero h1 { font-size: 36px; }
+    .card { padding: 24px 16px; }
+}
+```
+
+---
+
+### Step 7: Deploy to GitHub Pages
+
+**Setup:**
+1. Create GitHub repository
+2. Push code to `main` branch
+3. Enable GitHub Pages in settings
+4. Set source to `main` branch / `docs` folder
+
+**File Structure for Deployment:**
+```
+docs/
+├── index.html          # German landing (root)
+├── index-en.html       # English landing
+├── discussion.html     # Discussion page
+├── marketplace.html    # Marketplace page
+├── teams.html          # Teams page
+├── profile.html        # Profile page
+└── (other files...)
+```
+
+**Deploy:**
+```bash
+git add docs/
+git commit -m "Deploy v0.3"
+git push origin main
+```
+
+**Verify:**
+- Visit `https://YOUR_USERNAME.github.io/ideenschmiede/`
+- Check all pages load
+- Test navigation
+- Test mobile responsiveness
+
+---
+
+## Component Library
+
+### Card
+```css
+.card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 40px 32px;
+}
+```
+
+### Button
+```css
+.btn {
+    display: inline-block;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 600;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+```
+
+### Badge
+```css
+.badge {
+    display: inline-flex;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+}
+```
+
+### Progress Bar
+```css
+.progress-bar {
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-green), var(--accent-primary));
+}
+```
+
+---
+
+## Testing Checklist
+
+### Desktop (Chrome, Firefox, Safari)
+- [ ] All pages load without errors
+- [ ] Navigation links work correctly
+- [ ] Language switcher functional
+- [ ] Responsive at 1920px, 1440px, 1024px
+
+### Mobile (iOS Safari, Chrome Android)
+- [ ] Hamburger menu opens/closes
+- [ ] All touch targets 44px+
+- [ ] No horizontal scroll
+- [ ] Text readable at 100% zoom
+- [ ] Tested on iPhone 13 mini (375px)
+
+### Cross-Browser
+- [ ] CSS custom properties work
+- [ ] Flexbox/grid layouts correct
+- [ ] Emoji render properly
+
+---
+
+## Next Version (v0.4)
+
+**Planned Features:**
+- [ ] Backend API (Node.js/Express)
+- [ ] Database (PostgreSQL)
+- [ ] Authentication system
+- [ ] Real WebSocket implementation
+- [ ] Actual Bitcoin payment integration
+- [ ] User registration/login
+- [ ] Idea creation form
+- [ ] Investment flow
+- [ ] Team application system
+
+**Architecture Changes:**
+- Migrate from static HTML to React/Vue
+- Add state management
+- API integration
+- Authentication (JWT or SIWE)
+
+---
+
+## Resources
+
+**Reference Implementations:**
+- v0.3 Landing: `docs/index.html`
+- v0.3 Discussion: `docs/discussion.html`
+- v0.3 Marketplace: `docs/marketplace.html`
+- v0.3 Teams: `docs/teams.html`
+- v0.3 Profile: `docs/profile.html`
+
+**Documentation:**
+- VISION.md - Core principles and decisions
+- ARCHITECTURE.md - Technical specifications
+- This file - Build instructions
+
+---
+
+*For questions or issues, refer to the live demo or existing page implementations.*
