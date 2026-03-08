@@ -160,6 +160,140 @@
             #home .card button { width: 100%; }
         }
 
+        /* Small phones - iPhone 13 mini, SE, etc. */
+        @media (max-width: 375px) {
+            /* Hero section adjustments */
+            #home > div:first-child {
+                padding: 100px 16px 60px;
+                min-height: auto;
+            }
+            
+            #home h1 {
+                font-size: 40px !important;
+            }
+            
+            #home h1 + p {
+                font-size: 18px !important;
+            }
+            
+            #home h1 + p + p {
+                font-size: 14px !important;
+                margin-bottom: 40px;
+            }
+            
+            /* So profitierst du section */
+            #home > div:nth-child(2) h2 {
+                font-size: 24px;
+                margin-bottom: 40px;
+            }
+            
+            #home > div:nth-child(2) .card {
+                padding: 24px 20px;
+            }
+            
+            #home > div:nth-child(2) .card > div:first-child {
+                font-size: 48px;
+            }
+            
+            #home > div:nth-child(2) h3 {
+                font-size: 22px;
+            }
+            
+            /* Timeline flow - stack vertically */
+            #home > div:nth-child(3) h2 {
+                font-size: 24px;
+                margin-bottom: 40px;
+            }
+            
+            #home > div:nth-child(3) > div > div {
+                flex-direction: column !important;
+                text-align: center !important;
+                margin-bottom: 32px;
+            }
+            
+            #home > div:nth-child(3) > div > div > div:first-child,
+            #home > div:nth-child(3) > div > div > div:last-child {
+                padding: 0 !important;
+                text-align: center !important;
+            }
+            
+            #home > div:nth-child(3) > div > div > div:nth-child(2) {
+                margin: 16px 0;
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            #home > div:nth-child(3) > div > div h3 {
+                font-size: 18px;
+            }
+            
+            #home > div:nth-child(3) > div > div p {
+                font-size: 13px;
+            }
+            
+            /* Hide timeline line on small screens */
+            #home > div:nth-child(3) > div > div:first-child + div {
+                display: none;
+            }
+            
+            /* CTA Section */
+            #home > div:nth-child(4) h2 {
+                font-size: 28px;
+            }
+            
+            #home > div:nth-child(4) > p {
+                font-size: 16px;
+            }
+            
+            #home > div:nth-child(4) .card {
+                padding: 24px 20px;
+            }
+            
+            #home > div:nth-child(4) .card > div:first-child {
+                font-size: 36px;
+            }
+            
+            #home > div:nth-child(4) h3 {
+                font-size: 18px;
+            }
+            
+            /* General spacing */
+            #home > div:nth-child(2),
+            #home > div:nth-child(3),
+            #home > div:nth-child(4) {
+                padding: 60px 16px;
+            }
+            
+            /* Touch targets */
+            .btn {
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+            
+            /* Content padding */
+            .content {
+                padding: 12px;
+            }
+        }
+
+        /* Extra small phones */
+        @media (max-width: 320px) {
+            #home h1 {
+                font-size: 32px !important;
+            }
+            
+            #home h1 + p {
+                font-size: 16px !important;
+            }
+            
+            #home > div:nth-child(2) h2,
+            #home > div:nth-child(3) h2,
+            #home > div:nth-child(4) h2 {
+                font-size: 22px;
+            }
+        }
+
         /* Touch-friendly improvements */
         @media (hover: none) and (pointer: coarse) {
             .btn, .nav-link, .tab-btn { 
