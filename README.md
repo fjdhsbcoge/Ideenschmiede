@@ -26,11 +26,12 @@ Ideenschmiede is a platform where:
 - **Builders** form teams and bring ideas to life
 
 ### Core Principles
-- **Bitcoin-only** - No other blockchains, no tokens
+- **Non-custodial** - Platform never holds user funds
+- **Users run their own Bitcoin infrastructure** - Connect wallets, pay directly
 - **20/80 Revenue Split** - 20% to idea-owners, 80% to builders
 - **Community Validation** - One person, one vote
 - **Parallel Teams** - Multiple teams can build the same idea
-- **No Legal Contracts** - Social contracts + transparency
+- **Trust through transparency** - Social contracts + reputation, not enforcement
 
 ---
 
@@ -63,6 +64,7 @@ This project follows an **AI-first specification approach**:
 │
 ├── VISION.md            # Ideal version - core principles & decisions
 ├── BUILD.md             # Building manual - step-by-step implementation
+├── ARCHITECTURE.md      # Technical architecture - stack, data models, APIs
 ├── README.md            # This file
 └── AGENTS.md            # Workspace conventions for AI agents
 ```

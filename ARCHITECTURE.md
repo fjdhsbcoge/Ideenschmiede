@@ -9,12 +9,52 @@
 ## 1. System Overview
 
 ### 1.1 Architecture Philosophy
-- **Start simple, evolve gradually** - Database first, blockchain later
+- **Non-custodial by design** - Platform never holds user funds
+- **Users run their own Bitcoin infrastructure** - Connect wallets, pay directly
+- **Trust through transparency** - Social contracts + reputation, not enforcement
 - **API-first design** - Frontend and backend communicate via REST/GraphQL
 - **Event-driven** - Async processing for notifications, payments, etc.
 - **Modular** - Services can be replaced/upgraded independently
 
-### 1.2 High-Level Architecture
+### 1.2 Non-Custodial Approach
+
+**Core Principle:** The platform facilitates but never controls funds.
+
+```
+Traditional Platform:            Ideenschmiede:
+┌─────────────┐                  ┌─────────────┐
+│   User A    │                  │   User A    │
+└──────┬──────┘                  └──────┬──────┘
+       │                                │
+       │ 1. Send to platform            │ 1. Pay directly to User B
+       ▼                                │    (from own wallet/node)
+┌─────────────┐                         │
+│  PLATFORM   │◄──── Holds funds        │
+│  (custody)  │                         │
+└──────┬──────┘                         │
+       │                                │
+       │ 2. Send to User B              │ 2. Platform verifies
+       ▼                                │    via public API
+┌─────────────┐                         ▼
+│   User B    │                  ┌─────────────┐
+└─────────────┘                  │   User B    │
+                                 └─────────────┘
+```
+
+**Platform's Role:**
+- Generate receiving addresses from user xpubs
+- Verify transactions via public APIs (mempool.space, blockstream.info)
+- Track ownership and obligations in database
+- Display reputation and payment history
+- Facilitate communication between parties
+
+**Platform Never:**
+- Holds private keys
+- Controls user funds
+- Acts as intermediary in payments
+- Has custody of Bitcoin
+
+### 1.3 High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -582,32 +622,126 @@ SENTRY_DSN=...
 
 ## 7. Integration Points
 
-### 7.1 Bitcoin Integration (MVP)
+### 7.1 Bitcoin Integration (Non-Custodial)
+
+**Core Principle:** Users connect their own wallets. Platform never holds funds.
 
 ```typescript
-// Payment flow
-interface BitcoinPayment {
-  // Generate payment address for user
-  generateAddress(userId: string, purpose: 'subscription' | 'investment'): Promise<Address>;
+// User wallet connection
+interface WalletConnection {
+  // User provides extended public key (xpub)
+  // Platform generates receiving addresses
+  connectWallet(xpub: string, type: 'native_segwit' | 'taproot'): Promise<Wallet>;
   
-  // Watch for incoming payments
-  watchAddress(address: string, callback: (tx: Transaction) => void): void;
+  // Generate new receiving address for investment/payment
+  generateReceivingAddress(walletId: string, path: string): Promise<Address>;
+}
+
+// Payment verification (via public APIs)
+interface PaymentVerification {
+  // Verify transaction exists and is confirmed
+  verifyPayment(
+    txHash: string,
+    expectedAmount: Satoshis,
+    receivingAddress: Address
+  ): Promise<{
+    valid: boolean;
+    confirmations: number;
+    amount: Satoshis;
+  }>;
   
-  // Verify payment
-  verifyPayment(txHash: string, expectedAmount: Satoshis): Promise<boolean>;
+  // Watch mempool for incoming payments
+  watchMempool(address: string, callback: (tx: Transaction) => void): void;
+}
+
+// Revenue distribution tracking
+interface RevenueTracking {
+  // Team reports they paid shareholders
+  recordPayout(
+    teamId: string,
+    txHash: string,
+    distributions: { shareholderId: string; amount: Satoshis }[]
+  ): Promise<void>;
   
-  // Send payouts (revenue distribution)
-  sendPayout(recipients: { address: string; amount: Satoshis }[]): Promise<TxHash>;
+  // Verify reported payout on-chain
+  verifyPayout(txHash: string): Promise<boolean>;
+  
+  // Flag missing payments for reputation system
+  flagMissingPayment(teamId: string, period: string): void;
 }
 ```
 
-### 7.2 External APIs
+**Public APIs Used (No Bitcoin Node Required):**
+- `mempool.space/api` - Transaction data, mempool monitoring
+- `blockstream.info/api` - Block explorer, confirmation status
+
+**Subscription Pricing (Dynamic BTC Rate):**
+```typescript
+// Calculate BTC amount based on USD price
+function calculateSubscriptionBtc(usdPrice: number, btcUsdRate: number): Satoshis {
+  const btcAmount = usdPrice / btcUsdRate;
+  return btcToSatoshis(btcAmount);
+}
+
+// Example: $120/year subscription
+// BTC = $50,000 → 0.0024 BTC/year
+// BTC = $100,000 → 0.0012 BTC/year
+```
+
+### 7.2 Trust Through Reputation
+
+**Social Contracts, Not Legal Enforcement:**
+
+```typescript
+interface ReputationSystem {
+  // Team reputation score
+  calculateTeamScore(teamId: string): {
+    overall: number;           // 0-100
+    paymentHistory: number;    // % of on-time payments
+    milestoneCompletion: number; // % of milestones hit
+    shareholderReviews: number;  // Average rating
+  };
+  
+  // Track payment compliance
+  recordPaymentCompliance(
+    teamId: string,
+    period: string,
+    expectedAmount: Satoshis,
+    paidAmount: Satoshis,
+    txHash?: string
+  ): void;
+  
+  // Shareholder reviews
+  submitReview(
+    shareholderId: string,
+    teamId: string,
+    rating: 1-5,
+    comment: string,
+    tags: string[]  // 'responsive', 'transparent', 'delays'
+  ): void;
+}
+```
+
+**Trust Mechanisms:**
+1. **Transparent Payment History** - All on-chain, publicly verifiable
+2. **Reputation Score** - Visible on team profile
+3. **Shareholder Reviews** - Direct feedback from investors
+4. **Communication Channels** - Built-in forum/chat between teams and shareholders
+5. **Future Funding Impact** - Low reputation = harder to get future funding
+
+**Platform's Enforcement Power: None**
+- Can't force teams to pay
+- Can't freeze funds
+- Can't reverse transactions
+- **Can:** flag, display, warn, exclude from discovery
+
+### 7.3 External APIs
 
 | Service | Purpose | Integration |
 |---------|---------|-------------|
-| BlockCypher/Mempool | Bitcoin data | REST API |
-| DeepL | Translation | REST API (future) |
-| IPFS | File storage | HTTP API |
+| mempool.space | Bitcoin transaction data | REST API |
+| blockstream.info | Block explorer, verification | REST API |
+| Pinata/Web3Storage | IPFS pinning | REST API |
 | SMTP | Email notifications | Protocol |
 
 ---
@@ -615,22 +749,33 @@ interface BitcoinPayment {
 ## 8. Scaling Considerations
 
 ### 8.1 Phase 1: MVP (1-1000 users)
-- Single VPS
+- Single VPS (Hetzner/AWS ~$20/month)
 - PostgreSQL on same server
-- Redis for cache
-- Process payments via API (BlockCypher)
+- Redis for cache and sessions
+- Bitcoin verification via public APIs (free)
+- IPFS via pinning service
 
 ### 8.2 Phase 2: Growth (1000-10000 users)
 - Separate DB server
 - Load balancer
 - Background job workers
 - CDN for static assets
+- Continue using public Bitcoin APIs
 
 ### 8.3 Phase 3: Scale (10000+ users)
 - Kubernetes cluster
 - Read replicas for DB
-- Dedicated Bitcoin nodes
 - Multi-region deployment
+- Consider dedicated Bitcoin nodes only if API limits hit
+- Self-hosted IPFS cluster
+
+**Infrastructure Costs (MVP):**
+- VPS: ~$20/month
+- Database: Included
+- Bitcoin API: Free (mempool.space, blockstream.info)
+- IPFS pinning: ~$5-20/month
+- Domain + SSL: ~$20/year
+- **Total: ~$45-60/month**
 
 ---
 
@@ -718,13 +863,28 @@ for (const share of shares) {
 
 ---
 
-## 12. Open Questions
+## 12. Decisions Made
 
-1. **Payment Processing:** Build own Bitcoin infrastructure or use custodial service for MVP?
-2. **IPFS Pinning:** Self-host IPFS nodes or use pinning service?
-3. **Real-time:** WebSocket or Server-Sent Events?
-4. **Search:** PostgreSQL FTS sufficient or add Elasticsearch?
-5. **Multi-language:** Internationalization approach?
+| Question | Decision | Rationale |
+|----------|----------|-----------|
+| **Payment Processing** | Non-custodial via public APIs | Users control their own keys. Platform verifies via mempool.space/blockstream.info |
+| **Subscription ($120/year)** | Dynamic BTC pricing | Rate calculated daily. Example: BTC $50k = 0.0024 BTC/year |
+| **Trust/Enforcement** | Social contracts + reputation | Platform never enforces. Reputation system + shareholder communication |
+| **IPFS Pinning** | Use pinning service (Pinata/Web3Storage) | Simple, reliable. Self-host later if needed |
+| **Real-time** | Server-Sent Events (SSE) | Simpler than WebSocket. One-way updates sufficient |
+| **Search** | PostgreSQL FTS | Good enough for MVP. Add Elasticsearch if scale requires |
+| **Multi-language** | Simple i18n in code | German + English first. Translation management later |
+| **Bitcoin Node** | None required | Use public APIs. Users run their own infrastructure |
+
+---
+
+## 13. Open Questions
+
+1. **Subscription renewal:** Automatic (recurring BTC address) or manual (user pays each year)?
+2. **Revenue reporting frequency:** Monthly required? Or team decides?
+3. **Dispute resolution:** What happens when shareholders disagree with team? Platform mediate or community vote?
+4. **Multi-sig treasury:** Should teams use multi-sig for additional security?
+5. **Lightning Network:** Add as payment option for small amounts?
 
 ---
 
