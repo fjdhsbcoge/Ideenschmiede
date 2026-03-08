@@ -75,10 +75,100 @@
         .stat-box { text-align: center; padding: 20px; background: var(--bg-tertiary); border-radius: 12px; }
         .stat-value { font-size: 28px; font-weight: 700; color: var(--accent-primary); }
         .stat-label { font-size: 13px; color: var(--text-tertiary); margin-top: 4px; }
-        .tab-nav { display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 24px; }
-        .tab-btn { padding: 12px 20px; background: none; border: none; color: var(--text-secondary); font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab-nav { display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 24px; overflow-x: auto; }
+        .tab-btn { padding: 12px 20px; background: none; border: none; color: var(--text-secondary); font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
         .tab-btn.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
-        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle { display: none; background: none; border: none; color: var(--text-primary); font-size: 24px; cursor: pointer; }
+
+        /* Responsive Styles */
+        @media (max-width: 1024px) {
+            .content { padding: 24px; }
+            .page-header { padding: 32px 24px; }
+            .page-title { font-size: 28px; }
+        }
+
+        @media (max-width: 768px) {
+            /* Navigation */
+            .mobile-menu-toggle { display: block; }
+            .nav-links { 
+                display: none; 
+                position: absolute; 
+                top: 72px; 
+                left: 0; 
+                right: 0; 
+                background: var(--bg-secondary); 
+                flex-direction: column; 
+                padding: 16px; 
+                border-bottom: 1px solid var(--border-color);
+            }
+            .nav-links.active { display: flex; }
+            .nav-link { padding: 16px; width: 100%; text-align: left; }
+            
+            /* Layout */
+            .content { padding: 16px; }
+            .page-header { padding: 24px 16px; }
+            .page-title { font-size: 24px; }
+            .page-subtitle { font-size: 14px; }
+            
+            /* Cards */
+            .card { padding: 16px; }
+            
+            /* Stats */
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .stat-box { padding: 16px 12px; }
+            .stat-value { font-size: 20px; }
+            .stat-label { font-size: 12px; }
+            
+            /* Milestones */
+            .milestone-item { flex-direction: column; align-items: flex-start; }
+            .milestone-item > div[style*="grid"] { grid-template-columns: 1fr !important; }
+            
+            /* Budget */
+            .budget-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .budget-row input { width: 100% !important; }
+            
+            /* Team cards */
+            .team-card { padding: 16px; }
+            .team-card .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            
+            /* Forms */
+            .form-input, .form-textarea { font-size: 16px; /* Prevent zoom on iOS */ }
+            
+            /* Buttons */
+            .btn { width: 100%; justify-content: center; margin-bottom: 8px; }
+            .btn:last-child { margin-bottom: 0; }
+            
+            /* Modal */
+            .modal-content { width: 95%; margin: 16px; }
+            
+            /* Toast */
+            .toast { left: 16px; right: 16px; min-width: auto; }
+            
+            /* Chat */
+            #tab-chat .card > div[style*="height: 400px"] { height: 300px !important; }
+        }
+
+        @media (max-width: 480px) {
+            .page-title { font-size: 20px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .tab-btn { padding: 10px 16px; font-size: 13px; }
+            
+            /* Home page cards */
+            #home .card { text-align: center; }
+            #home .card button { width: 100%; }
+        }
+
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .btn, .nav-link, .tab-btn { 
+                min-height: 44px; /* iOS touch target */
+            }
+            .form-input, .form-textarea {
+                min-height: 44px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -88,12 +178,13 @@
                 <div class="nav-logo-icon">⚡</div>
                 <span>Ideenschmiede v0.3</span>
             </a>
-            <div class="nav-links">
-                <button class="nav-link active" onclick="showPage('home')">Start</button>
-                <button class="nav-link" onclick="showPage('marketplace')">🛒 Marktplatz</button>
-                <button class="nav-link" onclick="showPage('apply')">📝 Bewerben</button>
-                <button class="nav-link" onclick="showPage('select')">🎯 Teams wählen</button>
-                <button class="nav-link" onclick="showPage('dashboard')">📊 Dashboard</button>
+            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+            <div class="nav-links" id="nav-links">
+                <button class="nav-link active" onclick="showPage('home'); toggleMobileMenu()">Start</button>
+                <button class="nav-link" onclick="showPage('marketplace'); toggleMobileMenu()">🛒 Marktplatz</button>
+                <button class="nav-link" onclick="showPage('apply'); toggleMobileMenu()">📝 Bewerben</button>
+                <button class="nav-link" onclick="showPage('select'); toggleMobileMenu()">🎯 Teams wählen</button>
+                <button class="nav-link" onclick="showPage('dashboard'); toggleMobileMenu()">📊 Dashboard</button>
             </div>
         </div>
     </nav>
@@ -667,6 +758,11 @@
             document.getElementById(pageId).classList.add('active');
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             event.target.closest('button')?.classList.add('active');
+        }
+
+        function toggleMobileMenu() {
+            const navLinks = document.getElementById('nav-links');
+            navLinks.classList.toggle('active');
         }
 
         function addMilestone() {
