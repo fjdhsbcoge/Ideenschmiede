@@ -113,7 +113,14 @@
         <div class="main-nav-container">
             <a href="index.html" class="nav-logo"><div class="nav-logo-icon">⚡</div><span>Ideenschmiede</span></a>
             
-            <div class="role-switcher">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="nav-menu" style="display: flex; gap: 8px;">
+                    <a href="discussion.html" style="padding: 10px 16px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 6px;">💡 Diskussion</a>
+                    <a href="marketplace.html" style="padding: 10px 16px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 6px;">🛒 Marktplatz</a>
+                    <a href="teams.html" style="padding: 10px 16px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 6px;">👥 Teams</a>
+                </div>
+                
+                <div class="role-switcher">
                 <button class="role-btn" onclick="toggleRoleDropdown()">
                     <span>Rolle:</span>
                     <span class="role-badge" id="currentRoleBadge">Visitor</span>
