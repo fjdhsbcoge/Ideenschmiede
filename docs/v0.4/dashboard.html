@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard v0.4 - Ideenschmiede</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-tertiary: #606070;
+            --accent-primary: #e94560;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #f39c12;
+            --accent-purple: #9b59b6;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
+        
+        /* Navigation */
+        .main-nav { position: fixed; top: 0; left: 0; right: 0; background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); z-index: 1000; padding: 16px 24px; }
+        .main-nav-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .nav-logo { font-size: 20px; font-weight: 700; color: var(--text-primary); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .nav-logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        
+        /* Role Switcher */
+        .role-switcher { position: relative; }
+        .role-btn { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 14px; cursor: pointer; transition: all 0.3s ease; }
+        .role-btn:hover { border-color: var(--accent-primary); }
+        .role-badge { padding: 4px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .role-badge.visitor { background: var(--text-tertiary); color: var(--bg-primary); }
+        .role-badge.user { background: var(--accent-blue); color: white; }
+        .role-badge.subscriber { background: linear-gradient(135deg, var(--accent-primary), var(--accent-green)); color: white; }
+        .role-dropdown { display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 8px; min-width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .role-dropdown.active { display: block; }
+        .role-option { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; }
+        .role-option:hover { background: var(--bg-tertiary); }
+        .role-option-icon { font-size: 20px; }
+        .role-option-info { flex: 1; }
+        .role-option-name { font-weight: 600; font-size: 14px; }
+        .role-option-desc { font-size: 12px; color: var(--text-tertiary); }
+        .role-option-check { opacity: 0; color: var(--accent-green); }
+        .role-option.active .role-option-check { opacity: 1; }
+        
+        /* Page Header */
+        .page-header { padding: 100px 24px 40px; text-align: center; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); }
+        .page-title { font-size: clamp(28px, 5vw, 42px); font-weight: 700; margin-bottom: 12px; }
+        .current-role-display { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--bg-tertiary); border-radius: 100px; font-size: 14px; }
+        
+        .content { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+        
+        /* Upgrade Banner */
+        .upgrade-banner { background: linear-gradient(135deg, rgba(233, 69, 96, 0.15), rgba(46, 204, 113, 0.15)); border: 2px solid var(--accent-primary); border-radius: 16px; padding: 24px; margin-bottom: 32px; text-align: center; }
+        .upgrade-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .upgrade-text { color: var(--text-secondary); margin-bottom: 16px; }
+        .upgrade-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+        .upgrade-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(233, 69, 96, 0.3); }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; text-align: center; transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-5px); border-color: var(--accent-primary); }
+        .stat-icon { font-size: 32px; margin-bottom: 12px; }
+        .stat-value { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, var(--accent-primary), var(--accent-green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-label { font-size: 14px; color: var(--text-tertiary); margin-top: 4px; }
+        
+        /* Section Card */
+        .section-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .section-title { font-size: 20px; font-weight: 600; }
+        .section-action { color: var(--accent-primary); font-size: 14px; text-decoration: none; }
+        .section-action:hover { text-decoration: underline; }
+        
+        /* List Items */
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px; margin-bottom: 12px; transition: all 0.3s ease; }
+        .list-item:hover { border: 1px solid var(--accent-primary); }
+        .list-item-info { flex: 1; }
+        .list-item-title { font-weight: 600; margin-bottom: 4px; }
+        .list-item-meta { font-size: 13px; color: var(--text-tertiary); }
+        .list-item-value { text-align: right; }
+        .list-item-amount { font-size: 20px; font-weight: 700; color: var(--accent-green); }
+        
+        /* Locked Feature */
+        .locked-feature { position: relative; opacity: 0.6; filter: grayscale(0.5); }
+        .locked-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10, 10, 15, 0.7); display: flex; align-items: center; justify-content: center; border-radius: 16px; backdrop-filter: blur(2px); }
+        .locked-badge { display: flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--bg-secondary); border: 1px solid var(--accent-primary); border-radius: 100px; font-size: 13px; font-weight: 600; }
+        
+        /* Feature Grid */
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+        .feature-card { padding: 20px; background: var(--bg-tertiary); border-radius: 12px; border: 1px solid var(--border-color); transition: all 0.3s ease; }
+        .feature-card:hover { border-color: var(--accent-primary); }
+        .feature-icon { font-size: 28px; margin-bottom: 12px; }
+        .feature-title { font-weight: 600; margin-bottom: 4px; }
+        .feature-desc { font-size: 13px; color: var(--text-secondary); }
+        .feature-status { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; font-size: 12px; padding: 4px 10px; border-radius: 100px; }
+        .feature-status.available { background: rgba(46, 204, 113, 0.1); color: var(--accent-green); }
+        .feature-status.locked { background: rgba(233, 69, 96, 0.1); color: var(--accent-primary); }
+        
+        /* Toast */
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 16px 24px; background: var(--bg-secondary); border: 1px solid var(--accent-green); border-radius: 12px; color: var(--text-primary); font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 2000; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        @media (max-width: 768px) { .content { padding: 24px 16px; } .page-header { padding: 100px 16px 32px; } .stats-grid { grid-template-columns: repeat(2, 1fr); } .section-header { flex-direction: column; gap: 12px; align-items: flex-start; } .list-item { flex-direction: column; align-items: flex-start; gap: 12px; } .list-item-value { text-align: left; } }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="main-nav-container">
+            <a href="index.html" class="nav-logo"><div class="nav-logo-icon">⚡</div><span>Ideenschmiede</span></a>
+            
+            <div class="role-switcher">
+                <button class="role-btn" onclick="toggleRoleDropdown()">
+                    <span>Rolle:</span>
+                    <span class="role-badge" id="currentRoleBadge">Visitor</span>
+                    <span>▼</span>
+                </button>
+                
+                <div class="role-dropdown" id="roleDropdown">
+                    <div class="role-option active" onclick="setRole('visitor')" id="role-visitor">
+                        <span class="role-option-icon">🌐</span>
+                        <div class="role-option-info">
+                            <div class="role-option-name">Visitor</div>
+                            <div class="role-option-desc">Nicht angemeldet</div>
+                        </div>
+                        <span class="role-option-check">✓</span>
+                    </div>
+                    
+                    <div class="role-option" onclick="setRole('user')" id="role-user">
+                        <span class="role-option-icon">👤</span>
+                        <div class="role-option-info">
+                            <div class="role-option-name">User</div>
+                            <div class="role-option-desc">Angemeldet (kostenlos)</div>
+                        </div>
+                        <span class="role-option-check">✓</span>
+                    </div>
+                    
+                    <div class="role-option" onclick="setRole('subscriber')" id="role-subscriber">
+                        <span class="role-option-icon">⭐</span>
+                        <div class="role-option-info">
+                            <div class="role-option-name">Subscriber</div>
+                            <div class="role-option-desc">$120/Jahr - Voller Zugriff</div>
+                        </div>
+                        <span class="role-option-check">✓</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <h1 class="page-title">📊 Dashboard</h1>
+        <div class="current-role-display">
+            Aktuelle Rolle: <strong id="roleDisplayName">Visitor</strong>
+        </div>
+    </header>
+
+    <div class="content">
+        <!-- Upgrade Banner (nur für Visitor/User) -->
+        <div id="upgradeBanner" class="upgrade-banner" style="display: none;">
+            <div class="upgrade-title">🔒 Upgrade auf Subscriber</div>
+            <p class="upgrade-text">Schalte Voten, Investieren, Team-Bildung und mehr frei!</p>
+            <button class="upgrade-btn" onclick="upgradeToSubscriber()">💎 Jetzt Subscriber werden ($120/Jahr)</button>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid">
+            <!-- Wird dynamisch befüllt -->
+        </div>
+
+        <!-- Features Overview -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3 class="section-title">🎯 Deine Features</h3>
+            </div>
+            
+            <div class="feature-grid" id="featureGrid">
+                <!-- Wird dynamisch befüllt -->
+            </div>
+        </div>
+
+        <!-- Recent Activity (nur User/Subscriber) -->
+        <div class="section-card" id="activitySection" style="display: none;">
+            <div class="section-header">
+                <h3 class="section-title">📋 Letzte Aktivität</h3>
+                <a href="#" class="section-action">Alle anzeigen →</a>
+            </div>
+            
+            <div id="activityList">
+                <!-- Wird dynamisch befüllt -->
+            </div>
+        </div>
+
+        <!-- Portfolio (nur Subscriber) -->
+        <div class="section-card" id="portfolioSection" style="display: none;">
+            <div class="section-header">
+                <h3 class="section-title">💰 Investment Portfolio</h3>
+                <a href="marketplace.html" class="section-action">Marktplatz →</a>
+            </div>
+            
+            <div class="list-item">
+                <div class="list-item-info">
+                    <div class="list-item-title">AI-gestützte Sprachlern-App</div>
+                    <div class="list-item-meta">Idea-Shares • 20% Anteil</div>
+                </div>
+                <div class="list-item-value">
+                    <div class="list-item-amount">₿ 0.10</div>
+                    <div style="font-size: 12px; color: var(--accent-green);">+₿ 0.03/Monat</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Teams (nur Subscriber) -->
+        <div class="section-card" id="teamsSection" style="display: none;">
+            <div class="section-header">
+                <h3 class="section-title">👥 Meine Teams</h3>
+                <a href="teams.html" class="section-action">Alle Teams →</a>
+            </div>
+            
+            <div class="list-item">
+                <div class="list-item-info">
+                    <div class="list-item-title">ChatFluent</div>
+                    <div class="list-item-meta">AI-gestützte Sprachlern-App • Building</div>
+                </div>
+                <div class="list-item-value">
+                    <div style="font-size: 14px; color: var(--accent-green);">● Aktiv</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Role Management
+        let currentRole = 'visitor';
+        
+        const roleConfig = {
+            visitor: {
+                badge: 'Visitor',
+                badgeClass: 'visitor',
+                displayName: 'Visitor',
+                canVote: false,
+                canPost: false,
+                canComment: false,
+                canInvest: false,
+                canTeam: false,
+                stats: [
+                    { icon: '👁️', value: '0', label: 'Ideen gesehen' },
+                    { icon: '🔒', value: '-', label: 'Features gesperrt' }
+                ],
+                activities: []
+            },
+            user: {
+                badge: 'User',
+                badgeClass: 'user',
+                displayName: 'User (Angemeldet)',
+                canVote: false,
+                canPost: true,
+                canComment: true,
+                canInvest: false,
+                canTeam: false,
+                stats: [
+                    { icon: '💡', value: '3', label: 'Ideen gepostet' },
+                    { icon: '💬', value: '12', label: 'Kommentare' },
+                    { icon: '👁️', value: '234', label: 'Aufrufe' },
+                    { icon: '🔒', value: '2', label: 'Features gesperrt' }
+                ],
+                activities: [
+                    { title: 'Neue Idee gepostet', meta: 'AI-gestützte Sprachlern-App • Vor 2 Stunden' },
+                    { title: 'Kommentar geschrieben', meta: 'Bei Dezentrale Energiespeicher • Vor 5 Stunden' }
+                ]
+            },
+            subscriber: {
+                badge: 'Subscriber',
+                badgeClass: 'subscriber',
+                displayName: 'Subscriber (Premium)',
+                canVote: true,
+                canPost: true,
+                canComment: true,
+                canInvest: true,
+                canTeam: true,
+                stats: [
+                    { icon: '💡', value: '3', label: 'Ideen gepostet' },
+                    { icon: '💰', value: '12', label: 'Investments' },
+                    { icon: '👥', value: '1', label: 'Teams' },
+                    { icon: '₿', value: '0.18', label: 'Earnings/Monat' }
+                ],
+                activities: [
+                    { title: 'Investiert in ChatFluent', meta: 'Team-Shares • ₿ 0.05 • Vor 1 Stunde' },
+                    { title: 'Upvote gegeben', meta: 'Dezentrale Energiespeicher • Vor 3 Stunden' },
+                    { title: 'Neue Idee gepostet', meta: 'AI-gestützte Sprachlern-App • Vor 2 Tagen' }
+                ]
+            }
+        };
+        
+        const features = [
+            { icon: '👁️', title: 'Ideen ansehen', desc: 'Alle Ideen browsen', required: 'visitor' },
+            { icon: '💡', title: 'Ideen posten', desc: 'Eigene Ideen teilen', required: 'user' },
+            { icon: '💬', title: 'Kommentieren', desc: 'Feedback geben', required: 'user' },
+            { icon: '🗳️', title: 'Voten', desc: 'Up/Downvotes', required: 'subscriber' },
+            { icon: '💰', title: 'Investieren', desc: 'In Ideen & Teams', required: 'subscriber' },
+            { icon: '👥', title: 'Teams bilden', desc: 'Als Team bewerben', required: 'subscriber' },
+            { icon: '💎', title: 'Revenue share', desc: 'Gewinn beteiligen', required: 'subscriber' }
+        ];
+        
+        function toggleRoleDropdown() {
+            document.getElementById('roleDropdown').classList.toggle('active');
+        }
+        
+        function setRole(role) {
+            currentRole = role;
+            updateUI();
+            toggleRoleDropdown();
+            showToast(`Rolle gewechselt zu: ${roleConfig[role].displayName}`);
+        }
+        
+        function updateUI() {
+            const config = roleConfig[currentRole];
+            
+            // Update badge
+            const badge = document.getElementById('currentRoleBadge');
+            badge.textContent = config.badge;
+            badge.className = 'role-badge ' + config.badgeClass;
+            
+            // Update display name
+            document.getElementById('roleDisplayName').textContent = config.displayName;
+            
+            // Update role options
+            document.querySelectorAll('.role-option').forEach(opt => opt.classList.remove('active'));
+            document.getElementById('role-' + currentRole).classList.add('active');
+            
+            // Show/hide upgrade banner
+            document.getElementById('upgradeBanner').style.display = 
+                currentRole === 'subscriber' ? 'none' : 'block';
+            
+            // Update stats
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = config.stats.map(stat => `
+                <div class="stat-card">
+                    <div class="stat-icon">${stat.icon}</div>
+                    <div class="stat-value">${stat.value}</div>
+                    <div class="stat-label">${stat.label}</div>
+                </div>
+            `).join('');
+            
+            // Update features
+            const featureGrid = document.getElementById('featureGrid');
+            featureGrid.innerHTML = features.map(feature => {
+                const isAvailable = checkFeatureAccess(feature.required);
+                return `
+                    <div class="feature-card">
+                        <div class="feature-icon">${feature.icon}</div>
+                        <div class="feature-title">${feature.title}</div>
+                        <div class="feature-desc">${feature.desc}</div>
+                        <span class="feature-status ${isAvailable ? 'available' : 'locked'}">
+                            ${isAvailable ? '✓ Verfügbar' : '🔒 Ab ' + feature.required}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+            
+            // Show/hide activity section
+            document.getElementById('activitySection').style.display = 
+                currentRole === 'visitor' ? 'none' : 'block';
+            
+            // Update activity list
+            if (config.activities.length > 0) {
+                document.getElementById('activityList').innerHTML = config.activities.map(act => `
+                    <div class="list-item">
+                        <div class="list-item-info">
+                            <div class="list-item-title">${act.title}</div>
+                            <div class="list-item-meta">${act.meta}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Show/hide portfolio & teams (subscriber only)
+            document.getElementById('portfolioSection').style.display = 
+                currentRole === 'subscriber' ? 'block' : 'none';
+            document.getElementById('teamsSection').style.display = 
+                currentRole === 'subscriber' ? 'block' : 'none';
+        }
+        
+        function checkFeatureAccess(required) {
+            const hierarchy = { visitor: 0, user: 1, subscriber: 2 };
+            return hierarchy[currentRole] >= hierarchy[required];
+        }
+        
+        function upgradeToSubscriber() {
+            setRole('subscriber');
+            showToast('🎉 Willkommen als Subscriber!');
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.role-switcher')) {
+                document.getElementById('roleDropdown').classList.remove('active');
+            }
+        });
+        
+        // Initialize
+        updateUI();
+    </script>
+</body>
+</html>
