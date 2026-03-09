@@ -1,8 +1,8 @@
 # Ideenschmiede Technical Architecture
 
-**Version:** 2.0  
-**Last Updated:** 2026-03-08  
-**Status:** Current Implementation
+**Version:** 2.1  
+**Last Updated:** 2026-03-09  
+**Status:** v0.4 Interactive Demo Complete
 
 ---
 
@@ -10,19 +10,34 @@
 
 ### 1.1 Current Implementation Status
 
-**Live Demo:** https://fjdhsbcoge.github.io/Ideenschmiede/
+**Live Demo:** https://fjdhsbcoge.github.io/Ideenschmiede/v0.4/
 
-**Pages Implemented:**
-| Page | URL | Access Level |
-|------|-----|--------------|
-| Landing (DE) | /index.html | Public |
-| Landing (EN) | /index-en.html | Public |
-| Discussion | /discussion.html | Free |
-| Marketplace | /marketplace.html | Member |
-| Teams | /teams.html | Member |
-| Profile | /profile.html | Login |
+**Pages Implemented (v0.4):**
+| Page | URL | Access Level | Features |
+|------|-----|--------------|----------|
+| Landing (DE) | /v0.4/index.html | Public | Scroll animations, card hovers, progress bar |
+| Landing (EN) | /v0.4/index-en.html | Public | Full i18n, shimmer effects |
+| Discussion | /v0.4/discussion.html | Free | Live voting, filters, sorting |
+| Idea Detail | /v0.4/idea-detail.html | Free | Comments, voting, toast notifications |
+| Marketplace | /v0.4/marketplace.html | Member | Investment calc, team cards, modals |
+| Team Apply | /v0.4/team-apply.html | Member | Dynamic forms, budget validation |
+| Teams | /v0.4/teams.html | Member | Tab nav, progress tracking |
+| Profile | /v0.4/profile.html | Login | Wallet, earnings, investments |
 
-### 1.2 Core Principles
+### 1.2 v0.4 Interactive Features
+
+| Feature | Technology | Implementation |
+|---------|------------|----------------|
+| Scroll Animations | Intersection Observer API | Fade-in, slide-up on scroll |
+| Voting System | JavaScript State | Toggle up/down, real-time stats |
+| Investment Calc | DOM Events | Input × price = total (live) |
+| Dynamic Forms | JS DOM Manipulation | Add/remove milestones |
+| Validation | JS Event Listeners | 5% minimum skin-in-game |
+| Notifications | CSS + JS | Toast messages, timed fade |
+| Modals | CSS display/flex | Overlay with click-outside close |
+| Tab Navigation | JS class toggle | Content switching without reload |
+
+### 1.3 Core Principles
 
 - **Non-custodial** - Platform never holds user funds
 - **Users control keys** - Connect own wallets, pay directly
@@ -132,7 +147,81 @@
 - Mobile: < 768px
 - Small Mobile: < 375px (iPhone 13 mini)
 
-### 2.4 Internationalization (i18n)
+### 2.4 JavaScript Architecture (v0.4)
+
+**No Frameworks Approach:**
+- Vanilla JavaScript for all interactions
+- No build step required
+- Direct DOM manipulation
+- Event-driven architecture
+
+**Common Patterns Used:**
+
+**1. State Management:**
+```javascript
+// Voting state example
+const votes = { up: 142, down: 24 };
+let userVote = null;
+
+function vote(type) {
+  if (userVote === type) {
+    votes[type]--;
+    userVote = null;
+  } else {
+    if (userVote) votes[userVote]--;
+    votes[type]++;
+    userVote = type;
+  }
+  updateUI();
+}
+```
+
+**2. Intersection Observer for Animations:**
+```javascript
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+```
+
+**3. Dynamic DOM Updates:**
+```javascript
+function addMilestone() {
+  const item = document.createElement('div');
+  item.className = 'milestone-item';
+  item.innerHTML = `...`;
+  list.appendChild(item);
+  updateNumbers();
+}
+```
+
+**4. Form Validation:**
+```javascript
+function calculateBudget() {
+  let total = 0;
+  document.querySelectorAll('.milestone-input')
+    .forEach(input => total += parseFloat(input.value) || 0);
+  document.getElementById('total').textContent = '₿ ' + total.toFixed(2);
+}
+```
+
+**5. Modal System:**
+```javascript
+function showModal(content) {
+  document.getElementById('modalContent').innerHTML = content;
+  document.getElementById('modal').classList.add('active');
+}
+
+// Close on overlay click
+document.getElementById('modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
+```
+
+### 2.5 Internationalization (i18n)
 
 **Current Implementation:**
 - Separate HTML files per language
@@ -199,9 +288,108 @@
 - Mobile: Stacked vertically
 - Timeline: Left-aligned with connecting line
 
-### 4.2 Discussion Page
+### 4.2 Discussion Page (v0.4)
 
-**Purpose:** Browse ideas in discussion phase
+**Purpose:** Browse ideas with interactive voting
+
+**Components:**
+- Idea cards with live voting buttons
+- Filter buttons (Alle, Trending, Neueste, Kontrovers)
+- Sort dropdown (Beliebtheit, Neueste, Stimmen, Kommentare)
+- Vote progress bars
+- Toast notifications
+
+**Interactive Features:**
+- Upvote/downvote with toggle
+- Real-time percentage calculation
+- Visual feedback on vote
+- Staggered card animations on load
+
+### 4.3 Idea Detail Page (v0.4)
+
+**Purpose:** View idea details and participate in discussion
+
+**Components:**
+- Full idea description with tags
+- Large voting section with statistics
+- Comment form with textarea
+- Comments list with like buttons
+- "Move to Marketplace" CTA (if >25% votes)
+
+**Interactive Features:**
+- Voting with visual progress bar
+- Comment posting (appears immediately)
+- Comment liking
+- Tag click filtering
+
+### 4.4 Marketplace Page (v0.4)
+
+**Purpose:** Invest in validated ideas
+
+**Components:**
+- Stats bar (active ideas, volume, investors, teams)
+- Large idea card with funding progress
+- Share price display box
+- Investment calculator
+- Team cards with funding status
+
+**Interactive Features:**
+- Investment amount input → auto-calculated total
+- Buy button → confirmation modal
+- Team invest button → confirmation modal
+- Progress bar updates after purchase
+
+### 4.5 Team Application Page (v0.4)
+
+**Purpose:** Apply as a team to build an idea
+
+**Components:**
+- Progress steps indicator
+- Idea selection display
+- Team details form
+- Dynamic milestone list
+- Budget breakdown inputs
+- Skin-in-game calculator
+
+**Interactive Features:**
+- Add/remove milestones dynamically
+- Auto-calculate total budget
+- Calculate minimum investment (5%)
+- Calculate ownership percentage
+- Form validation before submit
+
+### 4.6 Teams Overview Page (v0.4)
+
+**Purpose:** Manage your teams and applications
+
+**Components:**
+- Tab navigation (Leading / Member / Applications)
+- Team cards with detailed stats
+- Member avatars list
+- Progress bars for milestones
+- Action buttons per team
+
+**Features:**
+- Tab switching without page reload
+- Team status indicators (Building, Pending, etc.)
+- Different actions per team type
+
+### 4.7 Profile Page (v0.4)
+
+**Purpose:** User dashboard and wallet
+
+**Components:**
+- Profile header with avatar
+- Stats grid (ideas, investments, teams, earnings)
+- Wallet card with balance
+- Earnings chart (visual bars)
+- Ideas list
+- Investments list
+
+**Interactive Features:**
+- Copy wallet address to clipboard
+- Edit profile button
+- View transaction history
 
 **Components:**
 - Idea cards with badges

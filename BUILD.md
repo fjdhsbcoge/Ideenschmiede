@@ -2,8 +2,8 @@
 
 **Purpose:** Step-by-step instructions for building Ideenschmiede. Designed for AI agents and developers.
 
-**Current Version:** v0.3  
-**Last Updated:** 2026-03-08  
+**Current Version:** v0.4  
+**Last Updated:** 2026-03-09  
 **Live Demo:** https://fjdhsbcoge.github.io/Ideenschmiede/
 
 ---
@@ -15,10 +15,44 @@
 | v0.1 | 2026-03-04 | ✅ Complete | Basic flow: login → post → invest |
 | v0.2 | 2026-03-05 | ✅ Complete | Stage visualization + profile |
 | v0.3 | 2026-03-08 | ✅ Complete | Landing page + 4 connected subpages |
+| v0.4 | 2026-03-09 | ✅ Complete | Interactive demo with animations |
 
 ---
 
-## v0.3 - Current Implementation
+## v0.4 - Interactive Demo
+
+### What We Built
+
+**Complete interactive demo located in `/docs/v0.4/`:**
+
+**Landing Pages (2 languages):**
+- German: `index.html` - With scroll animations, hover effects
+- English: `index-en.html` - Full i18n support
+
+**Interactive Pages (8 total):**
+1. **Landing** - Scroll progress bar, animated cards, shimmer effects
+2. **Discussion** - Live voting, filter buttons, sort dropdown
+3. **Idea Detail** - Comment posting, voting with progress bar
+4. **Marketplace** - Investment calculator, team cards, modals
+5. **Team Apply** - Dynamic milestones, budget calculator, validation
+6. **Teams** - Tab navigation, progress tracking, member lists
+7. **Profile** - Wallet display, earnings chart, investment list
+8. **Process** - (Existing) Process visualization
+
+**New Interactive Features:**
+- Scroll-triggered animations (Intersection Observer)
+- Real-time voting with visual feedback
+- Investment calculator (share price × amount)
+- Dynamic form validation
+- Toast notifications
+- Modal dialogs
+- Budget auto-calculation
+- Tab navigation
+- Copy-to-clipboard
+
+---
+
+## v0.3 - Static Pages
 
 ### What We Built
 
