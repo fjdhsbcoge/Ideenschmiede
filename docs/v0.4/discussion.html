@@ -539,6 +539,128 @@
     <div class="toast" id="toast"></div>
 
     <script>
+        // Role Management
+        let currentRole = localStorage.getItem('ideenschmiede_role') || 'visitor';
+        
+        // Check permissions on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUIBasedOnRole();
+        });
+        
+        function updateUIBasedOnRole() {
+            // Show/hide new idea button
+            const newIdeaBtn = document.querySelector('.btn-primary');
+            if (newIdeaBtn) {
+                if (currentRole === 'visitor') {
+                    newIdeaBtn.style.display = 'none';
+                } else {
+                    newIdeaBtn.style.display = 'inline-flex';
+                }
+            }
+            
+            // Update voting buttons based on role
+            document.querySelectorAll('.voting-section').forEach(section => {
+                if (currentRole !== 'subscriber') {
+                    section.style.opacity = '0.6';
+                    section.title = currentRole === 'visitor' ? 'Anmeldung erforderlich' : 'Upgrade auf Subscriber erforderlich';
+                }
+            });
+        }
+        
+        function vote(id, type) {
+            // Check permission
+            if (currentRole === 'visitor') {
+                showToast('❌ Bitte melde dich an, um zu voten');
+                return;
+            }
+            if (currentRole === 'user') {
+                showToast('🔒 Upgrade auf Subscriber für Voting');
+                return;
+            }
+            
+            // Rest der Vote-Funktion bleibt gleich...
+            if (userVotes[id] === type) {
+                showToast('Du hast bereits abgestimmt!');
+                return;
+            }
+            
+            if (userVotes[id]) {
+                votes[id][userVotes[id]]--;
+            }
+            
+            votes[id][type]++;
+            userVotes[id] = type;
+            
+            updateVoteDisplay(id);
+            
+            document.querySelectorAll(`[data-id="${id}"] .vote-btn`).forEach(btn => {
+                btn.classList.remove('voted');
+            });
+            document.querySelector(`[data-id="${id}"] .vote-btn.${type}`).classList.add('voted');
+            
+            showToast(type === 'up' ? '👍 Upvote gezählt!' : '👎 Downvote gezählt!');
+        }
+        
+        function filterIdeas(filter, btn) {
+            if (currentRole === 'visitor') {
+                showToast('❌ Anmeldung erforderlich');
+                return;
+            }
+            
+            // Rest der Funktion bleibt gleich...
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const cards = document.querySelectorAll('.idea-card');
+            cards.forEach(card => {
+                card.style.opacity = '0.5';
+                card.style.transform = 'scale(0.98)';
+            });
+
+            setTimeout(() => {
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'scale(1)';
+                    }, index * 50);
+                });
+            }, 200);
+
+            showToast(`Gefiltert nach: ${btn.textContent}`);
+        }
+        
+        function sortIdeas(sortType) {
+            if (currentRole === 'visitor') {
+                showToast('❌ Anmeldung erforderlich');
+                return;
+            }
+            
+            // Rest der Funktion bleibt gleich...
+            const list = document.getElementById('ideasList');
+            const cards = Array.from(list.querySelectorAll('.idea-card'));
+            
+            cards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(-20px)';
+            });
+
+            setTimeout(() => {
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateX(0)';
+                    }, index * 100);
+                });
+            }, 300);
+
+            const sortNames = {
+                'popular': 'Beliebtheit',
+                'newest': 'Neueste zuerst',
+                'votes': 'Meiste Stimmen',
+                'comments': 'Meiste Kommentare'
+            };
+            showToast(`Sortiert nach: ${sortNames[sortType]}`);
+        }
         // Voting data (simulated - would be backend in production)
         const votes = {
             1: { up: 142, down: 24 },

@@ -229,6 +229,36 @@
     <div class="toast" id="toast"></div>
 
     <script>
+        // Role Management
+        let currentRole = localStorage.getItem('ideenschmiede_role') || 'visitor';
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            checkPermission();
+        });
+
+        function checkPermission() {
+            // Hide team apply button for non-subscribers
+            const ctaButton = document.querySelector('.cta-button');
+            if (ctaButton && currentRole !== 'subscriber') {
+                ctaButton.style.display = 'none';
+            }
+            
+            // Show upgrade message for non-subscribers
+            if (currentRole !== 'subscriber') {
+                const content = document.querySelector('.content');
+                const upgradeMsg = document.createElement('div');
+                upgradeMsg.innerHTML = `
+                    <div style="background: linear-gradient(135deg, rgba(233,69,96,0.1), rgba(46,204,113,0.1)); border: 2px solid var(--accent-primary); border-radius: 16px; padding: 24px; margin-bottom: 32px; text-align: center;">
+                        <div style="font-size: 32px; margin-bottom: 12px;">💎</div>
+                        <div style="font-weight: 600; margin-bottom: 8px;">Subscriber Features</div>
+                        <div style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Upgrade auf Subscriber, um eigene Teams zu bilden und Funding zu erhalten.</div>
+                        <a href="profile.html" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); color: white; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 14px;">Mehr erfahren</a>
+                    </div>
+                `;
+                content.insertBefore(upgradeMsg, content.querySelector('.tab-nav'));
+            }
+        }
+
         function showTab(tabId, btn) {
             // Update buttons
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));

@@ -284,8 +284,37 @@
     <div class="toast" id="toast"></div>
 
     <script>
+        // Role Management
+        let currentRole = localStorage.getItem('ideenschmiede_role') || 'visitor';
+        
         const SHARE_PRICE = 0.00001;
         let currentInvestment = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkPermissions();
+        });
+
+        function checkPermissions() {
+            // Show locked overlay for non-subscribers
+            if (currentRole !== 'subscriber') {
+                const buySection = document.querySelector('.buy-section');
+                if (buySection) {
+                    buySection.innerHTML = `
+                        <div style="width: 100%; padding: 24px; background: rgba(233,69,96,0.1); border: 2px solid var(--accent-primary); border-radius: 12px; text-align: center;">
+                            <div style="font-size: 24px; margin-bottom: 12px;">🔒</div>
+                            <div style="font-weight: 600; margin-bottom: 8px;">Investieren nur für Subscriber</div>
+                            <div style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Upgrade auf Subscriber ($120/Jahr), um in Ideen und Teams zu investieren.</div>
+                            <a href="profile.html" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); color: white; text-decoration: none; border-radius: 10px; font-weight: 600;">Jetzt Subscriber werden</a>
+                        </div>
+                    `;
+                }
+                
+                // Disable team invest buttons
+                document.querySelectorAll('.team-actions .btn-primary').forEach(btn => {
+                    btn.onclick = () => showToast('🔒 Upgrade auf Subscriber für Team-Investment');
+                });
+            }
+        }
 
         function calculateTotal() {
             const amount = document.getElementById('shareAmount').value || 0;

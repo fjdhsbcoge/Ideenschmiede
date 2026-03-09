@@ -306,7 +306,45 @@ n            </div>
     <div class="toast" id="toast"></div>
 
     <script>
+        // Role Management
+        let currentRole = localStorage.getItem('ideenschmiede_role') || 'visitor';
+        
         let milestoneCount = 3;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkPermission();
+        });
+
+        function checkPermission() {
+            if (currentRole !== 'subscriber') {
+                document.body.innerHTML = `
+                    <nav class="main-nav">
+                        <div class="main-nav-container">
+                            <a href="index.html" class="nav-logo"><div class="nav-logo-icon">⚡</div><span>Ideenschmiede</span></a>
+                        </div>
+                    </nav>
+                    <div style="max-width: 600px; margin: 120px auto 40px; padding: 40px; text-align: center; background: var(--bg-secondary); border-radius: 20px; border: 2px solid var(--accent-primary);">
+                        <div style="font-size: 64px; margin-bottom: 24px;">🔒</div>
+                        <h1 style="margin-bottom: 16px;">Subscriber-Bereich</h1>
+                        <p style="color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6;">
+                            Das Bewerben als Team ist eine exklusive Funktion für Subscriber.<br>
+                            Werde Subscriber für $120/Jahr und nutze alle Features:
+                        </p>
+                        <ul style="text-align: left; max-width: 300px; margin: 0 auto 32px; color: var(--text-secondary); line-height: 2;">
+                            <li>✓ Als Team bewerben</li>
+                            <li>✓ Funding erhalten</li>
+                            <li>✓ Revenue teilen</li>
+                            <li>✓ Teams führen</li>
+                        </ul>
+                        <a href="profile.html" style="display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); color: white; text-decoration: none; border-radius: 12px; font-weight: 600;">
+                            Jetzt Subscriber werden
+                        </a>
+                        <br><br>
+                        <a href="teams.html" style="color: var(--text-secondary); text-decoration: none;">← Zurück zu Teams</a>
+                    </div>
+                `;
+            }
+        }
 
         function addMilestone() {
             if (milestoneCount >= 8) {

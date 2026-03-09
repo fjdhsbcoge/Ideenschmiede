@@ -120,25 +120,36 @@
     <nav class="main-nav">
         <div class="main-nav-container">
             <a href="index.html" class="nav-logo"><div class="nav-logo-icon">⚡</div><span>Ideenschmiede</span></a>
-            <button class="mobile-menu-btn" onclick="document.getElementById('navMenu').classList.toggle('active')">☰</button>
-            <div class="nav-menu" id="navMenu">
-                <a href="discussion.html" class="nav-item">💡 Ideen-Diskussion <span class="nav-badge badge-free">Frei</span></a>
-                <a href="marketplace.html" class="nav-item">🛒 Ideen-Marktplatz <span class="nav-badge badge-member">Mitglied</span></a>
-                <a href="teams.html" class="nav-item">👥 Meine Teams <span class="nav-badge badge-member">Mitglied</span></a>
-                <a href="profile.html" class="nav-item active">👤 Mein Profil <span class="nav-badge badge-login">Login</span></a>
+            
+            <!-- Role Switcher -->
+            <div class="role-switcher" style="position: relative;">
+                <button onclick="toggleRoleDropdown()" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); cursor: pointer;">
+                    <span id="currentRoleBadge" class="badge" style="font-size: 11px; padding: 4px 10px; border-radius: 100px; background: var(--text-tertiary);">Visitor</span>
+                    <span>▼</span>
+                </button>
+                <div id="roleDropdown" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 8px; min-width: 220px; z-index: 1001;">
+                    <div onclick="setRole('visitor')" class="role-option" style="padding: 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                        <span>🌐</span><div><div style="font-weight: 600;">Visitor</div><div style="font-size: 12px; color: var(--text-tertiary);">Nicht angemeldet</div></div>
+                    </div>
+                    <div onclick="setRole('user')" class="role-option" style="padding: 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                        <span>👤</span><div><div style="font-weight: 600;">User</div><div style="font-size: 12px; color: var(--text-tertiary);">Angemeldet (kostenlos)</div></div>
+                    </div>
+                    <div onclick="setRole('subscriber')" class="role-option" style="padding: 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px;">
+                        <span>⭐</span><div><div style="font-weight: 600;">Subscriber</div><div style="font-size: 12px; color: var(--text-tertiary);">$120/Jahr - Voller Zugriff</div></div>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
 
     <header class="profile-header">
-        <div class="profile-avatar-large">👤</div>
-        <h1 class="profile-name">Max Mustermann</h1>
-        <p class="profile-handle">@solar_max</p>
-        <span class="profile-badge">✓ Mitglied seit Januar 2026</span>
+        <div class="profile-avatar-large" id="profileAvatar">👤</div>
+        <h1 class="profile-name" id="profileName">Gast</h1>
+        <p class="profile-handle" id="profileHandle">-</p>
+        <span class="profile-badge" id="profileBadge" style="background: var(--text-tertiary);">🌐 Visitor</span>
         
         <div class="profile-actions">
-            <button class="btn-icon" onclick="editProfile()">✏️ Profil bearbeiten</button>
-            <button class="btn-icon" onclick="copyAddress()">📋 Adresse kopieren</button>
+            <button class="btn-icon" onclick="editProfile()" id="btnEdit">✏️ Profil bearbeiten</button>
             <button class="btn-icon" onclick="showSettings()">⚙️ Einstellungen</button>
         </div>
     </header>
@@ -237,14 +248,146 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        function editProfile() { showToast('✏️ Profilbearbeitung öffnet sich...'); }
-        function copyAddress() { 
-            navigator.clipboard.writeText('bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh');
-            showToast('📋 Adresse kopiert!'); 
+        // Role Management
+        let currentRole = localStorage.getItem('ideenschmiede_role') || 'visitor';
+        
+        const roleData = {
+            visitor: {
+                name: 'Gast',
+                handle: '-',
+                badge: '🌐 Visitor',
+                badgeColor: 'var(--text-tertiary)',
+                avatar: '👤',
+                stats: [
+                    { icon: '👁️', value: '0', label: 'Ideen gesehen' }
+                ],
+                showWallet: false,
+                showInvestments: false,
+                showTeams: false,
+                showEarnings: false
+            },
+            user: {
+                name: 'Max Mustermann',
+                handle: '@max_user',
+                badge: '👤 User',
+                badgeColor: 'var(--accent-blue)',
+                avatar: '👨',
+                stats: [
+                    { icon: '💡', value: '3', label: 'Ideen gepostet' },
+                    { icon: '💬', value: '12', label: 'Kommentare' },
+                    { icon: '👁️', value: '234', label: 'Aufrufe' }
+                ],
+                showWallet: true,
+                showInvestments: false,
+                showTeams: false,
+                showEarnings: false
+            },
+            subscriber: {
+                name: 'Max Mustermann',
+                handle: '@max_sub',
+                badge: '⭐ Subscriber',
+                badgeColor: 'var(--accent-primary)',
+                avatar: '💎',
+                stats: [
+                    { icon: '💡', value: '3', label: 'Ideen gepostet' },
+                    { icon: '💰', value: '12', label: 'Investments' },
+                    { icon: '👥', value: '1', label: 'Teams' },
+                    { icon: '₿', value: '0.18', label: 'Earnings/Monat' }
+                ],
+                showWallet: true,
+                showInvestments: true,
+                showTeams: true,
+                showEarnings: true
+            }
+        };
+        
+        function toggleRoleDropdown() {
+            const dropdown = document.getElementById('roleDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
         }
+        
+        function setRole(role) {
+            currentRole = role;
+            localStorage.setItem('ideenschmiede_role', role);
+            updateUI();
+            toggleRoleDropdown();
+            showToast(`Rolle gewechselt zu: ${roleData[role].badge}`);
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.role-switcher')) {
+                    document.getElementById('roleDropdown').style.display = 'none';
+                }
+            });
+        }
+        
+        function updateUI() {
+            const data = roleData[currentRole];
+            
+            // Update profile header
+            document.getElementById('profileAvatar').textContent = data.avatar;
+            document.getElementById('profileName').textContent = data.name;
+            document.getElementById('profileHandle').textContent = data.handle;
+            
+            const badge = document.getElementById('profileBadge');
+            badge.textContent = data.badge;
+            badge.style.background = data.badgeColor;
+            
+            // Update role badge in nav
+            const navBadge = document.getElementById('currentRoleBadge');
+            navBadge.textContent = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+            navBadge.style.background = data.badgeColor;
+            
+            // Update stats
+            const statsGrid = document.querySelector('.stats-grid');
+            statsGrid.innerHTML = data.stats.map(stat => `
+                <div class="stat-card">
+                    <div class="stat-icon">${stat.icon}</div>
+                    <div class="stat-value">${stat.value}</div>
+                    <div class="stat-label">${stat.label}</div>
+                </div>
+            `).join('');
+            
+            // Show/hide wallet
+            document.querySelector('.wallet-card').style.display = data.showWallet ? 'block' : 'none';
+            
+            // Show/hide earnings chart
+            document.querySelector('.section-card:has(.chart-container)').style.display = data.showEarnings ? 'block' : 'none';
+            
+            // Show/hide investments
+            const investmentsSection = document.querySelectorAll('.section-card')[3];
+            if (investmentsSection) investmentsSection.style.display = data.showInvestments ? 'block' : 'none';
+            
+            // Show/hide edit button for visitor
+            document.getElementById('btnEdit').style.display = currentRole === 'visitor' ? 'none' : 'inline-flex';
+        }
+        
+        function editProfile() { 
+            if (currentRole === 'visitor') {
+                showToast('❌ Bitte melde dich an');
+                return;
+            }
+            showToast('✏️ Profilbearbeitung öffnet sich...'); 
+        }
+        
         function showSettings() { showToast('⚙️ Einstellungen öffnen...'); }
-        function deposit() { showToast('📥 Einzahlungsadresse wird generiert...'); }
-        function withdraw() { showToast('📤 Auszahlung wird vorbereitet...'); }
+        
+        function deposit() { 
+            if (currentRole === 'visitor') {
+                showToast('❌ Anmeldung erforderlich');
+                return;
+            }
+            showToast('📥 Einzahlungsadresse wird generiert...'); 
+        }
+        
+        function withdraw() { 
+            if (currentRole === 'visitor') {
+                showToast('❌ Anmeldung erforderlich');
+                return;
+            }
+            showToast('📤 Auszahlung wird vorbereitet...'); 
+        }
+        
         function showHistory() { showToast('📜 Transaktionsverlauf wird geladen...'); }
         
         function showToast(message) {
@@ -253,6 +396,9 @@
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 2500);
         }
+        
+        // Initialize
+        updateUI();
     </script>
 </body>
 </html>
