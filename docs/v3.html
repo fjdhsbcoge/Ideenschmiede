@@ -1088,10 +1088,19 @@
     <script>
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            event.target.closest('button')?.classList.add('active');
+            const page = document.getElementById(pageId);
+            if (page) page.classList.add('active');
+            // Update URL hash
+            window.location.hash = pageId;
         }
+
+        // Handle hash on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const hash = window.location.hash.slice(1); // Remove #
+            if (hash && document.getElementById(hash)) {
+                showPage(hash);
+            }
+        });
 
         function toggleMobileMenu() {
             const navLinks = document.getElementById('nav-links');
