@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meine Teams v0.4 - Ideenschmiede</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-tertiary: #606070;
+            --accent-primary: #e94560;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #f39c12;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
+        
+        .main-nav { position: fixed; top: 0; left: 0; right: 0; background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); z-index: 1000; padding: 16px 24px; }
+        .main-nav-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .nav-logo { font-size: 20px; font-weight: 700; color: var(--text-primary); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .nav-logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .nav-menu { display: flex; gap: 8px; }
+        .nav-item { padding: 10px 16px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease; }
+        .nav-item:hover, .nav-item.active { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+        .badge-free { background: var(--accent-green); color: var(--bg-primary); }
+        .badge-member { background: var(--accent-primary); color: white; }
+        .mobile-menu-btn { display: none; background: none; border: none; color: var(--text-primary); font-size: 24px; cursor: pointer; }
+        
+        .page-header { padding: 100px 24px 40px; text-align: center; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); }
+        .page-title { font-size: clamp(32px, 5vw, 48px); font-weight: 700; margin-bottom: 12px; }
+        .page-subtitle { font-size: 16px; color: var(--text-secondary); }
+        
+        .content { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+        
+        /* Tab Nav */
+        .tab-nav { display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 32px; overflow-x: auto; }
+        .tab-btn { padding: 12px 24px; background: none; border: none; color: var(--text-secondary); font-size: 15px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.3s ease; }
+        .tab-btn:hover { color: var(--text-primary); }
+        .tab-btn.active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+        
+        /* CTA Button */
+        .cta-button { display: inline-flex; align-items: center; gap: 8px; padding: 14px 24px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border: none; border-radius: 10px; color: white; font-weight: 600; font-size: 15px; cursor: pointer; text-decoration: none; transition: all 0.3s ease; margin-bottom: 32px; }
+        .cta-button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(233, 69, 96, 0.3); }
+        
+        /* Team Card */
+        .team-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 28px; margin-bottom: 20px; transition: all 0.4s ease; animation: fadeInUp 0.5s ease; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .team-card:hover { border-color: var(--accent-primary); transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .team-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+        .team-info { flex: 1; }
+        .team-name { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+        .team-idea { color: var(--text-secondary); font-size: 14px; margin-bottom: 8px; }
+        .team-status { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; }
+        .status-active { background: rgba(46, 204, 113, 0.1); color: var(--accent-green); }
+        .status-pending { background: rgba(243, 156, 18, 0.1); color: var(--accent-orange); }
+        .status-building { background: rgba(52, 152, 219, 0.1); color: var(--accent-blue); }
+        
+        /* Team Stats */
+        .team-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .team-stat { text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px; transition: all 0.3s ease; }
+        .team-stat:hover { background: rgba(233, 69, 96, 0.1); transform: scale(1.05); }
+        .team-stat-value { font-size: 24px; font-weight: 700; color: var(--accent-primary); }
+        .team-stat-label { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+        
+        /* Progress Section */
+        .progress-section { margin-bottom: 24px; }
+        .progress-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+        .progress-bar-bg { height: 10px; background: var(--bg-tertiary); border-radius: 5px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; border-radius: 5px; transition: width 1s ease; position: relative; }
+        .progress-bar-fill.active { background: linear-gradient(90deg, var(--accent-green), var(--accent-primary)); }
+        .progress-bar-fill.pending { background: linear-gradient(90deg, var(--accent-orange), var(--accent-primary)); }
+        .progress-bar-fill.building { background: linear-gradient(90deg, var(--accent-blue), var(--accent-primary)); }
+        
+        /* Team Actions */
+        .team-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn { padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(233, 69, 96, 0.3); }
+        .btn-secondary { background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); }
+        .btn-secondary:hover { border-color: var(--accent-primary); }
+        .btn-success { background: var(--accent-green); color: var(--bg-primary); }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3); }
+        
+        /* Members List */
+        .members-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        .members-title { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; }
+        .members-list { display: flex; gap: 12px; flex-wrap: wrap; }
+        .member { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-tertiary); border-radius: 100px; font-size: 13px; }
+        .member-avatar { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-blue)); display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .member-role { color: var(--text-tertiary); font-size: 11px; }
+        
+        /* Empty State */
+        .empty-state { text-align: center; padding: 60px 24px; color: var(--text-tertiary); }
+        .empty-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
+        .empty-title { font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+        .empty-text { font-size: 14px; margin-bottom: 24px; }
+        
+        /* Tab Content */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Toast */
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 16px 24px; background: var(--bg-secondary); border: 1px solid var(--accent-green); border-radius: 12px; color: var(--text-primary); font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 2000; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        @media (max-width: 900px) { .nav-menu { display: none; position: absolute; top: 60px; left: 0; right: 0; background: var(--bg-secondary); flex-direction: column; padding: 16px; border-bottom: 1px solid var(--border-color); } .nav-menu.active { display: flex; } .mobile-menu-btn { display: block; } .team-stats { grid-template-columns: repeat(2, 1fr); } .team-actions { flex-direction: column; } .btn { width: 100%; justify-content: center; } }
+        @media (max-width: 768px) { .content { padding: 24px 16px; } .page-header { padding: 80px 16px 32px; } .team-header { flex-direction: column; } .tab-nav { gap: 4px; } .tab-btn { padding: 10px 16px; font-size: 14px; } }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="main-nav-container">
+            <a href="index.html" class="nav-logo"><div class="nav-logo-icon">⚡</div><span>Ideenschmiede</span></a>
+            <button class="mobile-menu-btn" onclick="document.getElementById('navMenu').classList.toggle('active')">☰</button>
+            <div class="nav-menu" id="navMenu">
+                <a href="discussion.html" class="nav-item">💡 Ideen-Diskussion <span class="nav-badge badge-free">Frei</span></a>
+                <a href="marketplace.html" class="nav-item">🛒 Ideen-Marktplatz <span class="nav-badge badge-member">Mitglied</span></a>
+                <a href="teams.html" class="nav-item active">👥 Meine Teams <span class="nav-badge badge-member">Mitglied</span></a>
+                <a href="profile.html" class="nav-item">👤 Mein Profil <span class="nav-badge badge-login">Login</span></a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <h1 class="page-title">👥 Meine Teams</h1>
+        <p class="page-subtitle">Teams, die du leitest oder denen du angehörst</p>
+    </header>
+
+    <div class="content">
+        <a href="team-apply.html" class="cta-button">+ Als Team bewerben</a>
+        
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="showTab('leading', this)">Geleitete Teams (1)</button>
+            <button class="tab-btn" onclick="showTab('member', this)">Team-Mitglied (0)</button>
+            <button class="tab-btn" onclick="showTab('applications', this)">Bewerbungen (1)</button>
+        </div>
+
+        <!-- Leading Teams Tab -->
+        <div id="leading" class="tab-content active">
+            <div class="team-card">
+                <div class="team-header">
+                    <div class="team-info">
+                        <div class="team-name">ChatFluent</div>
+                        <div class="team-idea">AI-gestützte Sprachlern-App</div>
+                        <span class="team-status status-building">🔵 Building</span>
+                    </div>
+                </div>
+                
+                <div class="team-stats">
+                    <div class="team-stat"><div class="team-stat-value">₿ 0.30</div><div class="team-stat-label">Funding Goal</div></div>
+                    <div class="team-stat"><div class="team-stat-value">40%</div><div class="team-stat-label">Fortschritt</div></div>
+                    <div class="team-stat"><div class="team-stat-value">Monat 2</div><div class="team-stat-label">Entwicklung</div></div>
+                    <div class="team-stat"><div class="team-stat-value">4/6</div><div class="team-stat-label">Meilensteine</div></div>
+                </div>
+                
+                <div class="progress-section">
+                    <div class="progress-header"><span>Meilenstein-Fortschritt</span><span>4 von 6 erreicht</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill building" style="width: 67%"></div></div>
+                </div>
+                
+                <div class="team-actions">
+                    <button class="btn btn-secondary" onclick="openDashboard()">📊 Dashboard</button>
+                    <button class="btn btn-primary" onclick="reportMilestone()">✅ Meilenstein melden</button>
+                    <button class="btn btn-success" onclick="reportRevenue()">💰 Revenue melden</button>
+                </div>
+                
+                <div class="members-section">
+                    <div class="members-title">Team-Mitglieder (4)</div>
+                    <div class="members-list">
+                        <div class="member"><span class="member-avatar">👨‍💻</span><span>Alex</span><span class="member-role">Dev Lead</span></div>
+                        <div class="member"><span class="member-avatar">👩‍🎨</span><span>Lisa</span><span class="member-role">Designer</span></div>
+                        <div class="member"><span class="member-avatar">👨‍🔬</span><span>Marc</span><span class="member-role">AI Research</span></div>
+                        <div class="member"><span class="member-avatar">👩‍💼</span><span>Sarah</span><span class="member-role">Marketing</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Member Tab -->
+        <div id="member" class="tab-content">
+            <div class="empty-state">
+                <div class="empty-icon">👥</div>
+                <div class="empty-title">Noch kein Team-Mitglied</div>
+                <p class="empty-text">Du bist derzeit in keinem Team als Mitglied. Schaue im Marktplatz nach Teams, die Mitglieder suchen.</p>
+                <a href="marketplace.html" class="btn btn-primary">Marktplatz durchsuchen</a>
+            </div>
+        </div>
+
+        <!-- Applications Tab -->
+        <div id="applications" class="tab-content">
+            <div class="team-card" style="border-color: var(--accent-orange);">
+                <div class="team-header">
+                    <div class="team-info">
+                        <div class="team-name">Team SolarGrid</div>
+                        <div class="team-idea">Dezentrale Energiespeicher-Community</div>
+                        <span class="team-status status-pending">🟡 Bewerbung ausstehend</span>
+                    </div>
+                </div>
+                
+                <div class="team-stats">
+                    <div class="team-stat"><div class="team-stat-value">₿ 0.50</div><div class="team-stat-label">Funding Goal</div></div>
+                    <div class="team-stat"><div class="team-stat-value">20%</div><div class="team-stat-label">Fortschritt</div></div>
+                    <div class="team-stat"><div class="team-stat-value">Bewerbung</div><div class="team-stat-label">Status</span></div></div>
+                    <div class="team-stat"><div class="team-stat-value">Vor 2 T.</div><div class="team-stat-label">Eingereicht</div></div>
+                </div>
+                
+                <div class="progress-section">
+                    <div class="progress-header"><span>Funding-Fortschritt</span><span>Warte auf Series A</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill pending" style="width: 20%"></div></div>
+                </div>
+                
+                <div class="team-actions">
+                    <button class="btn btn-secondary" onclick="editApplication()">✏️ Bewerbung bearbeiten</button>
+                    <button class="btn" style="background: transparent; border: 1px solid var(--text-tertiary); color: var(--text-tertiary);" onclick="withdrawApplication()">🗑️ Zurückziehen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        function showTab(tabId, btn) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        }
+        
+        function openDashboard() { showToast('📊 Dashboard wird geladen...'); }
+        function reportMilestone() { showToast('✅ Meilenstein-Meldung wird geöffnet...'); }
+        function reportRevenue() { showToast('💰 Revenue-Report wird geöffnet...'); }
+        function editApplication() { showToast('✏️ Bewerbung wird zum Bearbeiten geöffnet...'); }
+        function withdrawApplication() { 
+            if (confirm('Möchtest du deine Bewerbung wirklich zurückziehen?')) {
+                showToast('🗑️ Bewerbung zurückgezogen');
+            }
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+</html>
