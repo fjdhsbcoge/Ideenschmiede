@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ideenschmiede - Stage Visualization</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-tertiary: #606070;
+            --accent-primary: #e94560;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #f39c12;
+            --accent-purple: #9b59b6;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
+        .nav { background: rgba(10, 10, 15, 0.95); border-bottom: 1px solid var(--border-color); padding: 16px 32px; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+        .nav-container { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text-primary); font-weight: 700; font-size: 20px; }
+        .nav-logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .nav-links { display: flex; gap: 8px; }
+        .nav-link { padding: 10px 16px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-size: 14px; cursor: pointer; border: none; background: none; font-family: inherit; }
+        .nav-link:hover, .nav-link.active { background: var(--bg-tertiary); color: var(--text-primary); }
+        .main { margin-top: 72px; min-height: calc(100vh - 72px); }
+        .page { display: none; }
+        .page.active { display: block; }
+        .btn { padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; font-family: inherit; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); color: white; }
+        .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .page-header { background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); padding: 48px 32px; }
+        .page-header-content { max-width: 1400px; margin: 0 auto; }
+        .page-title { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+        .page-subtitle { color: var(--text-secondary); font-size: 16px; }
+        .content { max-width: 1400px; margin: 0 auto; padding: 32px; }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-secondary); }
+        .form-input, .form-textarea { width: 100%; padding: 12px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-primary); font-size: 15px; font-family: inherit; }
+        .form-textarea { min-height: 100px; resize: vertical; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--bg-secondary); border-radius: 16px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { padding: 24px; border-bottom: 1px solid var(--border-color); }
+        .modal-title { font-size: 20px; font-weight: 600; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; gap: 12px; justify-content: flex-end; }
+        .toast { position: fixed; top: 100px; right: 20px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 20px; min-width: 300px; z-index: 3000; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast-success { border-left: 4px solid var(--accent-green); }
+        .toast-error { border-left: 4px solid var(--accent-primary); }
+        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; }
+        .badge-discussion { background: rgba(52, 152, 219, 0.1); color: var(--accent-blue); }
+        .badge-marketplace { background: rgba(233, 69, 96, 0.1); color: var(--accent-primary); }
+        .badge-voting { background: rgba(243, 156, 18, 0.1); color: var(--accent-orange); }
+        .badge-building { background: rgba(46, 204, 113, 0.1); color: var(--accent-green); }
+        .badge-revenue { background: rgba(155, 89, 182, 0.1); color: var(--accent-purple); }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+        .stat-item { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; text-align: center; }
+        .stat-value { font-size: 28px; font-weight: 700; color: var(--accent-primary); }
+        .stat-label { font-size: 13px; color: var(--text-tertiary); }
+        .stage-selector { display: flex; gap: 8px; margin-bottom: 32px; overflow-x: auto; padding-bottom: 8px; }
+        .stage-btn { padding: 12px 20px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-secondary); font-size: 14px; cursor: pointer; white-space: nowrap; }
+        .stage-btn:hover { border-color: var(--accent-primary); color: var(--text-primary); }
+        .stage-btn.active { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
+        .perspective-switcher { display: flex; gap: 12px; margin-bottom: 24px; }
+        .perspective-btn { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-secondary); font-size: 14px; cursor: pointer; }
+        .perspective-btn.active { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
+        .split-bar { display: flex; height: 24px; border-radius: 6px; overflow: hidden; margin: 12px 0; }
+        .split-ideator { background: #f39c12; }
+        .split-cot { background: #9b59b6; }
+        .split-team { background: #2ecc71; }
+        .milestone { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; }
+        .milestone-status { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .milestone-done { background: var(--accent-green); }
+        .milestone-pending { background: var(--text-tertiary); }
+        .milestone-progress { background: var(--accent-orange); }
+        .earnings-table { width: 100%; border-collapse: collapse; }
+        .earnings-table th, .earnings-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .earnings-table th { color: var(--text-tertiary); font-weight: 500; font-size: 13px; }
+        .activity-item { display: flex; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border-color); }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--bg-tertiary); }
+        .profile-header { display: flex; gap: 24px; margin-bottom: 32px; }
+        .profile-avatar { width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+        .profile-info { flex: 1; }
+        .profile-name { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+        .profile-meta { color: var(--text-secondary); margin-bottom: 16px; }
+        .profile-actions { display: flex; gap: 12px; }
+        @media (max-width: 768px) { 
+            .stats { grid-template-columns: repeat(2, 1fr); } 
+            .profile-header { flex-direction: column; align-items: center; text-align: center; }
+            .stage-selector { flex-wrap: nowrap; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo" onclick="showPage('home')">
+                <div class="nav-logo-icon">⚡</div>
+                <span>Ideenschmiede</span>
+            </a>
+            <div class="nav-links">
+                <button class="nav-link" onclick="showPage('home')">Start</button>
+                <button class="nav-link" onclick="showPage('stages')">📊 Stages</button>
+                <button class="nav-link" onclick="showPage('discussion')">💡 Diskussion</button>
+                <button class="nav-link" onclick="showPage('marketplace')">🛒 Marktplatz</button>
+                <button class="nav-link" onclick="showPage('profile')">👤 Profil</button>
+            </div>
+            <div id="auth-section"></div>
+        </div>
+    </nav>
+
+    <main class="main">
+        <!-- Home Page -->
+        <div id="home" class="page active">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h1 class="page-title">⚡ Ideenschmiede v0.2</h1>
+                    <p class="page-subtitle">Von der ersten Idee bis zum erfolgreichen Produkt. 6 Stufen. 3 Perspektiven. Ein Ziel.</p>
+                    <div style="margin-top: 24px;">
+                        <button class="btn btn-primary" onclick="showPage('stages')">Stages erkunden →</button>
+                    </div>
+                </div>
+            </div>
+            <div class="content">
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value">6</div>
+                        <div class="stat-label">Lebenszyklus-Stufen</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">Nutzer-Perspektiven</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">20/80</div>
+                        <div class="stat-label">Revenue Split</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">₿</div>
+                        <div class="stat-label">Bitcoin Only</div>
+                    </div>
+                </div>
+                
+                <h2 style="margin-bottom: 24px;">Die 3 Perspektiven</h2>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px;">
+                    <div class="card">
+                        <div style="font-size: 48px; margin-bottom: 16px;">💡</div>
+                        <h3>Ideator</h3>
+                        <p style="color: var(--text-secondary); margin: 12px 0;">Poste Ideen, sammle Feedback, verdiene am Erfolg</p>
+                        <ul style="color: var(--text-secondary); padding-left: 20px;">
+                            <li>15% sofort bei Investment</li>
+                            <li>Anteil an allen Teams</li>
+                            <li>Kein Risiko, hohe Belohnung</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div style="font-size: 48px; margin-bottom: 16px;">💰</div>
+                        <h3>Investor</h3>
+                        <p style="color: var(--text-secondary); margin: 12px 0;">Entdecke, bewerte, investiere, verdiene</p>
+                        <ul style="color: var(--text-secondary); padding-left: 20px;">
+                            <li>Idea-Shares (diversifiziert)</li>
+                            <li>Team-Shares (fokussiert)</li>
+                            <li>Passives Einkommen</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔨</div>
+                        <h3>Builder</h3>
+                        <p style="color: var(--text-secondary); margin: 12px 0;">Bewirb dich, baue, generiere Revenue</p>
+                        <ul style="color: var(--text-secondary); padding-left: 20px;">
+                            <li>Skin-in-the-game</li>
+                            <li>80% der Team-Revenue</li>
+                            <li>Volle Autonomie</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stages Page -->
+        <div id="stages" class="page">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h1 class="page-title">📊 Ideen-Lebenszyklus</h1>
+                    <p class="page-subtitle">6 Stufen von der ersten Idee bis zur Revenue-Verteilung</p>
+                </div>
+            </div>
+            <div class="content">
+                <!-- Perspective Switcher -->
+                <div class="perspective-switcher">
+                    <button class="perspective-btn active" onclick="setPerspective('ideator')">💡 Ideator</button>
+                    <button class="perspective-btn" onclick="setPerspective('investor')">💰 Investor</button>
+                    <button class="perspective-btn" onclick="setPerspective('builder')">🔨 Builder</button>
+                </div>
+
+                <!-- Stage Selector -->
+                <div class="stage-selector">
+                    <button class="stage-btn active" onclick="showStage(1)">1. Diskussion</button>
+                    <button class="stage-btn" onclick="showStage(2)">2. Voting</button>
+                    <button class="stage-btn" onclick="showStage(3)">3. Idea-Shares</button>
+                    <button class="stage-btn" onclick="showStage(4)">4. Teams</button>
+                    <button class="stage-btn" onclick="showStage(5)">5. Building</button>
+                    <button class="stage-btn" onclick="showStage(6)">6. Revenue</button>
+                </div>
+
+                <!-- Stage Content -->
+                <div id="stage-content">
+                    <!-- Stage 1: Discussion -->
+                    <div id="stage-1" class="stage-view">
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                                <div>
+                                    <span class="badge badge-discussion">💬 In Diskussion</span>
+                                    <h2 style="margin-top: 12px;">Dezentrale Energiespeicher-Community</h2>
+                                </div>
+                                <span style="color: var(--text-tertiary);">Posted: 2026-02-01</span>
+                            </div>
+                            <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                                Ein gemeinschaftliches Netzwerk von Hausbatterien, das Energie handelt und Netzstabilität bietet. 
+                                Jeder Teilnehmer kann überschüssige Energie verkaufen oder bei Bedarf kaufen.
+                            </p>
+                            <div style="display: flex; gap: 24px; color: var(--text-secondary); font-size: 14px;">
+                                <span>👤 @solar_max</span>
+                                <span>💬 12 Kommentare</span>
+                                <span>👍 85% positive</span>
+                            </div>
+                            <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                <h4 style="margin-bottom: 12px;">💡 Ideator Perspektive</h4>
+                                <p style="color: var(--text-secondary);">
+                                    Du postest deine Idee kostenlos, sammelst Feedback und verfeinerst das Konzept. 
+                                    Die Community hilft dir, Schwächen zu erkennen und das Potenzial zu maximieren.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 2: Voting -->
+                    <div id="stage-2" class="stage-view" style="display: none;">
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                                <div>
+                                    <span class="badge badge-voting">🗳️ Voting (Tag 3 von 8)</span>
+                                    <h2 style="margin-top: 12px;">Open-Source Medikamenten-Datenbank</h2>
+                                </div>
+                            </div>
+                            <p style="color: var(--text-secondary); margin-bottom: 24px;">
+                                Eine crowdsourcete Datenbank für Arzneimittelwechselwirkungen und Nebenwirkungen. 
+                                Vollständig transparent und von der Community gepflegt.
+                            </p>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+                                <div style="text-align: center; padding: 20px; background: var(--bg-tertiary); border-radius: 12px;">
+                                    <div style="font-size: 32px; font-weight: 700; color: var(--accent-green);">78%</div>
+                                    <div style="color: var(--text-secondary); font-size: 14px;">👍 Upvotes</div>
+                                </div>
+                                <div style="text-align: center; padding: 20px; background: var(--bg-tertiary); border-radius: 12px;">
+                                    <div style="font-size: 32px; font-weight: 700; color: var(--accent-primary);">12%</div>
+                                    <div style="color: var(--text-secondary); font-size: 14px;">👎 Downvotes</div>
+                                </div>
+                                <div style="text-align: center; padding: 20px; background: var(--bg-tertiary); border-radius: 12px;">
+                                    <div style="font-size: 32px; font-weight: 700; color: var(--accent-blue);">156</div>
+                                    <div style="color: var(--text-secondary); font-size: 14px;">🗳️ Votes</div>
+                                </div>
+                            </div>
+
+                            <div style="padding: 16px; background: rgba(46, 204, 113, 0.1); border-radius: 12px; border: 1px solid rgba(46, 204, 113, 0.3);">
+                                <strong>✅ Status:</strong> Auf dem Weg zum Marktplatz (braucht >25% Upvotes)
+                            </div>
+
+                            <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                <h4 style="margin-bottom: 12px;">💰 Investor Perspektive</h4>
+                                <p style="color: var(--text-secondary);">
+                                    Du bewertest Ideen und hilfst, Qualität zu filtern. Deine Stimme zählt gleich viel wie alle anderen - 
+                                    egal wie viel du investierst. One person, one vote.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 3: Idea-Shares -->
+                    <div id="stage-3" class="stage-view" style="display: none;">
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                                <div>
+                                    <span class="badge badge-marketplace">🛒 Marketplace</span>
+                                    <h2 style="margin-top: 12px;">AI-gestützte Sprachlern-App</h2>
+                                </div>
+                                <span style="color: var(--accent-orange);">⏰ 6 Tage verbleibend</span>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0;">
+                                <div style="text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary);">₿ 0.45</div>
+                                    <div style="color: var(--text-secondary); font-size: 13px;">Raised</div>
+                                </div>
+                                <div style="text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--accent-green);">₿ 1.00</div>
+                                    <div style="color: var(--text-secondary); font-size: 13px;">Goal</div>
+                                </div>
+                                <div style="text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--accent-blue);">12</div>
+                                    <div style="color: var(--text-secondary); font-size: 13px;">Investors</div>
+                                </div>
+                                <div style="text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--accent-orange);">0.00005</div>
+                                    <div style="color: var(--text-secondary); font-size: 13px;">BTC/Share</div>
+                                </div>
+                            </div>
+
+                            <div style="margin: 24px 0;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>Funding Progress</span>
+                                    <span style="color: var(--accent-green);">45%</span>
+                                </div>
+                                <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden;">
+                                    <div style="width: 45%; height: 100%; background: linear-gradient(90deg, var(--accent-green), var(--accent-primary));"></div>
+                                </div>
+                            </div>
+
+                            <div style="padding: 16px; background: var(--bg-tertiary); border-radius: 12px; margin-bottom: 16px;">
+                                <h4 style="margin-bottom: 12px;">📊 Investment Split</h4>
+                                <div class="split-bar">
+                                    <div class="split-ideator" style="width: 15%;"></div>
+                                    <div class="split-cot" style="width: 5%;"></div>
+                                    <div class="split-team" style="width: 80%;"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                                    <span style="color: #f39c12;">● 15% Ideator</span>
+                                    <span style="color: #9b59b6;">● 5% Early Contributors</span>
+                                    <span style="color: #2ecc71;">● 80% Team Pool</span>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                <h4 style="margin-bottom: 12px;">💰 Investor Perspektive</h4>
+                                <p style="color: var(--text-secondary);">
+                                    Du kaufst Idea-Shares und verdienst an ALLEN Teams, die diese Idee bauen. 
+                                    Dein Anteil: Investition / Gesamtinvestition. Früh investieren = besserer Preis.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 4: Teams -->
+                    <div id="stage-4" class="stage-view" style="display: none;">
+                        <div class="card">
+                            <div style="margin-bottom: 16px;">
+                                <span class="badge badge-marketplace">🛒 Marketplace</span>
+                                <h2 style="margin-top: 12px;">AI-gestützte Sprachlern-App - Team Applications</h2>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 24px;">
+                                <div style="padding: 20px; background: var(--bg-tertiary); border-radius: 12px; border: 2px solid var(--accent-green);">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                        <h3>ChatFluent</h3>
+                                        <span class="badge" style="background: rgba(46, 204, 113, 0.1); color: var(--accent-green);">Leading</span>
+                                    </div>
+                                    <p style="color: var(--text-secondary); margin-bottom: 16px;">Fokus: Europäische Sprachen</p>
+                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+                                        <div>
+                                            <div style="font-size: 12px; color: var(--text-tertiary);">Funding Goal</div>
+                                            <div style="font-weight: 600;">₿ 0.30</div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 12px; color: var(--text-tertiary);">Skin-in-Game</div>
+                                            <div style="font-weight: 600; color: var(--accent-green);">₿ 0.05</div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary" style="width: 100%;">View Proposal</button>
+                                </div>
+
+                                <div style="padding: 20px; background: var(--bg-tertiary); border-radius: 12px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                        <h3>LingoAI</h3>
+                                        <span class="badge" style="background: rgba(52, 152, 219, 0.1); color: var(--accent-blue);">Applied</span>
+                                    </div>
+                                    <p style="color: var(--text-secondary); margin-bottom: 16px;">Fokus: Asiatische Sprachen</p>
+                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+                                        <div>
+                                            <div style="font-size: 12px; color: var(--text-tertiary);">Funding Goal</div>
+                                            <div style="font-weight: 600;">₿ 0.20</div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 12px; color: var(--text-tertiary);">Skin-in-Game</div>
+                                            <div style="font-weight: 600; color: var(--accent-green);">₿ 0.03</div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-secondary" style="width: 100%;">View Proposal</button>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                <h4 style="margin-bottom: 12px;">🔨 Builder Perspektive</h4>
+                                <p style="color: var(--text-secondary);">
+                                    Du bewirbst dich mit einem detaillierten Proposal, Roadmap und Budget. 
+                                    Skin-in-the-game ist Pflicht - du musst selbst investieren, um glaubwürdig zu sein.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 5: Building -->
+                    <div id="stage-5" class="stage-view" style="display: none;">
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                                <div>
+                                    <span class="badge badge-building">🔨 Building</span>
+                                    <h2 style="margin-top: 12px;">ChatFluent - AI Sprachlern-App</h2>
+                                </div>
+                                <span style="color: var(--accent-green);">Monat 2 von 6</span>
+                            </div>
+
+                            <div style="margin: 24px 0;">
+                                <h4 style="margin-bottom: 16px;">📊 Milestones</h4>
+                                <div class="milestone">
+                                    <div class="milestone-status milestone-done">✓</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600;">MVP Complete</div>
+                                        <div style="font-size: 13px; color: var(--text-tertiary);">Core functionality working</div>
+                                    </div>
+                                    <span style="color: var(--accent-green); font-size: 13px;">Done</span>
+                                </div>
+                                <div class="milestone">
+                                    <div class="milestone-status milestone-done">✓</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600;">Beta Launch</div>
+                                        <div style="font-size: 13px; color: var(--text-tertiary);">100 beta testers onboarded</div>
+                                    </div>
+                                    <span style="color: var(--accent-green); font-size: 13px;">Done</span>
+                                </div>
+                                <div class="milestone">
+                                    <div class="milestone-status milestone-progress">⟳</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600;">App Store Submission</div>
+                                        <div style="font-size: 13px; color: var(--text-tertiary);">In review with Apple</div>
+                                    </div>
+                                    <span style="color: var(--accent-orange); font-size: 13px;">In Review</span>
+                                </div>
+                                <div class="milestone">
+                                    <div class="milestone-status milestone-pending">○</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600;">Public Launch</div>
+                                        <div style="font-size: 13px; color: var(--text-tertiary);">Global availability</div>
+                                    </div>
+                                    <span style="color: var(--text-tertiary); font-size: 13px;">Pending</span>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0;">
+                                <div style="text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--accent-green);">₿ 0.12</div>
+                                    <div style="color: var(--text-secondary); font-size: 13px;">Revenue (letzter Monat)</div>
+                                </div>
+                                <div style="text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--accent-blue);">+34%</div>
+                                    <div style="color: var(--text-secondary); font-size: 13px;">User Growth</div>
+                                </div>
+                                <div style="text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--accent-primary);">1,247</div>
+                                    <div style="color: var(--text-secondary); font-size: 13px;">Active Users</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                <h4 style="margin-bottom: 12px;">🔨 Builder Perspektive</h4>
+                                <p style="color: var(--text-secondary);">
+                                    Du baust das Produkt, erreichst Meilensteine und generierst Revenue. 
+                                    Funds werden schrittweise freigegeben - bei Erfolg. Bei Misserfolg: Rückerstattung.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 6: Revenue -->
+                    <div id="stage-6" class="stage-view" style="display: none;">
+                        <div class="card">
+                            <div style="margin-bottom: 16px;">
+                                <span class="badge badge-revenue">💰 Revenue Distribution</span>
+                                <h2 style="margin-top: 12px;">ChatFluent - Monatliche Ausschüttung</h2>
+                            </div>
+
+                            <div style="text-align: center; padding: 32px; background: linear-gradient(135deg, rgba(155, 89, 182, 0.1), rgba(233, 69, 96, 0.1)); border-radius: 16px; margin: 24px 0;">
+                                <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">Gesamt Revenue</div>
+                                <div style="font-size: 48px; font-weight: 700; color: var(--accent-primary);">₿ 10.00</div>
+                                <div style="font-size: 14px; color: var(--text-tertiary); margin-top: 8px;">März 2026</div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin: 24px 0;">
+                                <div style="padding: 20px; background: rgba(233, 69, 96, 0.1); border-radius: 12px; border: 1px solid rgba(233, 69, 96, 0.3);">
+                                    <h4 style="color: var(--accent-primary); margin-bottom: 16px;">Idea-Share Pool (20%): ₿ 2.00</h4>
+                                    <div style="space-y: 8px;">
+                                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                                            <span>Investor A (40%)</span>
+                                            <span style="font-weight: 600;">₿ 0.80</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                                            <span>Investor B (35%)</span>
+                                            <span style="font-weight: 600;">₿ 0.70</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                                            <span>Investor C (25%)</span>
+                                            <span style="font-weight: 600;">₿ 0.50</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="padding: 20px; background: rgba(243, 156, 18, 0.1); border-radius: 12px; border: 1px solid rgba(243, 156, 18, 0.3);">
+                                    <h4 style="color: var(--accent-orange); margin-bottom: 16px;">Team-Share Pool (80%): ₿ 8.00</h4>
+                                    <div style="space-y: 8px;">
+                                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                                            <span>Team Lead (50%)</span>
+                                            <span style="font-weight: 600;">₿ 4.00</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                                            <span>Investor A (30%)</span>
+                                            <span style="font-weight: 600;">₿ 2.40</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                                            <span>Investor B (20%)</span>
+                                            <span style="font-weight: 600;">₿ 1.60</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                                <h4 style="margin-bottom: 12px;">💰 Investor Perspektive</h4>
+                                <p style="color: var(--text-secondary);">
+                                    Du verdienst aus zwei Quellen: Idea-Shares (20% von allen Teams) und Team-Shares (80% von deinem gewählten Team). 
+                                    Passives Einkommen, proportional zu deinem Anteil.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="profile" class="page">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h1 class="page-title">👤 Profil</h1>
+                    <p class="page-subtitle">Deine Ideen, Investments und Earnings</p>
+                </div>
+            </div>
+            <div class="content">
+                <!-- Profile Header -->
+                <div class="profile-header">
+                    <div class="profile-avatar">👤</div>
+                    <div class="profile-info">
+                        <div class="profile-name">@solar_max</div>
+                        <div class="profile-meta">
+                            Mitglied seit: 2026-01-15 | 
+                            <span style="color: var(--accent-green);">● Abo aktiv</span> (bis 2027-01-15)
+                        </div>
+                        <div class="profile-actions">
+                            <button class="btn btn-secondary">Profil bearbeiten</button>
+                            <button class="btn btn-primary">Abo verwalten</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">Ideen gepostet</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Investments</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">1</div>
+                        <div class="stat-label">Teams geleitet</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">₿ 0.18</div>
+                        <div class="stat-label">Earnings (Monat)</div>
+                    </div>
+                </div>
+
+                <!-- My Ideas -->
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">💡 Meine Ideen</h3>
+                    <div style="space-y: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px; margin-bottom: 12px;">
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 4px;">Dezentrale Energiespeicher-Community</div>
+                                <div style="font-size: 13px; color: var(--text-tertiary);">Posted: 2026-02-01 | 💬 12 | 👍 85%</div>
+                            </div>
+                            <span class="badge badge-discussion">💬 Diskussion</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 4px;">AI-gestützte Sprachlern-App</div>
+                                <div style="font-size: 13px; color: var(--text-tertiary);">Posted: 2026-02-15 | 💰 Raised: ₿ 0.45 | 👥 12 Investors</div>
+                            </div>
+                            <span class="badge badge-marketplace">🛒 Marketplace</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- My Investments -->
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">💰 Meine Investments</h3>
+                    
+                    <h4 style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Idea-Shares</h4>
+                    <div style="padding: 16px; background: var(--bg-tertiary); border-radius: 12px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: 600;">AI-gestützte Sprachlern-App</span>
+                            <span class="badge badge-building">Active</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-size: 13px; color: var(--text-secondary);">
+                            <div>Invested: <strong style="color: var(--text-primary);">₿ 0.10</strong></div>
+                            <div>Ownership: <strong style="color: var(--text-primary);">20%</strong></div>
+                            <div>Value: <strong style="color: var(--accent-green);">₿ 0.12</strong></div>
+                            <div>Monthly: <strong style="color: var(--accent-green);">₿ 0.03</strong></div>
+                        </div>
+                    </div>
+
+                    <h4 style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Team-Shares</h4>
+                    <div style="padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: 600;">ChatFluent (Team für AI Sprachlern-App)</span>
+                            <span class="badge badge-building">Building</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-size: 13px; color: var(--text-secondary);">
+                            <div>Invested: <strong style="color: var(--text-primary);">₿ 0.05</strong></div>
+                            <div>Ownership: <strong style="color: var(--text-primary);">25%</strong></div>
+                            <div>Value: <strong style="color: var(--accent-green);">₿ 0.08</strong></div>
+                            <div>Monthly: <strong style="color: var(--accent-green);">₿ 0.15</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- My Teams -->
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">🔨 Meine Teams</h3>
+                    
+                    <h4 style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Geleitet</h4>
+                    <div style="padding: 16px; background: var(--bg-tertiary); border-radius: 12px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: 600;">ChatFluent</span>
+                            <span class="badge badge-building">Building (Monat 2)</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+                            Idea: AI-gestützte Sprachlern-App | Revenue: ₿ 0.12/Monat
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px;">Dashboard</button>
+                            <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px;">Revenue melden</button>
+                        </div>
+                    </div>
+
+                    <h4 style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Mitglied</h4>
+                    <div style="padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 4px;">Team SolarGrid</div>
+                                <div style="font-size: 13px; color: var(--text-secondary);">Dezentrale Energiespeicher-Community | Rolle: Developer</div>
+                            </div>
+                            <span class="badge badge-marketplace">Funded</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Earnings History -->
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">📈 Earnings History</h3>
+                    <table class="earnings-table">
+                        <thead>
+                            <tr>
+                                <th>Monat</th>
+                                <th>Idea-Shares</th>
+                                <th>Team-Shares</th>
+                                <th>Gesamt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2026-03</td>
+                                <td style="color: var(--accent-primary);">₿ 0.03</td>
+                                <td style="color: var(--accent-orange);">₿ 0.15</td>
+                                <td style="font-weight: 600;">₿ 0.18</td>
+                            </tr>
+                            <tr>
+                                <td>2026-02</td>
+                                <td style="color: var(--accent-primary);">₿ 0.02</td>
+                                <td style="color: var(--accent-orange);">₿ 0.10</td>
+                                <td style="font-weight: 600;">₿ 0.12</td>
+                            </tr>
+                            <tr>
+                                <td>2026-01</td>
+                                <td style="color: var(--accent-primary);">₿ 0.01</td>
+                                <td style="color: var(--accent-orange);">₿ 0.05</td>
+                                <td style="font-weight: 600;">₿ 0.06</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Activity -->
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">🔔 Aktivität</h3>
+                    <div>
+                        <div class="activity-item">
+                            <div class="activity-icon">✅</div>
+                            <div style="flex: 1;">
+                                <div>Deine Idee hat das Voting bestanden und ist jetzt im Marketplace</div>
+                                <div style="font-size: 13px; color: var(--text-tertiary);">Vor 2 Stunden</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">🎯</div>
+                            <div style="flex: 1;">
+                                <div>Team ChatFluent hat den Meilenstein "Beta Launch" erreicht</div>
+                                <div style="font-size: 13px; color: var(--text-tertiary);">Vor 1 Tag</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">💰</div>
+                            <div style="flex: 1;">
+                                <div>Neues Investment in deiner Idee: ₿ 0.05 von @investor_3</div>
+                                <div style="font-size: 13px; color: var(--text-tertiary);">Vor 2 Tagen</div>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon">📊</div>
+                            <div style="flex: 1;">
+                                <div>Revenue-Ausschüttung verarbeitet: ₿ 0.18 erhalten</div>
+                                <div style="font-size: 13px; color: var(--text-tertiary);">Vor 5 Tagen</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">⚙️ Einstellungen</h3>
+                    
+                    <h4 style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Verbundene Wallets</h4>
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px;">
+                            <span>bc1q...x9k2</span>
+                            <span style="font-size: 12px; color: var(--accent-green);">● Primär</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">
+                            <span>bc1q...a3m7</span>
+                            <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 12px;">Primär machen</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" style="margin-bottom: 24px;">+ Wallet hinzufügen</button>
+
+                    <h4 style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Benachrichtigungen</h4>
+                    <div style="space-y: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px 0;">
+                            <input type="checkbox" checked> Email-Benachrichtigungen
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px 0;">
+                            <input type="checkbox" checked> Investment-Updates
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px 0;">
+                            <input type="checkbox" checked> Revenue-Alerts
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px 0;">
+                            <input type="checkbox"> SMS-Benachrichtigungen
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discussion Page (from v0.1) -->
+        <div id="discussion" class="page">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h1 class="page-title">💡 Diskussion</h1>
+                    <p class="page-subtitle">Entdecke Ideen und gib dein Feedback</p>
+                </div>
+            </div>
+            <div class="content">
+                <div id="discussion-content">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <span class="badge badge-discussion">💬 In Diskussion</span>
+                                <h3 style="margin-top: 12px;">Dezentrale Energiespeicher-Community</h3>
+                                <p style="color: var(--text-secondary); margin-top: 8px;">Ein gemeinschaftliches Netzwerk von Hausbatterien...</p>
+                                <div style="margin-top: 12px; color: var(--text-tertiary); font-size: 14px;">
+                                    👤 @solar_max | 💬 12 | 👍 85%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Marketplace Page (from v0.1) -->
+        <div id="marketplace" class="page">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <h1 class="page-title">🛒 Marktplatz</h1>
+                    <p class="page-subtitle">Investiere in validierte Ideen</p>
+                </div>
+            </div>
+            <div class="content">
+                <div id="marketplace-content">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <span class="badge badge-marketplace">🛒 Marketplace</span>
+                                <h3 style="margin-top: 12px;">AI-gestützte Sprachlern-App</h3>
+                                <p style="color: var(--text-secondary); margin-top: 8px;">Lerne Sprachen durch KI-gestützte Konversationen...</p>
+                                <div style="margin-top: 12px; color: var(--text-tertiary); font-size: 14px;">
+                                    💰 ₿ 0.45 / ₿ 1.00 | 👥 12 Investors | ⏰ 6 Tage
+                                </div>
+                            </div>
+                            <button class="btn btn-primary">Investieren</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // State
+        const State = {
+            user: localStorage.getItem('ideenschmiede_user') || null,
+            member: localStorage.getItem('ideenschmiede_member') === 'true',
+            
+            login(user, member = false) {
+                this.user = user;
+                this.member = member;
+                localStorage.setItem('ideenschmiede_user', user);
+                localStorage.setItem('ideenschmiede_member', member);
+                updateUI();
+                showToast(`Willkommen, ${user}!`, 'success');
+            },
+            
+            logout() {
+                this.user = null;
+                this.member = false;
+                localStorage.removeItem('ideenschmiede_user');
+                localStorage.removeItem('ideenschmiede_member');
+                updateUI();
+                showToast('Abgemeldet', 'success');
+            }
+        };
+
+        // Navigation
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // Update UI
+        function updateUI() {
+            const authSection = document.getElementById('auth-section');
+            if (State.user) {
+                authSection.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="color: var(--text-secondary);">${State.user}</span>
+                        ${State.member ? '<span style="color: var(--accent-green); font-size: 12px;">● Member</span>' : ''}
+                        <button class="btn btn-secondary" onclick="State.logout()" style="padding: 8px 16px; font-size: 13px;">Logout</button>
+                    </div>
+                `;
+            } else {
+                authSection.innerHTML = `
+                    <button class="btn btn-primary" onclick="loginDemo('member')" style="padding: 8px 16px; font-size: 13px;">Login</button>
+                `;
+            }
+        }
+
+        // Demo login
+        function loginDemo(type) {
+            if (type === 'member') {
+                State.login('solar_max', true);
+            } else {
+                State.login('guest_user', false);
+            }
+        }
+
+        // Toast
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Stage navigation
+        let currentStage = 1;
+        let currentPerspective = 'ideator';
+
+        function showStage(stageNum) {
+            currentStage = stageNum;
+            document.querySelectorAll('.stage-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i + 1 === stageNum);
+            });
+            document.querySelectorAll('.stage-view').forEach((view, i) => {
+                view.style.display = i + 1 === stageNum ? 'block' : 'none';
+            });
+        }
+
+        function setPerspective(perspective) {
+            currentPerspective = perspective;
+            document.querySelectorAll('.perspective-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Initialize
+        updateUI();
+    </script>
+</body>
+</html>
