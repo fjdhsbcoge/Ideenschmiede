@@ -368,7 +368,11 @@
                 <a href="discussion.html" class="nav-item active">💡 Ideen-Diskussion <span class="nav-badge badge-free">Frei</span></a>
                 <a href="marketplace.html" class="nav-item">🛒 Ideen-Marktplatz <span class="nav-badge badge-member">Mitglied</span></a>
                 <a href="teams.html" class="nav-item">👥 Meine Teams <span class="nav-badge badge-member">Mitglied</span></a>
-                <a href="profile.html" class="nav-item">👤 Mein Profil <span class="nav-badge badge-login">Login</span></a>
+                <a href="profile.html" class="nav-item">📊 Dashboard
+                003cspan class="nav-badge badge-login"003eLogin003c/span003e
+            003c/a003e
+            003ca href="profile.html" class="nav-item"003e
+                👤 Profil <span class="nav-badge badge-login">Login</span></a>
             </div>
         </div>
     </nav>
@@ -548,29 +552,54 @@
         });
         
         function updateUIBasedOnRole() {
-            // Show/hide new idea button
-            const newIdeaBtn = document.querySelector('.btn-primary');
-            if (newIdeaBtn) {
-                if (currentRole === 'visitor') {
-                    newIdeaBtn.style.display = 'none';
-                } else {
-                    newIdeaBtn.style.display = 'inline-flex';
-                }
+            // Show login notice for visitors above the new idea button
+            const content = document.querySelector('.content');
+            const existingNotice = document.getElementById('loginNotice');
+            
+            if (currentRole === 'visitor' && !existingNotice) {
+                const notice = document.createElement('div');
+                notice.id = 'loginNotice';
+                notice.innerHTML = `
+                    <div style="background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(233, 69, 96, 0.1)); border: 1px solid var(--accent-blue); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <div style="font-weight: 600; margin-bottom: 4px;">👋 Willkommen, Gast!</div>
+                            <div style="font-size: 14px; color: var(--text-secondary);"><a href="profile.html" style="color: var(--accent-blue);">Melde dich an</a>, um Ideen zu posten und zu kommentieren.</div>
+                        </div>
+                        <a href="profile.html" style="padding: 10px 20px; background: var(--accent-blue); color: white; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; white-space: nowrap;">Anmelden</a>
+                    </div>
+                `;
+                content.insertBefore(notice, content.firstChild);
             }
             
-            // Update voting buttons based on role
-            document.querySelectorAll('.voting-section').forEach(section => {
-                if (currentRole !== 'subscriber') {
-                    section.style.opacity = '0.6';
-                    section.title = currentRole === 'visitor' ? 'Anmeldung erforderlich' : 'Upgrade auf Subscriber erforderlich';
+            // Show/hide new idea button - only for User and Subscriber
+            const newIdeaBtn = document.querySelector('.btn-primary');
+            if (newIdeaBtn) {
+                newIdeaBtn.style.display = (currentRole === 'user' || currentRole === 'subscriber') ? 'inline-flex' : 'none';
+            }
+            
+            // Filter buttons - only for User and Subscriber
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                const originalOnclick = btn.getAttribute('onclick');
+                if (currentRole === 'visitor') {
+                    btn.onclick = () => showToast('❌ Anmeldung erforderlich');
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
                 }
             });
+            
+            // Sort dropdown - only for User and Subscriber
+            const sortSelect = document.querySelector('.sort-select');
+            if (sortSelect && currentRole === 'visitor') {
+                sortSelect.disabled = true;
+                sortSelect.style.opacity = '0.5';
+                sortSelect.title = 'Anmeldung erforderlich';
+            }
         }
         
         function vote(id, type) {
-            // Check permission
+            // Only subscribers can vote
             if (currentRole === 'visitor') {
-                showToast('❌ Bitte melde dich an, um zu voten');
+                showToast('❌ Bitte melde dich an');
                 return;
             }
             if (currentRole === 'user') {
@@ -578,7 +607,6 @@
                 return;
             }
             
-            // Rest der Vote-Funktion bleibt gleich...
             if (userVotes[id] === type) {
                 showToast('Du hast bereits abgestimmt!');
                 return;
@@ -607,7 +635,6 @@
                 return;
             }
             
-            // Rest der Funktion bleibt gleich...
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
@@ -635,7 +662,6 @@
                 return;
             }
             
-            // Rest der Funktion bleibt gleich...
             const list = document.getElementById('ideasList');
             const cards = Array.from(list.querySelectorAll('.idea-card'));
             
