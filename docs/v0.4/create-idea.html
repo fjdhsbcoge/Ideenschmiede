@@ -198,16 +198,16 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Titel <span>*</span></label>
+                    <label class="form-label">Titel <span>*</span> (min. 10 Zeichen)</label>
                     <input type="text" class="form-input" id="ideaTitle" placeholder="z.B. AI-gestützte Sprachlern-App" maxlength="100">
                     <div class="char-count"><span id="titleCount">0</span> / 100</div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Beschreibung <span>*</span></label>
-                    <textarea class="form-textarea" id="ideaDescription" placeholder="Beschreibe das Problem, deine Lösung und den Markt..." maxlength="2000"></textarea>
+                    <textarea class="form-textarea" id="ideaDescription" placeholder="Beschreibe das Problem, deine Lösung und den Markt... (mindestens 100 Zeichen)" maxlength="2000"></textarea>
                     <div class="char-count"><span id="descCount">0</span> / 2000</div>
-                    <p class="form-hint">💡 Tipp: Je detaillierter, desto besser kann die Community bewerten</p>
+                    <p class="form-hint" id="step1Hint">💡 Mindestens 100 Zeichen für eine gute Beschreibung</p>
                 </div>
 
                 <div class="form-actions">
@@ -413,26 +413,32 @@
             const title = document.getElementById('ideaTitle').value.trim();
             const desc = document.getElementById('ideaDescription').value.trim();
             const btn = document.getElementById('btnStep1');
-            // Relaxed validation: title min 5 chars, description min 20 chars
-            // Only disable if user has started typing but hasn't met minimum
-            const titleValid = title.length === 0 || title.length >= 5;
-            const descValid = desc.length === 0 || desc.length >= 20;
-            const isValid = title.length >= 5 && desc.length >= 20;
+            // Validation: title min 10 chars, description min 100 chars
+            const isValid = title.length >= 10 && desc.length >= 100;
+            btn.disabled = !isValid;
             
-            if (!titleValid || !descValid) {
-                // User is typing but hasn't met minimum - show disabled state
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
-            } else if (isValid) {
-                // All good
-                btn.disabled = false;
+            // Visual feedback
+            if (isValid) {
                 btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
             } else {
-                // Empty or partially filled - allow but show as inactive
-                btn.disabled = false;
-                btn.style.opacity = '1';
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
             }
-            console.log('Step 1 validation:', { title: title.length, desc: desc.length, isValid });
+            
+            // Update hint
+            const hintEl = document.getElementById('step1Hint');
+            if (desc.length > 0 && desc.length < 100) {
+                const remaining = 100 - desc.length;
+                hintEl.innerHTML = `⚠️ Noch ${remaining} Zeichen erforderlich (min. 100)`;
+                hintEl.style.color = 'var(--accent-orange)';
+            } else if (desc.length >= 100) {
+                hintEl.innerHTML = '✓ Mindestanzahl erreicht';
+                hintEl.style.color = 'var(--accent-green)';
+            } else {
+                hintEl.innerHTML = '💡 Mindestens 100 Zeichen für eine gute Beschreibung';
+                hintEl.style.color = 'var(--text-tertiary)';
+            }
         }
         
         // Tag Input
