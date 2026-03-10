@@ -376,7 +376,7 @@
 
     <header class="page-header">
         <h1 class="page-title">💡 Ideen-Diskussion</h1>
-        <p class="page-subtitle">Entdecke Ideen, gib Feedback. Bei >25% Zustimmung → Marktplatz</p>
+        <p class="page-subtitle">Entdecke Ideen, gib Feedback. Subscriber können Ideen in den Marktplatz verschieben.</p>
         <a href="create-idea.html" class="btn-primary">+ Neue Idee posten</a>
     </header>
 
@@ -417,20 +417,11 @@
                     <span>💬 8 Kommentare</span>
                 </div>
                 
-                <div class="voting-section" onclick="event.preventDefault()" title="Community Pre-Voting: Bei >25% Zustimmung kann die Idee in den Marktplatz verschoben werden">
-                    <button class="vote-btn up" onclick="vote(1, 'up')">
-                        <span>👍</span>
-                        <span class="vote-count" id="up-1">142</span>
-                    </button>
-                    <button class="vote-btn down" onclick="vote(1, 'down')">
-                        <span>👎</span>
-                        <span class="vote-count" id="down-1">24</span>
-                    </button>
-                    
-                    <div class="vote-progress">
-                        <div class="vote-progress-bar" id="progress-1" style="width: 85%"></div>
-                    </div>
-                    <span class="vote-percentage" id="percent-1">85%</span>
+                <div class="idea-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);" onclick="event.preventDefault()">
+                    <span style="font-size: 13px; color: var(--text-tertiary);"
+>💬 8 Kommentare</span>
+                    <button class="btn-move" onclick="event.stopPropagation(); showMoveModal(1)" style="padding: 8px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); font-size: 13px; cursor: pointer;"
+>→ Marktplatz</button>
                 </div>
             </a>
 
