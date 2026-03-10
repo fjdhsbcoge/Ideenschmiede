@@ -105,6 +105,15 @@
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 16px 24px; background: var(--bg-secondary); border: 1px solid var(--accent-green); border-radius: 12px; color: var(--text-primary); font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 2000; }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 24px; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 20px; padding: 32px; max-width: 500px; width: 100%; text-align: center; }
+        .modal-icon { font-size: 48px; margin-bottom: 16px; }
+        .modal-title { font-size: 24px; font-weight: 600; margin-bottom: 12px; }
+        .modal-text { color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6; }
+        .modal-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+        
         @media (max-width: 768px) { .content { padding: 24px 16px; } .page-header { padding: 100px 16px 32px; } .stats-grid { grid-template-columns: repeat(2, 1fr); } .section-header { flex-direction: column; gap: 12px; align-items: flex-start; } .list-item { flex-direction: column; align-items: flex-start; gap: 12px; } .list-item-value { text-align: left; } }
     </style>
 </head>
@@ -194,7 +203,7 @@
         <div class="section-card" id="activitySection" style="display: none;">
             <div class="section-header">
                 <h3 class="section-title">📋 Letzte Aktivität</h3>
-                <a href="#" class="section-action">Alle anzeigen →</a>
+                <a href="#" class="section-action" onclick="showInvestmentsModal(); return false;">Alle anzeigen →</a>
             </div>
             
             <div id="activityList">
@@ -411,6 +420,14 @@
             setTimeout(() => toast.classList.remove('show'), 2500);
         }
         
+        function showInvestmentsModal() {
+            document.getElementById('investmentsModal').classList.add('active');
+        }
+        
+        function closeInvestmentsModal() {
+            document.getElementById('investmentsModal').classList.remove('active');
+        }
+        
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.role-switcher')) {
@@ -418,8 +435,28 @@
             }
         });
         
+        // Close modal on overlay click
+        document.getElementById('investmentsModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('investmentsModal')) {
+                closeInvestmentsModal();
+            }
+        });
+        
         // Initialize
         updateUI();
     </script>
+    <!-- Investments Modal -->
+    <div class="modal-overlay" id="investmentsModal">
+        <div class="modal">
+            <div class="modal-icon">💰</div>
+            <h3 class="modal-title">Investments</h3>
+            <p class="modal-text">
+                Die vollständige Investments-Liste mit allen Details,<br>
+                Filtern und Export-Optionen kommt in v0.5.<br><br>
+                Aktuell siehst du die wichtigsten Investments im Dashboard.
+            </p>
+            <button class="modal-btn" onclick="closeInvestmentsModal()">Verstanden</button>
+        </div>
+    </div>
 </body>
 </html>

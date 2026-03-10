@@ -112,6 +112,15 @@
         .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 16px 24px; background: var(--bg-secondary); border: 1px solid var(--accent-green); border-radius: 12px; color: var(--text-primary); font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 2000; }
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 24px; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 20px; padding: 32px; max-width: 500px; width: 100%; text-align: center; }
+        .modal-icon { font-size: 48px; margin-bottom: 16px; }
+        .modal-title { font-size: 24px; font-weight: 600; margin-bottom: 12px; }
+        .modal-text { color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6; }
+        .modal-btn { padding: 12px 24px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; }
+        
         @media (max-width: 900px) { .nav-menu { display: none; position: absolute; top: 60px; left: 0; right: 0; background: var(--bg-secondary); flex-direction: column; padding: 16px; border-bottom: 1px solid var(--border-color); } .nav-menu.active { display: flex; } .mobile-menu-btn { display: block; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 768px) { .content { padding: 24px 16px; } .profile-header { padding: 80px 16px 32px; } .profile-actions { flex-direction: column; align-items: center; } .btn-icon { width: 100%; max-width: 200px; } .list-item { flex-direction: column; align-items: flex-start; gap: 12px; } .list-item-value { text-align: left; } .wallet-actions { flex-direction: column; } }
     </style>
@@ -183,7 +192,7 @@
         <div class="section-card" style="margin-top: 24px;">
             <div class="section-header">
                 <h3 class="section-title">📈 Earnings (letzte 6 Monate)</h3>
-                <a href="#" class="section-action">Details →</a>
+                <a href="#" class="section-action" onclick="showEarningsModal(); return false;">Details →</a>
             </div>
             
             <div class="chart-container">
@@ -390,6 +399,14 @@
         
         function showHistory() { showToast('📜 Transaktionsverlauf wird geladen...'); }
         
+        function showEarningsModal() {
+            document.getElementById('earningsModal').classList.add('active');
+        }
+        
+        function closeEarningsModal() {
+            document.getElementById('earningsModal').classList.remove('active');
+        }
+        
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -397,8 +414,29 @@
             setTimeout(() => toast.classList.remove('show'), 2500);
         }
         
+        // Close modal on overlay click
+        document.getElementById('earningsModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('earningsModal')) {
+                closeEarningsModal();
+            }
+        });
+        
         // Initialize
         updateUI();
     </script>
+    
+    <!-- Earnings Modal -->
+    <div class="modal-overlay" id="earningsModal">
+        <div class="modal">
+            <div class="modal-icon">📈</div>
+            <h3 class="modal-title">Earnings Details</h3>
+            <p class="modal-text">
+                Die detaillierte Earnings-Übersicht mit monatlicher Aufschlüsselung,
+                Revenue-Quellen und Auszahlungshistorie kommt in v0.5.<br><br>
+                Aktuell siehst du die letzten 6 Monate im Chart oben.
+            </p>
+            <button class="modal-btn" onclick="closeEarningsModal()">Verstanden</button>
+        </div>
+    </div>
 </body>
 </html>
