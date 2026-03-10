@@ -404,13 +404,35 @@
                 formData.description = descInput.value;
                 validateStep1();
             });
+            
+            // Initial validation
+            validateStep1();
         }
         
         function validateStep1() {
             const title = document.getElementById('ideaTitle').value.trim();
             const desc = document.getElementById('ideaDescription').value.trim();
             const btn = document.getElementById('btnStep1');
-            btn.disabled = title.length < 10 || desc.length < 50;
+            // Relaxed validation: title min 5 chars, description min 20 chars
+            // Only disable if user has started typing but hasn't met minimum
+            const titleValid = title.length === 0 || title.length >= 5;
+            const descValid = desc.length === 0 || desc.length >= 20;
+            const isValid = title.length >= 5 && desc.length >= 20;
+            
+            if (!titleValid || !descValid) {
+                // User is typing but hasn't met minimum - show disabled state
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+            } else if (isValid) {
+                // All good
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            } else {
+                // Empty or partially filled - allow but show as inactive
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+            console.log('Step 1 validation:', { title: title.length, desc: desc.length, isValid });
         }
         
         // Tag Input
@@ -476,7 +498,23 @@
         
         function validateStep2() {
             const btn = document.getElementById('btnStep2');
-            btn.disabled = formData.tags.length < 2 || !formData.category;
+            const isValid = formData.tags.length >= 1 && formData.category;
+            btn.disabled = !isValid;
+            if (!isValid) {
+                btn.style.opacity = '0.5';
+            } else {
+                btn.style.opacity = '1';
+            }
+            console.log('Step 2 validation:', { tags: formData.tags.length, category: formData.category, isValid });
+        }
+        
+        // Category Selection
+        function selectCategory(category) {
+            formData.category = category;
+            document.querySelectorAll('.category-option').forEach(el => {
+                el.classList.toggle('selected', el.dataset.category === category);
+            });
+            validateStep2();
         }
         
         // Target Selection
@@ -497,7 +535,13 @@
         
         function validateStep3() {
             const btn = document.getElementById('btnStep3');
-            btn.disabled = !formData.target;
+            const isValid = !!formData.target;
+            btn.disabled = !isValid;
+            if (!isValid) {
+                btn.style.opacity = '0.5';
+            } else {
+                btn.style.opacity = '1';
+            }
         }
         
         // Step Navigation
@@ -590,11 +634,6 @@
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 2500);
         }
-        
-        // Initial validation
-        validateStep1();
-        validateStep2();
-        validateStep3();
     </script>
 </body>
 </html>
