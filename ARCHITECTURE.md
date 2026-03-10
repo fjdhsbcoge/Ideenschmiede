@@ -1,8 +1,8 @@
 # Ideenschmiede Technical Architecture
 
-**Version:** 2.1  
-**Last Updated:** 2026-03-09  
-**Status:** v0.4 Interactive Demo Complete
+**Version:** 2.2  
+**Last Updated:** 2026-03-10  
+**Status:** v0.4 Interactive Demo Complete - UI Documentation Updated
 
 ---
 
@@ -15,14 +15,15 @@
 **Pages Implemented (v0.4):**
 | Page | URL | Access Level | Features |
 |------|-----|--------------|----------|
-| Landing (DE) | /v0.4/index.html | Public | Scroll animations, card hovers, progress bar |
+| Landing (DE) | /v0.4/index.html | Public | Scroll animations, card hovers, progress bar, shimmer effects |
 | Landing (EN) | /v0.4/index-en.html | Public | Full i18n, shimmer effects |
-| Discussion | /v0.4/discussion.html | Free | Live voting, filters, sorting |
-| Idea Detail | /v0.4/idea-detail.html | Free | Comments, voting, toast notifications |
-| Marketplace | /v0.4/marketplace.html | Member | Investment calc, team cards, modals |
-| Team Apply | /v0.4/team-apply.html | Member | Dynamic forms, budget validation |
-| Teams | /v0.4/teams.html | Member | Tab nav, progress tracking |
-| Profile | /v0.4/profile.html | Login | Wallet, earnings, investments |
+| Discussion | /v0.4/discussion.html | Free (Read) / User (Post) / Subscriber (Vote) | Live voting, filters, sorting, role-based access |
+| Idea Detail | /v0.4/idea-detail.html | Free (Read) / User (Comment) / Subscriber (Vote) | Comments, voting, toast notifications |
+| Marketplace | /v0.4/marketplace.html | Subscriber Only | Hard paywall, unified card layout, investment modal |
+| Team Apply | /v0.4/team-apply.html | Subscriber Only | Paywall, dynamic milestones, budget validation |
+| Teams | /v0.4/teams.html | Subscriber (Full) / Others (View) | Tab nav, progress tracking, upgrade notice |
+| Dashboard | /v0.4/dashboard.html | Login Required | Role switcher, stats, wallet, earnings chart |
+| Profile | /v0.4/profile.html | Login Required | Wallet, earnings, investments, role switcher |
 
 ### 1.2 v0.4 Interactive Features
 
@@ -36,8 +37,83 @@
 | Notifications | CSS + JS | Toast messages, timed fade |
 | Modals | CSS display/flex | Overlay with click-outside close |
 | Tab Navigation | JS class toggle | Content switching without reload |
+| Role-Based Access | localStorage | 3-tier permission system |
+| Paywall | CSS overlay | Full-screen subscriber gate |
 
-### 1.3 Core Principles
+### 1.3 3-Tier Role System UI
+
+**Role Switcher Component (Dashboard & Profile):**
+```
+┌────────────────────────────────────────┐
+│  Rolle: [Visitor ▼]                    │
+│  ┌──────────────────────────────────┐  │
+│  │ 🌐 Visitor                      │✓ │  │
+│  │ Nicht angemeldet                │   │  │
+│  ├──────────────────────────────────┤  │
+│  │ 👤 User                         │   │  │
+│  │ Angemeldet (kostenlos)          │   │  │
+│  ├──────────────────────────────────┤  │
+│  │ ⭐ Subscriber                   │   │  │
+│  │ $120/Jahr - Voller Zugriff      │   │  │
+│  └──────────────────────────────────┘  │
+└────────────────────────────────────────┘
+```
+
+**Access Control Matrix:**
+| Feature | Visitor | User | Subscriber |
+|---------|---------|------|------------|
+| Read Ideas | ✅ | ✅ | ✅ |
+| Post Ideas | ❌ | ✅ | ✅ |
+| Comment | ❌ | ✅ | ✅ |
+| Vote | ❌ | ❌ | ✅ |
+| Invest | ❌ | ❌ | ✅ |
+| Join Teams | ❌ | ❌ | ✅ |
+| Dashboard | ❌ | ✅ | ✅ |
+| Profile Full | ❌ | ✅ | ✅ |
+
+### 1.4 Paywall Design (Marketplace & Team Apply)
+
+**Hard Paywall Overlay:**
+```
+┌────────────────────────────────────────────────────────────┐
+│  🔒 FULL SCREEN OVERLAY                                    │
+│                                                            │
+│  ┌────────────────────────────────────────────────────┐   │
+│  │                                                    │   │
+│  │                 💎                                 │   │
+│  │                                                    │   │
+│  │         Subscriber-Bereich                         │   │
+│  │                                                    │   │
+│  │  Der Ideen-Marktplatz ist exklusiv für             │   │
+│  │  Subscriber verfügbar...                           │   │
+│  │                                                    │   │
+│  │              $120                                  │   │
+│  │        pro Jahr · Unbegrenzter Zugang              │   │
+│  │                                                    │   │
+│  │  ✓ In alle Marktplatz-Ideen investieren           │   │
+│  │  ✓ Gewinnbeteiligung erhalten                      │   │
+│  │  ✓ Teams bewerten und auswählen                    │   │
+│  │  ✓ Exklusive Insights & Analytics                  │   │
+│  │  ✓ Selbst als Team bewerben                        │   │
+│  │                                                    │   │
+│  │    [Jetzt Subscriber werden]                       │   │
+│  │                                                    │   │
+│  │    ← Zurück zur Diskussion                         │   │
+│  │                                                    │   │
+│  └────────────────────────────────────────────────────┘   │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+```
+
+**Visual Design:**
+- Full-screen overlay (z-index: 2000)
+- Centered card with gradient shimmer animation
+- Features list with checkmarks
+- Primary CTA button (gradient)
+- Secondary back link
+- Responsive: Stack on mobile
+
+### 1.5 Core Principles
 
 - **Non-custodial** - Platform never holds user funds
 - **Users control keys** - Connect own wallets, pay directly
@@ -45,20 +121,29 @@
 - **WebSocket real-time** - Two-way communication for interactivity
 - **i18n ready** - German/English support built-in
 
-### 1.3 Architecture Diagram
+### 1.6 Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      CLIENT (Browser)                        │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐            │
-│  │   Landing   │ │ Discussion  │ │ Marketplace │            │
-│  │   (i18n)    │ │   (Free)    │ │  (Member)   │            │
-│  └──────┬──────┘ └──────┬──────┘ └──────┬──────┘            │
-│         │               │               │                    │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐            │
-│  │    Teams    │ │   Profile   │ │   v3 Demo   │            │
-│  │  (Member)   │ │  (Login)    │ │(Team Form)  │            │
-│  └─────────────┘ └─────────────┘ └─────────────┘            │
+│                                                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │   Landing   │  │ Discussion  │  │ Marketplace │          │
+│  │   (i18n)    │  │  (3-Tier)   │  │(Subscriber  │          │
+│  │             │  │             │  │   Only)     │          │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘          │
+│         │                │                │                  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │    Teams    │  │   Profile   │  │  Dashboard  │          │
+│  │  (3-Tier)   │  │   (Login)   │  │(Role Switch)│          │
+│  └─────────────┘  └─────────────┘  └─────────────┘          │
+│                                                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │ Idea Detail │  │  Team Apply │  │   (More)    │          │
+│  │  (3-Tier)   │  │(Subscriber  │  │             │          │
+│  │             │  │   Only)     │  │             │          │
+│  └─────────────┘  └─────────────┘  └─────────────┘          │
+│                                                              │
 └─────────────────────────────────────────────────────────────┘
                               │
                               │ HTTPS
@@ -107,10 +192,11 @@
 └─────────────────────────────────────┘
 ```
 
-**Subpages (discussion, marketplace, teams, profile):**
+**Subpages (discussion, marketplace, teams, dashboard, profile):**
 ```
 ┌─────────────────────────────────────┐
-│  Navigation (fixed, 4 items)        │
+│  Navigation (fixed, 5 items)        │
+│  - Dashboard link added             │
 ├─────────────────────────────────────┤
 │  Page Header                        │
 │  - Title + subtitle                 │
@@ -176,7 +262,26 @@ function vote(type) {
 }
 ```
 
-**2. Intersection Observer for Animations:**
+**2. Role Management:**
+```javascript
+// 3-Tier role system
+let currentRole = localStorage.getItem('ideenschmiede_role') || 'visitor';
+
+function setRole(role) {
+  currentRole = role;
+  localStorage.setItem('ideenschmiede_role', role);
+  updateUIBasedOnRole();
+}
+
+function updateUIBasedOnRole() {
+  // Show/hide elements based on role
+  // Visitor: read-only
+  // User: post/comment
+  // Subscriber: vote/invest/teams
+}
+```
+
+**3. Intersection Observer for Animations:**
 ```javascript
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
@@ -187,7 +292,7 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 ```
 
-**3. Dynamic DOM Updates:**
+**4. Dynamic DOM Updates:**
 ```javascript
 function addMilestone() {
   const item = document.createElement('div');
@@ -198,7 +303,7 @@ function addMilestone() {
 }
 ```
 
-**4. Form Validation:**
+**5. Form Validation:**
 ```javascript
 function calculateBudget() {
   let total = 0;
@@ -208,7 +313,7 @@ function calculateBudget() {
 }
 ```
 
-**5. Modal System:**
+**6. Modal System:**
 ```javascript
 function showModal(content) {
   document.getElementById('modalContent').innerHTML = content;
@@ -240,12 +345,13 @@ document.getElementById('modal').addEventListener('click', (e) => {
 
 ### 3.1 Access Control Badges
 
-| Category | Path | Badge | Access |
-|----------|------|-------|--------|
-| Ideen-Diskussion | /discussion.html | Frei (Green) | Public read, login to post |
-| Ideen-Marktplatz | /marketplace.html | Mitglied (Red) | Subscription required |
-| Meine Teams | /teams.html | Mitglied (Red) | Subscription required |
-| Mein Profil | /profile.html | Login (Blue) | Login required |
+| Category | Path | Badge DE | Badge EN | Access |
+|----------|------|----------|----------|--------|
+| Ideen-Diskussion | /discussion.html | Frei (Grün) | Free (Green) | Public read, login to post |
+| Ideen-Marktplatz | /marketplace.html | Mitglied (Rot) | Sub (Red) | Subscription required |
+| Meine Teams | /teams.html | Mitglied (Rot) | Sub (Red) | Subscription required |
+| Dashboard | /dashboard.html | Login (Blau) | Login (Blue) | Login required |
+| Mein Profil | /profile.html | Login (Blau) | Login (Blue) | Login required |
 
 ### 3.2 Navigation Component
 
@@ -259,7 +365,22 @@ document.getElementById('modal').addEventListener('click', (e) => {
         💡 Ideen-Diskussion
         <span class="nav-badge badge-free">Frei</span>
       </a>
-      <!-- ... more items -->
+      <a href="marketplace.html" class="nav-item">
+        🛒 Ideen-Marktplatz
+        <span class="nav-badge badge-member">Mitglied</span>
+      </a>
+      <a href="teams.html" class="nav-item">
+        👥 Meine Teams
+        <span class="nav-badge badge-member">Mitglied</span>
+      </a>
+      <a href="dashboard.html" class="nav-item">
+        📊 Dashboard
+        <span class="nav-badge badge-login">Login</span>
+      </a>
+      <a href="profile.html" class="nav-item">
+        👤 Profil
+        <span class="nav-badge badge-login">Login</span>
+      </a>
     </div>
   </div>
 </nav>
@@ -270,6 +391,7 @@ document.getElementById('modal').addEventListener('click', (e) => {
 - Mobile hamburger menu
 - Active page highlighting
 - Access level badges
+- 5 links (including Dashboard)
 
 ---
 
@@ -290,60 +412,93 @@ document.getElementById('modal').addEventListener('click', (e) => {
 
 ### 4.2 Discussion Page (v0.4)
 
-**Purpose:** Browse ideas with interactive voting
+**Purpose:** Browse ideas with role-based interaction
 
 **Components:**
-- Idea cards with live voting buttons
-- Filter buttons (Alle, Trending, Neueste, Kontrovers)
-- Sort dropdown (Beliebtheit, Neueste, Stimmen, Kommentare)
+- Login notice for Visitors (top banner)
+- Idea cards with conditional voting
+- Filter buttons (disabled for Visitors)
+- Sort dropdown (disabled for Visitors)
 - Vote progress bars
 - Toast notifications
 
-**Interactive Features:**
-- Upvote/downvote with toggle
-- Real-time percentage calculation
-- Visual feedback on vote
-- Staggered card animations on load
+**Role-Based UI:**
+| Element | Visitor | User | Subscriber |
+|---------|---------|------|------------|
+| Login Notice | ✅ (shown) | ❌ | ❌ |
+| New Idea Button | ❌ | ✅ | ✅ |
+| Filter Buttons | ❌ (disabled) | ✅ | ✅ |
+| Vote Buttons | ❌ (disabled) | ❌ (disabled + hint) | ✅ |
 
 ### 4.3 Idea Detail Page (v0.4)
 
-**Purpose:** View idea details and participate in discussion
+**Purpose:** View idea details with role-based participation
 
 **Components:**
 - Full idea description with tags
-- Large voting section with statistics
-- Comment form with textarea
+- Voting section (conditional)
+- Comment form (User+ only)
 - Comments list with like buttons
-- "Move to Marketplace" CTA (if >25% votes)
-
-**Interactive Features:**
-- Voting with visual progress bar
-- Comment posting (appears immediately)
-- Comment liking
-- Tag click filtering
+- "Move to Marketplace" CTA (Subscriber only, if >25% votes)
 
 ### 4.4 Marketplace Page (v0.4)
 
-**Purpose:** Invest in validated ideas
+**Purpose:** Invest in validated ideas (Subscriber only)
 
 **Components:**
-- Stats bar (active ideas, volume, investors, teams)
-- Large idea card with funding progress
-- Share price display box
-- Investment calculator
-- Team cards with funding status
+- Hard paywall overlay for non-subscribers
+- Unified card layout (same as Discussion)
+- Investment calculator modal
+- 15/5/80 split visualization
+- Filter tabs (Alle/Neu/Funding/Building/Abgeschlossen)
 
-**Interactive Features:**
-- Investment amount input → auto-calculated total
-- Buy button → confirmation modal
-- Team invest button → confirmation modal
-- Progress bar updates after purchase
+**Paywall Behavior:**
+- Full-screen overlay (z-index: 2000)
+- Cannot be dismissed without subscribing
+- Back link to Discussion
+- Shimmer animation on card
 
-### 4.5 Team Application Page (v0.4)
+### 4.5 Dashboard Page (v0.4) - NEW
 
-**Purpose:** Apply as a team to build an idea
+**Purpose:** User dashboard with role management
 
 **Components:**
+- Role switcher dropdown (top right)
+- Stats grid (4 metrics)
+- Wallet card with BTC balance
+- Earnings chart (6-month bars)
+- "Meine Ideen" list
+- "Meine Investments" list
+- Quick navigation to other pages
+
+**Dynamic Content:**
+| Element | Visitor | User | Subscriber |
+|---------|---------|------|------------|
+| Role Badge | 🌐 Visitor | 👤 User | ⭐ Subscriber |
+| Profile Name | Gast | @user | @subscriber |
+| Edit Button | ❌ | ✅ | ✅ |
+| Wallet | ❌ (hidden) | ✅ | ✅ |
+| Investments | ❌ (hidden) | ✅ | ✅ |
+
+### 4.6 Profile Page (v0.4)
+
+**Purpose:** User profile with wallet and history
+
+**Components:**
+- Profile header with avatar
+- Role badge and switcher
+- Stats grid
+- Wallet card
+- Earnings section
+- Ideas list
+- Investments list
+
+### 4.7 Team Application Page (v0.4)
+
+**Purpose:** Apply as a team (Subscriber only)
+
+**Components:**
+- Hard paywall for non-subscribers
 - Progress steps indicator
 - Idea selection display
 - Team details form
@@ -351,81 +506,16 @@ document.getElementById('modal').addEventListener('click', (e) => {
 - Budget breakdown inputs
 - Skin-in-game calculator
 
-**Interactive Features:**
-- Add/remove milestones dynamically
-- Auto-calculate total budget
-- Calculate minimum investment (5%)
-- Calculate ownership percentage
-- Form validation before submit
+### 4.8 Teams Overview Page (v0.4)
 
-### 4.6 Teams Overview Page (v0.4)
-
-**Purpose:** Manage your teams and applications
+**Purpose:** Manage teams
 
 **Components:**
 - Tab navigation (Leading / Member / Applications)
 - Team cards with detailed stats
-- Member avatars list
+- Upgrade notice for non-subscribers
 - Progress bars for milestones
 - Action buttons per team
-
-**Features:**
-- Tab switching without page reload
-- Team status indicators (Building, Pending, etc.)
-- Different actions per team type
-
-### 4.7 Profile Page (v0.4)
-
-**Purpose:** User dashboard and wallet
-
-**Components:**
-- Profile header with avatar
-- Stats grid (ideas, investments, teams, earnings)
-- Wallet card with balance
-- Earnings chart (visual bars)
-- Ideas list
-- Investments list
-
-**Interactive Features:**
-- Copy wallet address to clipboard
-- Edit profile button
-- View transaction history
-
-**Components:**
-- Idea cards with badges
-- Comment counts
-- Vote percentages
-- Author info
-
-### 4.3 Marketplace Page
-
-**Purpose:** Invest in validated ideas
-
-**Components:**
-- Funding progress bars
-- Stats grid (raised, goal, investors, teams)
-- Investment buttons
-- Team application links
-
-### 4.4 Teams Page
-
-**Purpose:** Manage teams you lead or belong to
-
-**Components:**
-- Tab navigation (Geleitete Teams / Team-Mitglied)
-- Team cards with stats
-- Status indicators (Aktiv / Bewerbung)
-- Action buttons (Dashboard, Revenue melden)
-
-### 4.5 Profile Page
-
-**Purpose:** User dashboard
-
-**Components:**
-- Profile header with avatar
-- Stats grid (4 metrics)
-- Ideas section
-- Investments section
 
 ---
 
@@ -440,9 +530,10 @@ interface User {
   email: string;
   avatar?: URL;
   language: 'de' | 'en';
-  subscription: {
+  role: 'visitor' | 'user' | 'subscriber';
+  subscription?: {
     active: boolean;
-    type: 'monthly' | 'annual';
+    type: 'annual';
     expiresAt: Timestamp;
   };
   wallets: Wallet[];          // Multiple wallet support
@@ -458,6 +549,7 @@ interface Idea {
   title: string;
   description: string;
   tags: string[];
+  language: string;           // 'de', 'en', etc.
   stage: 'discussion' | 'voting' | 'marketplace' | 'active' | 'completed';
   
   // Discussion Phase
@@ -480,7 +572,20 @@ interface Idea {
 }
 ```
 
-### 5.3 Team
+### 5.3 Translation (Future)
+```typescript
+interface Translation {
+  id: UUID;
+  postId: UUID;
+  sourceLang: string;
+  targetLang: string;
+  translatedText: string;
+  deeplCost?: Decimal;        // Cost tracking
+  cachedAt: Timestamp;
+}
+```
+
+### 5.4 Team
 ```typescript
 interface Team {
   id: UUID;
@@ -507,7 +612,7 @@ interface Team {
 }
 ```
 
-### 5.4 Milestone
+### 5.5 Milestone
 ```typescript
 interface Milestone {
   id: UUID;
@@ -524,9 +629,9 @@ interface Milestone {
 
 ---
 
-## 6. API Design
+## 6. API Design (Future)
 
-### 6.1 REST Endpoints (Future Implementation)
+### 6.1 REST Endpoints
 
 ```yaml
 # Authentication
@@ -535,11 +640,15 @@ POST   /api/v1/auth/login
 POST   /api/v1/auth/logout
 
 # Ideas
-GET    /api/v1/ideas?stage=&filter=
+GET    /api/v1/ideas?stage=&filter=&lang=
 POST   /api/v1/ideas
 GET    /api/v1/ideas/:id
 POST   /api/v1/ideas/:id/vote
 POST   /api/v1/ideas/:id/move-to-marketplace
+
+# Translations (Future)
+POST   /api/v1/translate/:postId
+GET    /api/v1/translations/:postId
 
 # Teams
 GET    /api/v1/ideas/:id/teams
@@ -552,6 +661,7 @@ GET    /api/v1/users/me
 GET    /api/v1/users/:id/ideas
 GET    /api/v1/users/:id/investments
 GET    /api/v1/users/:id/teams
+GET    /api/v1/users/:id/dashboard
 ```
 
 ### 6.2 WebSocket Events
@@ -645,15 +755,16 @@ function calculateSubscriptionBtc(usdPrice: number, btcUsdRate: number): Satoshi
 ### 8.2 File Structure
 
 ```
-docs/
+docs/v0.4/
 ├── index.html              # German landing
 ├── index-en.html           # English landing
-├── discussion.html         # Discussion page
-├── marketplace.html        # Marketplace page
-├── teams.html              # Teams page
-├── profile.html            # Profile page
-├── v2.html                 # v0.2 prototype
-├── v3.html                 # v0.3 prototype
+├── discussion.html         # Discussion page (3-tier access)
+├── idea-detail.html        # Idea detail page (3-tier access)
+├── marketplace.html        # Marketplace page (paywall)
+├── teams.html              # Teams page (3-tier access)
+├── team-apply.html         # Team application (paywall)
+├── dashboard.html          # Dashboard (login required, role switcher)
+├── profile.html            # Profile page (login required)
 └── process.html            # Process visualization
 ```
 
@@ -718,12 +829,21 @@ docs/
 - [ ] Language switcher functions
 - [ ] Responsive breakpoints correct
 - [ ] All links functional
+- [ ] Role switching works
+- [ ] Paywall appears for non-subscribers
 
 **Mobile (iOS Safari, Chrome Android):**
 - [ ] Hamburger menu opens/closes
 - [ ] Touch targets 44px+
 - [ ] No horizontal scroll
 - [ ] Text readable without zoom
+- [ ] Role switcher accessible
+
+**Role Testing:**
+- [ ] Visitor sees read-only UI
+- [ ] User can post/comment
+- [ ] Subscriber can vote/invest
+- [ ] Paywall blocks non-subscribers
 
 ### 11.2 Future Automated Testing
 
@@ -739,10 +859,11 @@ docs/
 2. **Authentication:** JWT vs SIWE (Sign-In with Ethereum style for Bitcoin)?
 3. **WebSocket:** Use Socket.io or native WebSocket?
 4. **i18n:** JSON files or database-driven translations?
-5. **Search:** PostgreSQL FTS or add Elasticsearch?
+5. **DeepL Integration:** Backend proxy architecture for translation?
+6. **Search:** PostgreSQL FTS or add Elasticsearch?
 
 ---
 
-*Last updated: 2026-03-08*
+*Last updated: 2026-03-10*
 
-*This architecture document reflects the current implementation and serves as a blueprint for future development.*
+*This architecture document reflects the current v0.4 implementation including the 3-tier role system, paywall design, and Dashboard page.*
