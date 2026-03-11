@@ -2,7 +2,7 @@
 
 **Purpose:** This document describes the ideal version of Ideenschmiede - what we would build with unlimited resources and skills. It serves as guidance for future developers to understand our decisions and direction.
 
-**Last Updated:** 2026-03-05
+**Last Updated:** 2026-03-12
 
 ---
 

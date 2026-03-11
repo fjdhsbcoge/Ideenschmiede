@@ -17,6 +17,7 @@
 | v0.3 | 2026-03-08 | ✅ Complete | Landing page + 4 connected subpages |
 | v0.4 | 2026-03-09 | ✅ Complete | Interactive demo with animations, role system |
 | v0.4.1 | 2026-03-10 | ✅ Complete | Navigation fixes, Dashboard link added, docs updated |
+| v0.4.2 | 2026-03-12 | ✅ Complete | **investments.html**, **team-create.html**, Share/Shareholder info on idea-detail |
 
 ---
 
