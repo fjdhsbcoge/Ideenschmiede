@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meine Investments - Ideenschmiede</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-tertiary: #606070;
+            --accent-primary: #e94560;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #f39c12;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
+        
+        .main-nav { position: fixed; top: 0; left: 0; right: 0; background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); z-index: 1000; padding: 16px 24px; }
+        .main-nav-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .nav-logo { font-size: 20px; font-weight: 700; color: var(--text-primary); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .nav-logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .back-link { color: var(--text-secondary); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease; }
+        .back-link:hover { color: var(--text-primary); }
+        
+        .content { max-width: 1000px; margin: 0 auto; padding: 100px 24px 40px; }
+        
+        .page-header { margin-bottom: 32px; }
+        .page-title { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+        .page-subtitle { color: var(--text-secondary); font-size: 16px; }
+        
+        /* Stats Bar */
+        .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; text-align: center; }
+        .stat-icon { font-size: 32px; margin-bottom: 12px; }
+        .stat-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+        .stat-value.positive { color: var(--accent-green); }
+        .stat-value.negative { color: var(--accent-primary); }
+        .stat-label { font-size: 14px; color: var(--text-secondary); }
+        
+        /* Controls */
+        .controls { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+        .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+        .filter-btn { padding: 10px 20px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 100px; color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: all 0.3s ease; }
+        .filter-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+        .filter-btn.active { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
+        .sort-select { padding: 10px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 14px; cursor: pointer; }
+        
+        /* Investment Cards */
+        .investment-list { display: flex; flex-direction: column; gap: 16px; }
+        .investment-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; transition: all 0.3s ease; }
+        .investment-card:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+        .investment-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .investment-title { font-size: 18px; font-weight: 600; color: var(--text-primary); text-decoration: none; }
+        .investment-title:hover { color: var(--accent-primary); }
+        .investment-status { padding: 6px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; }
+        .status-active { background: rgba(46, 204, 113, 0.1); color: var(--accent-green); }
+        .status-pending { background: rgba(243, 156, 18, 0.1); color: var(--accent-orange); }
+        .status-completed { background: rgba(52, 152, 219, 0.1); color: var(--accent-blue); }
+        .investment-meta { display: flex; gap: 16px; color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+        
+        .investment-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px; padding: 16px; background: var(--bg-tertiary); border-radius: 12px; margin-bottom: 16px; }
+        .detail-item { text-align: center; }
+        .detail-value { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+        .detail-value.positive { color: var(--accent-green); }
+        .detail-value.negative { color: var(--accent-primary); }
+        .detail-label { font-size: 12px; color: var(--text-tertiary); }
+        
+        .investment-actions { display: flex; gap: 12px; }
+        .btn-small { padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; text-decoration: none; transition: all 0.3s ease; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3); }
+        .btn-secondary { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { border-color: var(--accent-primary); color: var(--text-primary); }
+        
+        /* Empty State */
+        .empty-state { text-align: center; padding: 80px 24px; }
+        .empty-icon { font-size: 64px; margin-bottom: 24px; }
+        .empty-title { font-size: 24px; font-weight: 600; margin-bottom: 12px; }
+        .empty-text { color: var(--text-secondary); margin-bottom: 24px; }
+        
+        /* Progress Bar */
+        .progress-bar { height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-green), var(--accent-primary)); border-radius: 4px; transition: width 0.3s ease; }
+        
+        /* Toast */
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 16px 24px; background: var(--bg-secondary); border: 1px solid var(--accent-green); border-radius: 12px; color: var(--text-primary); font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 2000; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        @media (max-width: 768px) { .content { padding: 90px 16px 24px; } .stats-bar { grid-template-columns: repeat(2, 1fr); } .investment-header { flex-direction: column; gap: 12px; } .investment-actions { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="main-nav-container">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon">⚡</div>
+                <span>Ideenschmiede</span>
+            </a>
+            <a href="dashboard.html" class="back-link">← Zurück zum Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="page-header">
+            <h1 class="page-title">💰 Meine Investments</h1>
+            <p class="page-subtitle">Übersicht aller deiner Investments und deren Performance</p>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value">₿ 2.45</div>
+                <div class="stat-label">Total Investiert</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-value positive">+18.5%</div>
+                <div class="stat-label">Gesamt-ROI</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-value">8</div>
+                <div class="stat-label">Aktive Investments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💵</div>
+                <div class="stat-value">₿ 0.12</div>
+                <div class="stat-label">Earnings/Monat</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="filterInvestments('all', this)">Alle</button>
+                <button class="filter-btn" onclick="filterInvestments('active', this)">🟢 Aktiv</button>
+                <button class="filter-btn" onclick="filterInvestments('pending', this)">🟡 Pending</button>
+                <button class="filter-btn" onclick="filterInvestments('completed', this)">🔵 Abgeschlossen</button>
+            </div>
+            <select class="sort-select" onchange="sortInvestments(this.value)">
+                <option value="date">📅 Neueste zuerst</option>
+                <option value="amount">💰 Höchster Betrag</option>
+                <option value="roi">📈 Beste ROI</option>
+                <option value="earnings">💵 Höchste Earnings</option>
+            </select>
+        </div>
+
+        <!-- Investment List -->
+        <div class="investment-list" id="investmentList">
+            <!-- Investment 1 -->
+            <div class="investment-card" data-status="active">
+                <div class="investment-header">
+                    <a href="idea-detail.html?id=1" class="investment-title">AI-gestützte Sprachlern-App</a>
+                    <span class="investment-status status-active">🟢 Aktiv</span>
+                </div>
+                <div class="investment-meta">
+                    <span>📅 Investiert: Vor 3 Monaten</span>
+                    <span>👥 Team: ChatFluent</span>
+                    <span>🔖 Idea-Shares</span>
+                </div>
+                
+                <div class="investment-details">
+                    <div class="detail-item">
+                        <div class="detail-value">₿ 0.50</div>
+                        <div class="detail-label">Investiert</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value positive">+24%</div>
+                        <div class="detail-label">ROI</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value">₿ 0.04</div>
+                        <div class="detail-label">Earnings/Monat</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value">50,000</div>
+                        <div class="detail-label">Shares</div>
+                    </div>
+                </div>
+                
+                <div class="investment-actions">
+                    <button class="btn-small btn-secondary" onclick="showDetails(1)">Details</button>
+                    <button class="btn-small btn-primary" onclick="addInvestment(1)">+ Nachkaufen</button>
+                </div>
+            </div>
+
+            <!-- Investment 2 -->
+            <div class="investment-card" data-status="pending">
+                <div class="investment-header">
+                    <a href="idea-detail.html?id=2" class="investment-title">Dezentrale Micro-Grid Energieplattform</a>
+                    <span class="investment-status status-pending">🟡 Pending</span>
+                </div>
+                <div class="investment-meta">
+                    <span>📅 Investiert: Vor 2 Wochen</span>
+                    <span>👥 Team: GreenGrid Labs</span>
+                    <span>🎯 Team-Shares</span>
+                </div>
+                
+                <div class="investment-details">
+                    <div class="detail-item">
+                        <div class="detail-value">₿ 0.30</div>
+                        <div class="detail-label">Investiert</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value">--</div>
+                        <div class="detail-label">ROI</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value">--</div>
+                        <div class="detail-label">Earnings</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value">25,000</div>
+                        <div class="detail-label">Shares</div>
+                    </div>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 65%"></div>
+                </div>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">Funding: 65% erreicht</p>
+                
+                <div class="investment-actions">
+                    <button class="btn-small btn-secondary" onclick="showDetails(2)">Details</button>
+                    <button class="btn-small btn-primary" onclick="addInvestment(2)">+ Nachkaufen</button>
+                </div>
+            </div>
+
+            <!-- Investment 3 -->
+            <div class="investment-card" data-status="completed">
+                <div class="investment-header">
+                    <a href="idea-detail.html?id=3" class="investment-title">Privacy-First Messenger</a>
+                    <span class="investment-status status-completed">🔵 Abgeschlossen</span>
+                </div>
+                <div class="investment-meta">
+                    <span>📅 Investiert: Vor 8 Monaten</span>
+                    <span>👥 Team: SecureChat</span>
+                    <span>🔖 Idea-Shares</span>
+                </div>
+                
+                <div class="investment-details">
+                    <div class="detail-item">
+                        <div class="detail-value">₿ 0.80</div>
+                        <div class="detail-label">Investiert</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value positive">+45%</div>
+                        <div class="detail-label">ROI</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value">₿ 1.16</div>
+                        <div class="detail-label">Exit Value</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value">80,000</div>
+                        <div class="detail-label">Shares</div>
+                    </div>
+                </div>
+                
+                <div class="investment-actions">
+                    <button class="btn-small btn-secondary" onclick="showDetails(3)">Details</button>
+                    <button class="btn-small btn-primary" onclick="claimEarnings(3)">💰 Earnings claimen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        function filterInvestments(filter, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const cards = document.querySelectorAll('.investment-card');
+            cards.forEach(card => {
+                if (filter === 'all' || card.dataset.status === filter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            showToast(`Gefiltert: ${btn.textContent}`);
+        }
+
+        function sortInvestments(sortType) {
+            const sortNames = {
+                'date': 'Neueste zuerst',
+                'amount': 'Höchster Betrag',
+                'roi': 'Beste ROI',
+                'earnings': 'Höchste Earnings'
+            };
+            showToast(`Sortiert nach: ${sortNames[sortType]}`);
+        }
+
+        function showDetails(id) {
+            showToast(`📊 Details für Investment #${id} werden geladen...`);
+        }
+
+        function addInvestment(id) {
+            showToast(`💰 Nachkauf für Investment #${id}...`);
+        }
+
+        function claimEarnings(id) {
+            showToast(`💵 Earnings werden ausgezahlt...`);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+</html>
