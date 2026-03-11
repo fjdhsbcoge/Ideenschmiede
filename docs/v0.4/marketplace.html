@@ -185,16 +185,16 @@
             <div class="controls">
                 <div class="filter-bar">
                     <button class="filter-btn active" onclick="filterIdeas('all', this)">Alle</button>
-                    <button class="filter-btn" onclick="filterIdeas('new', this)">🆕 Neu</button>
-                    <button class="filter-btn" onclick="filterIdeas('funding', this)">💰 Im Funding</button>
-                    <button class="filter-btn" onclick="filterIdeas('building', this)">🔨 In Entwicklung</button>
-                    <button class="filter-btn" onclick="filterIdeas('completed', this)">✅ Abgeschlossen</button>
+                    <button class="filter-btn" onclick="filterIdeas('voting', this)">🗳️ Voting</button>
+                    <button class="filter-btn" onclick="filterIdeas('team-application', this)">👥 Team-Bewerbung</button>
+                    <button class="filter-btn" onclick="filterIdeas('series-a', this)">💰 Series A</button>
+                    <button class="filter-btn" onclick="filterIdeas('series-b', this)">🚀 Series B</button>
                 </div>
                 <select class="sort-select" onchange="sortIdeas(this.value)">
+                    <option value="status">Status: Voting → Funding → Series</option>
                     <option value="newest">Neueste zuerst</option>
                     <option value="funding">Höchstes Funding</option>
                     <option value="roi">Beste ROI</option>
-                    <option value="popularity">Beliebtheit</option>
                 </select>
             </div>
 
@@ -203,7 +203,7 @@
                 <div class="idea-card" data-id="1">
                     <div class="idea-header">
                         <a href="idea-detail.html" class="idea-title">AI-gestützte Sprachlern-App</a>
-                        <span class="tag" style="background: var(--accent-green); color: white;">💰 Im Funding</span>
+                        <span class="tag" style="background: var(--accent-green); color: white;">🗳️ Voting Phase</span>
                     </div>
                     <div class="idea-meta">
                         <span>👤 @linguist_dev</span>
@@ -239,7 +239,7 @@
                 <div class="idea-card" data-id="2">
                     <div class="idea-header">
                         <a href="idea-detail.html?id=2" class="idea-title">Dezentrale Micro-Grid Energieplattform</a>
-                        <span class="tag" style="background: var(--accent-blue); color: white;">🔨 In Entwicklung</span>
+                        <span class="tag" style="background: var(--accent-blue); color: white;">👥 Team-Bewerbung</span>
                     </div>
                     <div class="idea-meta">
                         <span>👤 @green_energy_pro</span>
@@ -355,11 +355,24 @@
         function filterIdeas(filter, btn) {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            showToast(`Gefiltert: ${btn.textContent}`);
+            
+            const filterNames = {
+                'all': 'Alle',
+                'voting': '🗳️ Voting',
+                'team-application': '👥 Team-Bewerbung',
+                'series-a': '💰 Series A',
+                'series-b': '🚀 Series B'
+            };
+            showToast(`Gefiltert: ${filterNames[filter]}`);
         }
 
         function sortIdeas(sortType) {
-            const sortNames = { 'newest': 'Neueste', 'funding': 'Höchstes Funding', 'roi': 'Beste ROI', 'popularity': 'Beliebtheit' };
+            const sortNames = { 
+                'status': 'Status: Voting → Funding → Series',
+                'newest': 'Neueste', 
+                'funding': 'Höchstes Funding', 
+                'roi': 'Beste ROI'
+            };
             showToast(`Sortiert nach: ${sortNames[sortType]}`);
         }
 
