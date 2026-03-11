@@ -30,15 +30,17 @@
 - German: `index.html` - With scroll animations, hover effects, shimmer effects
 - English: `index-en.html` - Full i18n support
 
-**Interactive Pages (9 total):**
+**Interactive Pages (10 total):**
 1. **Landing** - Scroll progress bar, animated cards, shimmer effects
-2. **Discussion** - Live voting, filter buttons, sort dropdown, **role-based access**
-3. **Idea Detail** - Comment posting, voting with progress bar, **role-based access**
-4. **Marketplace** - **Hard paywall**, unified card layout, investment modal
-5. **Team Apply** - **Hard paywall**, dynamic milestones, budget calculator, validation
-6. **Teams** - Tab navigation, progress tracking, member lists, **upgrade notice**
-7. **Dashboard** - **NEW**, role switcher, stats, wallet, earnings chart
-8. **Profile** - Wallet display, earnings chart, investment list, **role switcher**
+2. **Discussion** - Filter buttons, sort dropdown, **role-based access**, feedback only (no voting)
+3. **Idea Detail** - Comment posting, **role-based access**, CTA to marketplace
+4. **Create Idea** - **NEW** 4-step wizard for posting ideas
+5. **Marketplace** - **Hard paywall**, voting phase, team application, series funding
+6. **Team Apply** - **Hard paywall**, dynamic milestones, budget calculator, validation
+7. **Team Create** - **NEW** Form new teams for marketplace ideas
+8. **Teams** - Tab navigation, progress tracking, member lists
+9. **Dashboard** - Role switcher, stats, wallet, earnings chart
+10. **Profile** - Wallet display, earnings chart, investment list, role switcher
 
 **New Interactive Features:**
 - Scroll-triggered animations (Intersection Observer)

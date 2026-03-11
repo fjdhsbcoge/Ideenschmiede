@@ -53,7 +53,7 @@ Ideenschmiede is the marketplace where ideas become reality through community va
    ↓
 2. Gather feedback, refine concept
    ↓
-3. Subscribe ($120/year) and move Idea to Marketplace
+3. Subscribe ($120/year) and move OWN Idea to Marketplace (only ideator can move)
    ↓
 4. Receive immediate 15% of all investments
 ```

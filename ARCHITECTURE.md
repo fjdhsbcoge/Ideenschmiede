@@ -17,11 +17,13 @@
 |------|-----|--------------|----------|
 | Landing (DE) | /v0.4/index.html | Public | Scroll animations, card hovers, progress bar, shimmer effects |
 | Landing (EN) | /v0.4/index-en.html | Public | Full i18n, shimmer effects |
-| Discussion | /v0.4/discussion.html | Free (Read) / User (Post) / Subscriber (Vote) | Live voting, filters, sorting, role-based access |
-| Idea Detail | /v0.4/idea-detail.html | Free (Read) / User (Comment) / Subscriber (Vote) | Comments, voting, toast notifications |
-| Marketplace | /v0.4/marketplace.html | Subscriber Only | Hard paywall, unified card layout, investment modal |
+| Discussion | /v0.4/discussion.html | Visitor (Read) / User (Post+Comment) / Subscriber (Move to Marketplace) | Comments, feedback, no voting |
+| Idea Detail | /v0.4/idea-detail.html | Visitor (Read) / User (Comment) / Subscriber (Move to Marketplace) | Comments, CTA to marketplace |
+| Create Idea | /v0.4/create-idea.html | User+ | 4-step wizard: content → tags → target → review |
+| Marketplace | /v0.4/marketplace.html | Subscriber Only | Hard paywall, voting phases, team application, series funding |
 | Team Apply | /v0.4/team-apply.html | Subscriber Only | Paywall, dynamic milestones, budget validation |
-| Teams | /v0.4/teams.html | Subscriber (Full) / Others (View) | Tab nav, progress tracking, upgrade notice |
+| Team Create | /v0.4/team-create.html | Subscriber Only | Form new teams for marketplace ideas |
+| Teams | /v0.4/teams.html | Subscriber (Full) / Others (View) | Tab nav, progress tracking, member lists |
 | Dashboard | /v0.4/dashboard.html | Login Required | Role switcher, stats, wallet, earnings chart |
 | Profile | /v0.4/profile.html | Login Required | Wallet, earnings, investments, role switcher |
 
@@ -65,9 +67,10 @@
 | Read Ideas | ✅ | ✅ | ✅ |
 | Post Ideas | ❌ | ✅ | ✅ |
 | Comment | ❌ | ✅ | ✅ |
-| Vote | ❌ | ❌ | ✅ |
+| Move Own Idea to Marketplace | ❌ | ❌ | ✅ |
+| Vote (Marketplace only) | ❌ | ❌ | ✅ |
 | Invest | ❌ | ❌ | ✅ |
-| Join Teams | ❌ | ❌ | ✅ |
+| Form/Join Teams | ❌ | ❌ | ✅ |
 | Dashboard | ❌ | ✅ | ✅ |
 | Profile Full | ❌ | ✅ | ✅ |
 
