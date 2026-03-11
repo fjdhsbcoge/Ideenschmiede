@@ -71,13 +71,11 @@ This project follows an **AI-first specification approach**:
 
 ---
 
-## 🚀 Live Demos
+## 🚀 Live Demo
 
-| Version | Description | Link |
-|---------|-------------|------|
-| v0.1 | Basic flow: login → post → invest | [Live Demo](https://fjdhsbcoge.github.io/Ideenschmiede) |
-| v0.2 | Stage visualization + profile page | [Live Demo](https://fjdhsbcoge.github.io/Ideenschmiede/v2.html) |
-| Process | Interactive 3-perspective view | [Live Demo](https://fjdhsbcoge.github.io/Ideenschmiede/process.html) |
+**Latest Version (v0.4):** [https://fjdhsbcoge.github.io/Ideenschmiede/v0.4/](https://fjdhsbcoge.github.io/Ideenschmiede/v0.4/)
+
+*Interactive demo with role system, marketplace paywall, team creation, and wallet integration.*
 
 ---
 
@@ -86,10 +84,16 @@ This project follows an **AI-first specification approach**:
 ### Completed ✅
 - [x] Vision document (VISION.md)
 - [x] Build manual (BUILD.md)
-- [x] v0.1 prototype - Basic user flow
-- [x] v0.2 prototype - 6-stage lifecycle visualization
-- [x] Process visualization - Ideator/Investor/Builder perspectives
-- [x] Profile page specification
+- [x] Architecture documentation (ARCHITECTURE.md)
+- [x] v0.4 Interactive Demo with role system
+  - Landing page (DE/EN)
+  - Discussion with role-based access
+  - Marketplace with subscriber paywall
+  - Team creation and application
+  - Dashboard with role switcher
+  - Profile with wallet display
+- [x] 3-Tier Role System (Visitor/User/Subscriber)
+- [x] Team creation flow (team-create.html)
 
 ### In Progress 🚧
 - [ ] v0.3 prototype - Team formation flow

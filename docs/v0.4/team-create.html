@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team gründen - Ideenschmiede</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-tertiary: #606070;
+            --accent-primary: #e94560;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #f39c12;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
+        
+        .main-nav { position: fixed; top: 0; left: 0; right: 0; background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); z-index: 1000; padding: 16px 24px; }
+        .main-nav-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .nav-logo { font-size: 20px; font-weight: 700; color: var(--text-primary); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .nav-logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .back-link { color: var(--text-secondary); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease; }
+        .back-link:hover { color: var(--text-primary); }
+        
+        .content { max-width: 800px; margin: 0 auto; padding: 100px 24px 40px; }
+        
+        /* Progress Steps */
+        .progress-steps { display: flex; justify-content: center; gap: 8px; margin-bottom: 40px; }
+        .step { display: flex; align-items: center; gap: 8px; }
+        .step-number { width: 40px; height: 40px; border-radius: 50%; background: var(--bg-tertiary); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: 600; transition: all 0.3s ease; }
+        .step.active .step-number { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .step.completed .step-number { background: var(--accent-green); border-color: var(--accent-green); }
+        .step-label { font-size: 14px; color: var(--text-secondary); display: none; }
+        @media (min-width: 600px) { .step-label { display: block; } }
+        .step-line { width: 40px; height: 2px; background: var(--border-color); }
+        .step-line.completed { background: var(--accent-green); }
+        
+        /* Form Card */
+        .form-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 20px; padding: 32px; margin-bottom: 24px; }
+        .form-header { margin-bottom: 32px; }
+        .form-title { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+        .form-subtitle { color: var(--text-secondary); font-size: 14px; }
+        
+        .form-group { margin-bottom: 24px; }
+        .form-label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: var(--text-secondary); }
+        .form-label span { color: var(--accent-primary); }
+        .form-input, .form-textarea, .form-select { width: 100%; padding: 14px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-primary); font-size: 15px; font-family: inherit; transition: all 0.3s ease; }
+        .form-input:focus, .form-textarea:focus, .form-select:focus { outline: none; border-color: var(--accent-primary); }
+        .form-textarea { resize: vertical; min-height: 120px; }
+        .form-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
+        
+        /* Idea Selection */
+        .idea-selection { display: grid; gap: 12px; }
+        .idea-option { padding: 16px; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; cursor: pointer; transition: all 0.3s ease; }
+        .idea-option:hover { border-color: var(--accent-primary); }
+        .idea-option.selected { border-color: var(--accent-primary); background: rgba(233, 69, 96, 0.1); }
+        .idea-option-title { font-weight: 600; margin-bottom: 4px; }
+        .idea-option-meta { font-size: 13px; color: var(--text-secondary); }
+        
+        /* Skills Tags */
+        .skills-input { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; min-height: 50px; }
+        .skill-tag { display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--accent-blue); border-radius: 100px; font-size: 13px; }
+        .skill-remove { cursor: pointer; opacity: 0.7; }
+        .skill-input-field { flex: 1; min-width: 100px; background: transparent; border: none; color: var(--text-primary); padding: 6px; outline: none; font-size: 14px; }
+        
+        /* Milestones */
+        .milestone-list { display: flex; flex-direction: column; gap: 16px; }
+        .milestone-item { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; }
+        .milestone-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .milestone-number { font-weight: 600; color: var(--accent-primary); }
+        .milestone-remove { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 18px; }
+        .milestone-remove:hover { color: var(--accent-primary); }
+        
+        /* Budget Summary */
+        .budget-summary { background: var(--bg-tertiary); border-radius: 12px; padding: 20px; margin-top: 24px; }
+        .budget-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); }
+        .budget-row:last-child { border-bottom: none; font-weight: 600; font-size: 18px; color: var(--accent-green); }
+        
+        /* Buttons */
+        .form-actions { display: flex; justify-content: space-between; margin-top: 32px; gap: 16px; }
+        .btn { padding: 14px 28px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; border: none; transition: all 0.3s ease; }
+        .btn-prev { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .btn-prev:hover { background: var(--border-color); color: var(--text-primary); }
+        .btn-next { background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); color: white; flex: 1; }
+        .btn-next:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(233, 69, 96, 0.3); }
+        .btn-next:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-add { padding: 10px 20px; background: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: 10px; color: var(--text-secondary); cursor: pointer; width: 100%; margin-top: 12px; }
+        .btn-add:hover { border-color: var(--accent-primary); color: var(--text-primary); }
+        
+        /* Success Screen */
+        .success-screen { display: none; text-align: center; padding: 60px 24px; }
+        .success-screen.show { display: block; }
+        .success-icon { font-size: 80px; margin-bottom: 24px; animation: bounce 1s ease; }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+        .success-title { font-size: 32px; font-weight: 700; margin-bottom: 16px; }
+        .success-text { color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6; }
+        
+        /* Toast */
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 16px 24px; background: var(--bg-secondary); border: 1px solid var(--accent-green); border-radius: 12px; color: var(--text-primary); font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 2000; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        @media (max-width: 768px) { .content { padding: 90px 16px 24px; } .form-card { padding: 24px; } .form-actions { flex-direction: column-reverse; } }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="main-nav-container">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon">⚡</div>
+                <span>Ideenschmiede</span>
+            </a>
+            <a href="teams.html" class="back-link">← Zurück zu Teams</a>
+        </div>
+    </nav>
+
+    <div class="content">
+        <!-- Progress Steps -->
+        <div class="progress-steps">
+            <div class="step active" id="step1-indicator">
+                <div class="step-number">1</div>
+                <span class="step-label">Idee</span>
+            </div>
+            <div class="step-line" id="line1"></div>
+            <div class="step" id="step2-indicator">
+                <div class="step-number">2</div>
+                <span class="step-label">Team</span>
+            </div>
+            <div class="step-line" id="line2"></div>
+            <div class="step" id="step3-indicator">
+                <div class="step-number">3</div>
+                <span class="step-label">Plan</span>
+            </div>
+            <div class="step-line" id="line3"></div>
+            <div class="step" id="step4-indicator">
+                <div class="step-number">4</div>
+                <span class="step-label">Review</span>
+            </div>
+        </div>
+
+        <!-- Step 1: Select Idea -->
+        <div class="form-card" id="step1">
+            <div class="form-header">
+                <h2 class="form-title">💡 Welche Idee möchtest du umsetzen?</h2>
+                <p class="form-subtitle">Wähle eine Idee aus dem Marktplatz</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Marktplatz-Idee <span>*</span></label>
+                <div class="idea-selection" id="ideaSelection">
+                    <div class="idea-option" onclick="selectIdea(1)" data-idea="1">
+                        <div class="idea-option-title">AI-gestützte Sprachlern-App</div>
+                        <div class="idea-option-meta">💰 2.4 BTC gefundet • 🤖 AI/ML • 📚 EdTech</div>
+                    </div>
+                    <div class="idea-option" onclick="selectIdea(2)" data-idea="2">
+                        <div class="idea-option-title">Dezentrale Micro-Grid Energieplattform</div>
+                        <div class="idea-option-meta">💰 5.1 BTC gefundet • ⚡ Energy • 🔗 Blockchain</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-next" onclick="goToStep(2)" id="btnStep1">Weiter →</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Team Details -->
+        <div class="form-card" id="step2" style="display: none;">
+            <div class="form-header">
+                <h2 class="form-title">👥 Wer seid ihr?</h2>
+                <p class="form-subtitle">Beschreibe dein Team und die Vision</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Team-Name <span>*</span></label>
+                <input type="text" class="form-input" id="teamName" placeholder="z.B. LinguaTech Squad" maxlength="50">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Eure Vision <span>*</span></label>
+                <textarea class="form-textarea" id="teamVision" placeholder="Warum seid ihr das beste Team für diese Idee? Was macht euch aus?" maxlength="500"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Gesuchte Skills <span>*</span> (mindestens 2)</label>
+                <div class="skills-input" id="skillsInput">
+                    <input type="text" class="skill-input-field" id="skillInput" placeholder="Skill eingeben + Enter">
+                </div>
+                <p class="form-hint">z.B. React Developer, UX Designer, Blockchain Expert</p>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-prev" onclick="goToStep(1)">← Zurück</button>
+                <button class="btn btn-next" onclick="goToStep(3)" id="btnStep2">Weiter →</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Plan & Milestones -->
+        <div class="form-card" id="step3" style="display: none;">
+            <div class="form-header">
+                <h2 class="form-title">📋 Was ist euer Plan?</h2>
+                <p class="form-subtitle">Definiert Meilensteine und Budget</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Zeitrahmen <span>*</span></label>
+                <select class="form-select" id="timeline">
+                    <option value="">Wähle Dauer...</option>
+                    <option value="3">3 Monate</option>
+                    <option value="6">6 Monate</option>
+                    <option value="9">9 Monate</option>
+                    <option value="12">12 Monate</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Meilensteine <span>*</span> (mindestens 3)</label>
+                <div class="milestone-list" id="milestoneList">
+                    <div class="milestone-item">
+                        <div class="milestone-header">
+                            <span class="milestone-number">Meilenstein 1</span>
+                        </div>
+                        <input type="text" class="form-input" placeholder="Was wird erreicht?" style="margin-bottom: 8px;">
+                        <input type="date" class="form-input" style="margin-bottom: 8px;">
+                        <input type="number" class="form-input milestone-budget" placeholder="Budget (BTC)" step="0.001" onchange="calculateTotal()">
+                    </div>
+                </div>
+                <button class="btn-add" onclick="addMilestone()">+ Meilenstein hinzufügen</button>
+            </div>
+
+            <div class="budget-summary">
+                <div class="budget-row">
+                    <span>Gesamtbudget</span>
+                    <span id="totalBudget">0 BTC</span>
+                </div>
+                <div class="budget-row">
+                    <span>Skin-in-Game (min. 5%)</span>
+                    <span id="skinInGame">0 BTC</span>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-prev" onclick="goToStep(2)">← Zurück</button>
+                <button class="btn btn-next" onclick="goToStep(4)" id="btnStep3">Weiter →</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Review -->
+        <div class="form-card" id="step4" style="display: none;">
+            <div class="form-header">
+                <h2 class="form-title">✅ Alles bereit?</h2>
+                <p class="form-subtitle">Überprüfe eure Angaben vor dem Einreichen</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Idee</label>
+                <div id="reviewIdea" style="padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">-</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Team</label>
+                <div id="reviewTeam" style="padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">-</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Plan</label>
+                <div id="reviewPlan" style="padding: 12px; background: var(--bg-tertiary); border-radius: 8px;">-</div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-prev" onclick="goToStep(3)">← Zurück</button>
+                <button class="btn btn-next" onclick="submitTeam()">🚀 Team bewerben</button>
+            </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div class="success-screen" id="successScreen">
+            <div class="success-icon">🎉</div>
+            <h1 class="success-title">Team beworben!</h1>
+            <p class="success-text">Eure Team-Bewerbung wurde eingereicht. Investoren können jetzt euren Plan prüfen und für euch voten.</p>
+            <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                <a href="teams.html" class="btn btn-next">Zu meinen Teams →</a>
+                <a href="marketplace.html" class="btn btn-prev">Zum Marktplatz</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentStep = 1;
+        let formData = { idea: null, name: '', vision: '', skills: [], timeline: '', milestones: [], totalBudget: 0 };
+
+        function goToStep(step) {
+            // Hide all steps
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`step${i}`).style.display = 'none';
+            }
+            
+            // Show current step
+            document.getElementById(`step${step}`).style.display = 'block';
+            currentStep = step;
+            
+            // Update indicators
+            updateStepIndicators(step);
+            
+            // If review step, populate data
+            if (step === 4) populateReview();
+        }
+
+        function updateStepIndicators(currentStep) {
+            for (let i = 1; i <= 4; i++) {
+                const indicator = document.getElementById(`step${i}-indicator`);
+                const line = document.getElementById(`line${i}`);
+                
+                if (i < currentStep) {
+                    indicator.classList.add('completed');
+                    indicator.classList.remove('active');
+                    if (line) line.classList.add('completed');
+                } else if (i === currentStep) {
+                    indicator.classList.add('active');
+                    indicator.classList.remove('completed');
+                } else {
+                    indicator.classList.remove('active', 'completed');
+                }
+            }
+        }
+
+        function selectIdea(id) {
+            formData.idea = id;
+            document.querySelectorAll('.idea-option').forEach(el => {
+                el.classList.toggle('selected', el.dataset.idea == id);
+            });
+            validateStep1();
+        }
+
+        function validateStep1() {
+            document.getElementById('btnStep1').disabled = !formData.idea;
+        }
+
+        // Skills Input
+        document.getElementById('skillInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const skill = e.target.value.trim();
+                if (skill && !formData.skills.includes(skill)) {
+                    formData.skills.push(skill);
+                    renderSkills();
+                    e.target.value = '';
+                    validateStep2();
+                }
+            }
+        });
+
+        function renderSkills() {
+            const container = document.getElementById('skillsInput');
+            const input = document.getElementById('skillInput');
+            container.querySelectorAll('.skill-tag').forEach(el => el.remove());
+            
+            formData.skills.forEach((skill, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'skill-tag';
+                tag.innerHTML = `${skill} <span class="skill-remove" onclick="removeSkill(${index})">✕</span>`;
+                container.insertBefore(tag, input);
+            });
+        }
+
+        function removeSkill(index) {
+            formData.skills.splice(index, 1);
+            renderSkills();
+            validateStep2();
+        }
+
+        function validateStep2() {
+            const name = document.getElementById('teamName').value.trim();
+            const vision = document.getElementById('teamVision').value.trim();
+            document.getElementById('btnStep2').disabled = !name || !vision || formData.skills.length < 2;
+        }
+
+        document.getElementById('teamName').addEventListener('input', validateStep2);
+        document.getElementById('teamVision').addEventListener('input', validateStep2);
+
+        // Milestones
+        let milestoneCount = 1;
+        function addMilestone() {
+            milestoneCount++;
+            const list = document.getElementById('milestoneList');
+            const item = document.createElement('div');
+            item.className = 'milestone-item';
+            item.innerHTML = `
+                <div class="milestone-header">
+                    <span class="milestone-number">Meilenstein ${milestoneCount}</span>
+                    <button class="milestone-remove" onclick="this.parentElement.parentElement.remove(); calculateTotal()">✕</button>
+                </div>
+                <input type="text" class="form-input" placeholder="Was wird erreicht?" style="margin-bottom: 8px;">
+                <input type="date" class="form-input" style="margin-bottom: 8px;">
+                <input type="number" class="form-input milestone-budget" placeholder="Budget (BTC)" step="0.001" onchange="calculateTotal()">
+            `;
+            list.appendChild(item);
+        }
+
+        function calculateTotal() {
+            let total = 0;
+            document.querySelectorAll('.milestone-budget').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            formData.totalBudget = total;
+            document.getElementById('totalBudget').textContent = total.toFixed(3) + ' BTC';
+            document.getElementById('skinInGame').textContent = (total * 0.05).toFixed(3) + ' BTC';
+            validateStep3();
+        }
+
+        function validateStep3() {
+            const timeline = document.getElementById('timeline').value;
+            const milestones = document.querySelectorAll('.milestone-item').length;
+            document.getElementById('btnStep3').disabled = !timeline || milestones < 3 || formData.totalBudget <= 0;
+        }
+
+        document.getElementById('timeline').addEventListener('change', validateStep3);
+
+        function populateReview() {
+            const ideas = { 1: 'AI-gestützte Sprachlern-App', 2: 'Dezentrale Micro-Grid Energieplattform' };
+            document.getElementById('reviewIdea').textContent = ideas[formData.idea];
+            
+            const name = document.getElementById('teamName').value;
+            document.getElementById('reviewTeam').innerHTML = `<strong>${name}</strong><br>${formData.skills.join(', ')}`;
+            
+            const timeline = document.getElementById('timeline').value;
+            document.getElementById('reviewPlan').innerHTML = `${timeline} Monate • ${formData.totalBudget.toFixed(3)} BTC • ${document.querySelectorAll('.milestone-item').length} Meilensteine`;
+        }
+
+        function submitTeam() {
+            showToast('🚀 Team-Bewerbung wird eingereicht...');
+            setTimeout(() => {
+                document.querySelector('.progress-steps').style.display = 'none';
+                document.querySelectorAll('.form-card').forEach(el => el.style.display = 'none');
+                document.getElementById('successScreen').classList.add('show');
+            }, 1500);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // Initialize
+        validateStep1();
+        validateStep2();
+        validateStep3();
+    </script>
+</body>
+</html>
