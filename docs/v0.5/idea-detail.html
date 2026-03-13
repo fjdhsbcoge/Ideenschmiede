@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idee Details v0.4 - Ideenschmiede</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-tertiary: #606070;
+            --accent-primary: #e94560;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #f39c12;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
+        .main-nav { position: fixed; top: 0; left: 0; right: 0; background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); z-index: 1000; padding: 16px 24px; }
+        .main-nav-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .nav-logo { font-size: 20px; font-weight: 700; color: var(--text-primary); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .nav-logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .back-link { color: var(--text-secondary); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+        .back-link:hover { color: var(--text-primary); }
+        .content { max-width: 800px; margin: 0 auto; padding: 100px 24px 40px; }
+        .idea-header { margin-bottom: 32px; animation: fadeInDown 0.6s ease; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        .badge { display: inline-flex; padding: 6px 14px; border-radius: 100px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+        .badge-discussion { background: rgba(52, 152, 219, 0.1); color: var(--accent-blue); }
+        .idea-title { font-size: clamp(24px, 5vw, 36px); font-weight: 700; margin-bottom: 16px; line-height: 1.3; }
+        .idea-meta { display: flex; gap: 16px; color: var(--text-secondary); font-size: 14px; flex-wrap: wrap; }
+        .idea-body { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 32px; margin-bottom: 24px; animation: fadeInUp 0.6s ease 0.1s both; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .idea-description { font-size: 16px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 24px; }
+        .idea-description strong { color: var(--text-primary); }
+        .idea-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tag { padding: 6px 12px; background: var(--bg-tertiary); border-radius: 8px; font-size: 13px; color: var(--text-secondary); transition: all 0.3s ease; cursor: pointer; }
+        .tag:hover { background: var(--accent-primary); color: white; transform: translateY(-2px); }
+        .voting-section { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-bottom: 24px; animation: fadeInUp 0.6s ease 0.2s both; }
+        .voting-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+        .voting-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+        .voting-stat { text-align: center; padding: 20px; background: var(--bg-tertiary); border-radius: 12px; }
+        .voting-stat-value { font-size: 32px; font-weight: 700; }
+        .voting-stat-value.up { color: var(--accent-green); }
+        .voting-buttons { display: flex; gap: 12px; margin-bottom: 16px; }
+        .vote-btn { flex: 1; padding: 16px 24px; border-radius: 12px; font-weight: 600; font-size: 16px; cursor: pointer; border: 2px solid; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; }
+        .vote-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .vote-btn.up { background: transparent; border-color: var(--accent-green); color: var(--accent-green); }
+        .vote-btn.up:hover:not(:disabled), .vote-btn.up.voted { background: rgba(46, 204, 113, 0.1); }
+        .vote-btn.up.voted { background: var(--accent-green); color: var(--bg-primary); }
+        .vote-btn.down { background: transparent; border-color: var(--accent-primary); color: var(--accent-primary); }
+        .vote-btn.down:hover:not(:disabled), .vote-btn.down.voted { background: rgba(233, 69, 96, 0.1); }
+        .vote-btn.down.voted { background: var(--accent-primary); color: white; }
+        .vote-progress-large { height: 12px; background: var(--bg-tertiary); border-radius: 6px; overflow: hidden; }
+        .vote-progress-bar-large { height: 100%; background: linear-gradient(90deg, var(--accent-green), var(--accent-primary)); border-radius: 6px; transition: width 0.5s ease; }
+        .comments-section { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; animation: fadeInUp 0.6s ease 0.3s both; }
+        .comments-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .comments-title { font-size: 20px; font-weight: 600; }
+        .comments-count { background: var(--bg-tertiary); padding: 4px 12px; border-radius: 100px; font-size: 14px; color: var(--text-secondary); }
+        .comment-form { margin-bottom: 24px; padding: 20px; background: var(--bg-tertiary); border-radius: 12px; border: 1px solid var(--border-color); }
+        .comment-input { width: 100%; padding: 16px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-primary); font-size: 15px; font-family: inherit; resize: vertical; min-height: 100px; margin-bottom: 12px; }
+        .comment-input:focus { outline: none; border-color: var(--accent-primary); }
+        .comment-submit { padding: 12px 24px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border: none; border-radius: 10px; color: white; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .comment-submit:hover { transform: translateY(-2px); }
+        .comments-list { display: flex; flex-direction: column; gap: 16px; }
+        .comment { padding: 20px; background: var(--bg-tertiary); border-radius: 12px; border: 1px solid var(--border-color); }
+        .comment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .comment-author { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .comment-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-blue)); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .comment-time { font-size: 13px; color: var(--text-tertiary); }
+        .comment-text { color: var(--text-secondary); line-height: 1.6; }
+        .comment-actions { display: flex; gap: 16px; margin-top: 12px; font-size: 13px; }
+        .comment-action { color: var(--text-tertiary); cursor: pointer; }
+        .comment-action:hover { color: var(--accent-primary); }
+        .cta-section { background: linear-gradient(135deg, rgba(233, 69, 96, 0.1), rgba(46, 204, 113, 0.1)); border: 1px solid var(--accent-primary); border-radius: 16px; padding: 24px; margin-top: 24px; text-align: center; }
+        .cta-title { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+        .cta-text { color: var(--text-secondary); margin-bottom: 20px; }
+        .btn-primary { display: inline-block; padding: 14px 28px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border: none; border-radius: 12px; color: white; font-weight: 600; font-size: 15px; cursor: pointer; text-decoration: none; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 16px 24px; background: var(--bg-secondary); border: 1px solid var(--accent-green); border-radius: 12px; opacity: 0; transition: all 0.3s ease; z-index: 2000; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .login-note { text-align: center; padding: 20px; color: var(--text-secondary); }
+        .login-note a { color: var(--accent-primary); }
+        @media (max-width: 768px) { .content { padding: 90px 16px 24px; } .voting-stats { grid-template-columns: 1fr; } .voting-buttons { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="main-nav-container">
+            <a href="index.html" class="nav-logo"><div class="nav-logo-icon">⚡</div><span>Ideenschmiede</span></a>
+            <a href="discussion.html" class="back-link">← Zurück zur Diskussion</a>
+            <div class="nav-menu" style="display: flex; gap: 8px;">
+                <a href="dashboard.html" class="nav-item" style="padding: 10px 16px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;">📊 Dashboard</a>
+                <a href="profile.html" class="nav-item" style="padding: 10px 16px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;">👤 Profil</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="content">
+        <div class="idea-header">
+            <span class="badge badge-discussion">💬 In Diskussion</span>
+            <h1 class="idea-title">AI-gestützte Sprachlern-App</h1>
+            <div class="idea-meta"><span>👤 @linguist_dev</span><span>📅 Vor 3 Tagen</span><span>👁️ 234 Aufrufe</span></div>
+        </div>
+
+        <div class="idea-body">
+            <p class="idea-description">Lerne Sprachen durch KI-gestützte Konversationen...</p>
+            <div class="idea-tags"><span class="tag">🤖 AI</span><span class="tag">📚 Bildung</span></div>
+        </div>
+
+        <div class="info-section" id="infoSection" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 12px;">🛒 Im Marktplatz</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                Diese Idee befindet sich im Marktplatz. Hier läuft das Community Voting für Investments. Als Subscriber kannst du investieren oder abstimmen.
+            </p>
+            <div style="display: flex; gap: 16px; font-size: 14px; color: var(--text-tertiary);">
+                <span>💬 8 Kommentare</span>
+                <span>👁️ 234 Aufrufe</span>
+                <span>💰 Im Funding</span>
+            </div>
+        </div>
+
+        <!-- Share & Shareholder Information -->
+        <div class="shares-section" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-bottom: 24px;">
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">📊 Shares & Investoren</h3>
+            
+            <!-- Share Stats -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                <div style="text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                    <div style="font-size: 20px; font-weight: 700; color: var(--accent-green); margin-bottom: 4px;">₿ 0.00001</div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">Preis/Share</div>
+                </div>
+                <div style="text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                    <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">7.6M</div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">Verfügbar</div>
+                </div>
+                <div style="text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                    <div style="font-size: 20px; font-weight: 700; color: var(--accent-primary); margin-bottom: 4px;">2.4M</div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">Verkauft</div>
+                </div>
+                <div style="text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px;">
+                    <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">156</div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">Investoren</div>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;">
+                    <span>Verkaufte Shares</span>
+                    <span>24%</span>
+                </div>
+                <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden;">
+                    <div style="width: 24%; height: 100%; background: linear-gradient(90deg, var(--accent-green), var(--accent-primary)); border-radius: 4px;"></div>
+                </div>
+            </div>
+            
+            <!-- Top Shareholders -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-secondary);">🏆 Top Shareholder</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-tertiary); border-radius: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">🥇</span>
+                            <span>@crypto_whale</span>
+                        </div>
+                        <span style="font-weight: 600;">450,000 Shares (5.9%)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-tertiary); border-radius: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">🥈</span>
+                            <span>@early_investor</span>
+                        </div>
+                        <span style="font-weight: 600;">320,000 Shares (4.2%)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--bg-tertiary); border-radius: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 20px;">🥉</span>
+                            <span>@tech_angel</span>
+                        </div>
+                        <span style="font-weight: 600;">275,000 Shares (3.6%)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Investments -->
+            <div>
+                <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-secondary);">🕐 Kürzliche Investments</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-tertiary); border-radius: 8px; font-size: 14px;">
+                        <span>@new_investor_42</span>
+                        <span style="color: var(--text-secondary);">vor 2 Stunden • 15,000 Shares</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-tertiary); border-radius: 8px; font-size: 14px;">
+                        <span>@btc_maximalist</span>
+                        <span style="color: var(--text-secondary);">vor 5 Stunden • 8,500 Shares</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--bg-tertiary); border-radius: 8px; font-size: 14px;">
+                        <span>@satoshi_fan</span>
+                        <span style="color: var(--text-secondary);">vor 1 Tag • 22,000 Shares</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comments-section">
+            <div class="comments-header"><h3 class="comments-title">💬 Kommentare</h3><span class="comments-count" id="commentCount">3</span></div>
+            
+            <div class="comment-form" id="commentForm">
+                <textarea class="comment-input" id="commentInput" placeholder="Dein Kommentar..."></textarea>
+                <button class="comment-submit" onclick="postComment()">Kommentieren</button>
+            </div>
+            
+            <div class="comments-list" id="commentsList">
+                <div class="comment"><div class="comment-header"><span class="comment-author"><span class="comment-avatar">👩</span>@polyglot_sarah</span><span class="comment-time">Vor 2h</span></div><p class="comment-text">Geniale Idee!</p><div class="comment-actions"><span class="comment-action">👍 12</span></div></div>
+            </div>
+        </div>
+
+        <div class="cta-section" id="ctaSection">
+            <h3 class="cta-title">🛒 Im Marktplatz</h3>
+            <p class="cta-text">Diese Idee befindet sich im Marktplatz. Du kannst hier investieren, abstimmen oder dich als Team bewerben.</p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <a href="marketplace.html" class="btn-primary">← Zurück zum Marktplatz</a>
+                <a href="team-apply.html" class="btn-secondary" style="padding: 14px 28px; border-radius: 12px; text-decoration: none;">📝 Team bewerben</a>
+            </div>
+        </div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Role Management
+        let currentRole = localStorage.getItem('ideenschmiede_role') || 'visitor';
+        
+        let votes = { up: 142, down: 24 };
+        let userVote = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkPermissions();
+        });
+
+        function checkPermissions() {
+            // Voting only for subscribers
+            const votingSection = document.getElementById('votingSection');
+            const btnUp = document.getElementById('btnUp');
+            const btnDown = document.getElementById('btnDown');
+            const lockedMsg = document.getElementById('voteLockedMsg');
+            
+            if (currentRole !== 'subscriber') {
+                btnUp.disabled = true;
+                btnDown.disabled = true;
+                lockedMsg.style.display = 'block';
+                votingSection.style.opacity = '0.8';
+            }
+
+            // Commenting for user and subscriber only
+            const commentForm = document.getElementById('commentForm');
+            if (currentRole === 'visitor') {
+                commentForm.innerHTML = '<p class="login-note">🔒 <a href="profile.html">Melde dich an</a>, um zu kommentieren</p>';
+            }
+
+            // CTA only for subscriber
+            const ctaSection = document.getElementById('ctaSection');
+            if (currentRole !== 'subscriber') {
+                ctaSection.style.display = 'none';
+            }
+        }
+
+        function vote(type) {
+            if (currentRole !== 'subscriber') {
+                showToast('🔒 Upgrade auf Subscriber für Voting');
+                return;
+            }
+            
+            if (userVote === type) {
+                votes[type]--;
+                userVote = null;
+                document.getElementById('btnUp').classList.remove('voted');
+                document.getElementById('btnDown').classList.remove('voted');
+                showToast('Stimme zurückgenommen');
+            } else {
+                if (userVote) votes[userVote]--;
+                votes[type]++;
+                userVote = type;
+                document.getElementById('btnUp').classList.toggle('voted', type === 'up');
+                document.getElementById('btnDown').classList.toggle('voted', type === 'down');
+                showToast(type === 'up' ? '👍 Upvote!' : '👎 Downvote!');
+            }
+            updateVoteDisplay();
+        }
+
+        function updateVoteDisplay() {
+            const total = votes.up + votes.down;
+            const percentage = total > 0 ? Math.round((votes.up / total) * 100) : 0;
+            document.getElementById('upCount').textContent = votes.up;
+            document.getElementById('downCount').textContent = votes.down;
+            document.getElementById('approvalPercent').textContent = percentage + '%';
+            document.getElementById('totalVotes').textContent = total;
+            document.getElementById('progressBar').style.width = percentage + '%';
+        }
+
+        function postComment() {
+            if (currentRole === 'visitor') {
+                showToast('❌ Anmeldung erforderlich');
+                return;
+            }
+            
+            const input = document.getElementById('commentInput');
+            const text = input.value.trim();
+            if (!text) { showToast('Bitte gib einen Kommentar ein'); return; }
+            
+            const newComment = document.createElement('div');
+            newComment.className = 'comment';
+            newComment.innerHTML = `
+                <div class="comment-header">
+                    <span class="comment-author"><span class="comment-avatar">${currentRole === 'subscriber' ? '💎' : '👤'}</span>@${currentRole}</span>
+                    <span class="comment-time">Gerade eben</span>
+                </div>
+                <p class="comment-text">${text}</p>
+            `;
+            document.getElementById('commentsList').prepend(newComment);
+            input.value = '';
+            showToast('💬 Kommentar gepostet!');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+</html>

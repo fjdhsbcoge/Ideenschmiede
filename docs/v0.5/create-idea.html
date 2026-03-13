@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neue Idee erstellen - Ideenschmiede</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-tertiary: #606070;
+            --accent-primary: #e94560;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #f39c12;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; }
+        
+        /* Navigation */
+        .main-nav { position: fixed; top: 0; left: 0; right: 0; background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); z-index: 1000; padding: 16px 24px; }
+        .main-nav-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .nav-logo { font-size: 20px; font-weight: 700; color: var(--text-primary); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .nav-logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .back-link { color: var(--text-secondary); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease; }
+        .back-link:hover { color: var(--text-primary); }
+        
+        /* Content */
+        .content { max-width: 800px; margin: 0 auto; padding: 100px 24px 40px; }
+        
+        /* Login Required Overlay */
+        .login-required { display: none; text-align: center; padding: 80px 24px; }
+        .login-required.show { display: block; }
+        .login-icon { font-size: 80px; margin-bottom: 24px; }
+        .login-title { font-size: 28px; font-weight: 700; margin-bottom: 16px; }
+        .login-text { color: var(--text-secondary); font-size: 16px; margin-bottom: 32px; line-height: 1.6; }
+        .btn-primary { display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); border: none; border-radius: 12px; color: white; font-weight: 600; font-size: 16px; cursor: pointer; text-decoration: none; transition: all 0.3s ease; }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4); }
+        .btn-secondary { display: inline-block; padding: 12px 24px; background: transparent; border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-secondary); font-size: 14px; text-decoration: none; margin-top: 16px; transition: all 0.3s ease; }
+        .btn-secondary:hover { border-color: var(--accent-primary); color: var(--text-primary); }
+        
+        /* Wizard Container */
+        .wizard { display: none; }
+        .wizard.show { display: block; }
+        
+        /* Progress Steps */
+        .progress-steps { display: flex; justify-content: center; gap: 8px; margin-bottom: 40px; }
+        .step { display: flex; align-items: center; gap: 8px; }
+        .step-number { width: 40px; height: 40px; border-radius: 50%; background: var(--bg-tertiary); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: 600; transition: all 0.3s ease; }
+        .step.active .step-number { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .step.completed .step-number { background: var(--accent-green); border-color: var(--accent-green); }
+        .step-label { font-size: 14px; color: var(--text-secondary); display: none; }
+        @media (min-width: 600px) { .step-label { display: block; } }
+        .step-line { width: 40px; height: 2px; background: var(--border-color); }
+        .step-line.completed { background: var(--accent-green); }
+        
+        /* Form Card */
+        .form-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 20px; padding: 32px; }
+        .form-header { margin-bottom: 32px; }
+        .form-title { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+        .form-subtitle { color: var(--text-secondary); font-size: 14px; }
+        
+        /* Form Elements */
+        .form-group { margin-bottom: 24px; }
+        .form-label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: var(--text-secondary); }
+        .form-label span { color: var(--accent-primary); }
+        .form-input, .form-textarea { width: 100%; padding: 14px 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-primary); font-size: 15px; font-family: inherit; transition: all 0.3s ease; }
+        .form-input:focus, .form-textarea:focus { outline: none; border-color: var(--accent-primary); }
+        .form-textarea { resize: vertical; min-height: 120px; }
+        .form-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
+        .char-count { font-size: 12px; color: var(--text-tertiary); text-align: right; margin-top: 4px; }
+        
+        /* Tags Input */
+        .tags-input { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 12px; min-height: 50px; }
+        .tags-input:focus-within { border-color: var(--accent-primary); }
+        .tag-item { display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: var(--accent-primary); border-radius: 100px; font-size: 13px; }
+        .tag-remove { cursor: pointer; opacity: 0.7; }
+        .tag-remove:hover { opacity: 1; }
+        .tag-input-field { flex: 1; min-width: 100px; background: transparent; border: none; color: var(--text-primary); padding: 6px; outline: none; font-size: 14px; }
+        .tag-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .tag-suggestion { padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 100px; font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease; }
+        .tag-suggestion:hover { border-color: var(--accent-primary); color: var(--text-primary); }
+        
+        /* Category Grid */
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+        .category-option { padding: 16px; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
+        .category-option:hover { border-color: var(--accent-primary); }
+        .category-option.selected { border-color: var(--accent-primary); background: rgba(233, 69, 96, 0.1); }
+        .category-icon { font-size: 28px; margin-bottom: 8px; }
+        .category-name { font-size: 14px; font-weight: 500; }
+        
+        /* Target Selection */
+        .target-options { display: grid; gap: 16px; }
+        .target-option { display: flex; align-items: center; gap: 16px; padding: 20px; background: var(--bg-tertiary); border: 2px solid var(--border-color); border-radius: 16px; cursor: pointer; transition: all 0.3s ease; }
+        .target-option:hover { border-color: var(--accent-blue); }
+        .target-option.selected { border-color: var(--accent-blue); background: rgba(52, 152, 219, 0.1); }
+        .target-option.disabled { opacity: 0.5; cursor: not-allowed; }
+        .target-icon { font-size: 32px; }
+        .target-info { flex: 1; }
+        .target-title { font-weight: 600; margin-bottom: 4px; }
+        .target-desc { font-size: 14px; color: var(--text-secondary); }
+        .target-badge { padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; }
+        .target-badge.free { background: var(--accent-green); color: var(--bg-primary); }
+        .target-badge.sub { background: var(--accent-primary); color: white; }
+        
+        /* Review Card */
+        .review-section { margin-bottom: 24px; }
+        .review-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-tertiary); margin-bottom: 8px; }
+        .review-value { font-size: 18px; font-weight: 600; }
+        .review-value.title { font-size: 24px; }
+        .review-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        
+        /* Buttons */
+        .form-actions { display: flex; justify-content: space-between; margin-top: 32px; gap: 16px; }
+        .btn { padding: 14px 28px; border-radius: 12px; font-weight: 600; font-size: 15px; cursor: pointer; border: none; transition: all 0.3s ease; }
+        .btn-prev { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .btn-prev:hover { background: var(--border-color); color: var(--text-primary); }
+        .btn-next { background: linear-gradient(135deg, var(--accent-primary), #ff6b6b); color: white; flex: 1; }
+        .btn-next:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(233, 69, 96, 0.3); }
+        .btn-next:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-submit { background: linear-gradient(135deg, var(--accent-green), #27ae60); color: white; flex: 1; }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(46, 204, 113, 0.3); }
+        
+        /* Success Screen */
+        .success-screen { display: none; text-align: center; padding: 60px 24px; }
+        .success-screen.show { display: block; }
+        .success-icon { font-size: 80px; margin-bottom: 24px; animation: bounce 1s ease; }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+        .success-title { font-size: 32px; font-weight: 700; margin-bottom: 16px; }
+        .success-text { color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6; }
+        .success-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        
+        /* Toast */
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 16px 24px; background: var(--bg-secondary); border: 1px solid var(--accent-green); border-radius: 12px; color: var(--text-primary); font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 2000; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        @media (max-width: 768px) { .content { padding: 90px 16px 24px; } .form-card { padding: 24px; } .category-grid { grid-template-columns: repeat(2, 1fr); } .form-actions { flex-direction: column-reverse; } .btn-prev, .btn-next, .btn-submit { width: 100%; } }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="main-nav-container">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon">⚡</div>
+                <span>Ideenschmiede</span>
+            </a>
+            <a href="discussion.html" class="back-link">← Zurück zur Diskussion</a>
+        </div>
+    </nav>
+
+    <div class="content">
+        <!-- Login Required (for Visitors) -->
+        <div class="login-required" id="loginRequired">
+            <div class="login-icon">🔒</div>
+            <h1 class="login-title">Anmeldung erforderlich</h1>
+            <p class="login-text">
+                Um eine neue Idee zu posten, musst du angemeldet sein.<br>
+                Erstelle einen kostenlosen Account oder melde dich an.
+            </p>
+            <a href="profile.html" class="btn-primary">Jetzt anmelden</a><br>
+            <a href="discussion.html" class="btn-secondary">← Zurück zur Diskussion</a>
+        </div>
+
+        <!-- Wizard (for User/Subscriber) -->
+        <div class="wizard" id="wizard">
+            <!-- Progress Steps -->
+            <div class="progress-steps">
+                <div class="step active" id="step1-indicator">
+                    <div class="step-number">1</div>
+                    <span class="step-label">Inhalt</span>
+                </div>
+                <div class="step-line" id="line1"></div>
+                <div class="step" id="step2-indicator">
+                    <div class="step-number">2</div>
+                    <span class="step-label">Tags</span>
+                </div>
+                <div class="step-line" id="line2"></div>
+                <div class="step" id="step3-indicator">
+                    <div class="step-number">3</div>
+                    <span class="step-label">Ziel</span>
+                </div>
+                <div class="step-line" id="line3"></div>
+                <div class="step" id="step4-indicator">
+                    <div class="step-number">4</div>
+                    <span class="step-label">Review</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Content -->
+            <div class="form-card" id="step1">
+                <div class="form-header">
+                    <h2 class="form-title">💡 Was ist deine Idee?</h2>
+                    <p class="form-subtitle">Beschreibe deine Idee so klar wie möglich</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Titel <span>*</span> (min. 10 Zeichen)</label>
+                    <input type="text" class="form-input" id="ideaTitle" placeholder="z.B. AI-gestützte Sprachlern-App" maxlength="100">
+                    <div class="char-count"><span id="titleCount">0</span> / 100</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Beschreibung <span>*</span></label>
+                    <textarea class="form-textarea" id="ideaDescription" placeholder="Beschreibe das Problem, deine Lösung und den Markt... (mindestens 100 Zeichen)" maxlength="2000"></textarea>
+                    <div class="char-count"><span id="descCount">0</span> / 2000</div>
+                    <p class="form-hint" id="step1Hint">💡 Mindestens 100 Zeichen für eine gute Beschreibung</p>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-next" onclick="goToStep(2)" id="btnStep1">Weiter →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Tags & Category -->
+            <div class="form-card" id="step2" style="display: none;">
+                <div class="form-header">
+                    <h2 class="form-title">🏷️ Tags & Kategorie</h2>
+                    <p class="form-subtitle">Hilf anderen, deine Idee zu finden</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tags <span>*</span> (mindestens 2)</label>
+                    <div class="tags-input" id="tagsInput">
+                        <input type="text" class="tag-input-field" id="tagInput" placeholder="Tag eingeben + Enter">
+                    </div>
+                    <p class="form-hint">Drücke Enter oder Komma um einen Tag hinzuzufügen</p>
+                    
+                    <div class="tag-suggestions">
+                        <span class="tag-suggestion" onclick="addTag('🤖 AI')">🤖 AI</span>
+                        <span class="tag-suggestion" onclick="addTag('📱 Mobile')">📱 Mobile</span>
+                        <span class="tag-suggestion" onclick="addTag('🌐 Web')">🌐 Web</span>
+                        <span class="tag-suggestion" onclick="addTag('🔒 Privacy')">🔒 Privacy</span>
+                        <span class="tag-suggestion" onclick="addTag('💰 FinTech')">💰 FinTech</span>
+                        <span class="tag-suggestion" onclick="addTag('🎮 Gaming')">🎮 Gaming</span>
+                        <span class="tag-suggestion" onclick="addTag('🌍 Sustainability')">🌍 Sustainability</span>
+                        <span class="tag-suggestion" onclick="addTag('📚 Education')">📚 Education</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Kategorie <span>*</span></label>
+                    <div class="category-grid" id="categoryGrid">
+                        <div class="category-option" onclick="selectCategory('tech')" data-category="tech">
+                            <div class="category-icon">💻</div>
+                            <div class="category-name">Technologie</div>
+                        </div>
+                        <div class="category-option" onclick="selectCategory('business')" data-category="business">
+                            <div class="category-icon">💼</div>
+                            <div class="category-name">Business</div>
+                        </div>
+                        <div class="category-option" onclick="selectCategory('social')" data-category="social">
+                            <div class="category-icon">👥</div>
+                            <div class="category-name">Social</div>
+                        </div>
+                        <div class="category-option" onclick="selectCategory('science')" data-category="science">
+                            <div class="category-icon">🔬</div>
+                            <div class="category-name">Wissenschaft</div>
+                        </div>
+                        <div class="category-option" onclick="selectCategory('energy')" data-category="energy">
+                            <div class="category-icon">⚡</div>
+                            <div class="category-name">Energie</div>
+                        </div>
+                        <div class="category-option" onclick="selectCategory('other')" data-category="other">
+                            <div class="category-icon">✨</div>
+                            <div class="category-name">Sonstiges</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-prev" onclick="goToStep(1)">← Zurück</button>
+                    <button class="btn btn-next" onclick="goToStep(3)" id="btnStep2">Weiter →</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Target -->
+            <div class="form-card" id="step3" style="display: none;">
+                <div class="form-header">
+                    <h2 class="form-title">🎯 Wo soll die Idee erscheinen?</h2>
+                    <p class="form-subtitle">Wähle das Ziel für deine Idee</p>
+                </div>
+
+                <div class="target-options">
+                    <div class="target-option" onclick="selectTarget('discussion')" id="target-discussion">
+                        <div class="target-icon">💬</div>
+                        <div class="target-info">
+                            <div class="target-title">Ideen-Diskussion</div>
+                            <div class="target-desc">Sammle Feedback in der Community. Subscriber können die Idee jederzeit in den Marktplatz verschieben, wo das Voting startet.</div>
+                        </div>
+                        <span class="target-badge free">Frei</span>
+                    </div>
+
+                    <div class="target-option" onclick="selectTarget('marketplace')" id="target-marketplace">
+                        <div class="target-icon">🛒</div>
+                        <div class="target-info">
+                            <div class="target-title">Direkt zum Marktplatz</div>
+                            <div class="target-desc">Direkter Zugang zu Investments. Deine Idee muss bereits validiert sein.</div>
+                        </div>
+                        <span class="target-badge sub">Subscriber</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-prev" onclick="goToStep(2)">← Zurück</button>
+                    <button class="btn btn-next" onclick="goToStep(4)" id="btnStep3">Weiter →</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Review -->
+            <div class="form-card" id="step4" style="display: none;">
+                <div class="form-header">
+                    <h2 class="form-title">✅ Überprüfe deine Idee</h2>
+                    <p class="form-subtitle">Stimmt alles? Dann kannst du posten!</p>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-label">Titel</div>
+                    <div class="review-value title" id="reviewTitle">-</div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-label">Beschreibung</div>
+                    <div class="review-value" id="reviewDescription">-</div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-label">Tags</div>
+                    <div class="review-tags" id="reviewTags"></div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-label">Kategorie</div>
+                    <div class="review-value" id="reviewCategory">-</div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-label">Ziel</div>
+                    <div class="review-value" id="reviewTarget">-</div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-prev" onclick="goToStep(3)">← Zurück</button>
+                    <button class="btn btn-submit" onclick="submitIdea()">🚀 Idee posten</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div class="success-screen" id="successScreen">
+            <div class="success-icon">🎉</div>
+            <h1 class="success-title">Idee gepostet!</h1>
+            <p class="success-text" id="successText">Deine Idee ist jetzt in der Diskussion und sammelt Feedback.</p>
+            <div class="success-actions">
+                <a href="idea-detail.html?id=new" class="btn-primary">Idee ansehen →</a>
+                <a href="discussion.html" class="btn-secondary">Zur Diskussion</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Role Management
+        let currentRole = localStorage.getItem('ideenschmiede_role') || 'visitor';
+        
+        // Form Data
+        let formData = {
+            title: '',
+            description: '',
+            tags: [],
+            category: '',
+            target: ''
+        };
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (currentRole === 'visitor') {
+                document.getElementById('loginRequired').classList.add('show');
+            } else {
+                document.getElementById('wizard').classList.add('show');
+            }
+            
+            setupCharacterCounters();
+            setupTagInput();
+        });
+        
+        // Character Counters
+        function setupCharacterCounters() {
+            const titleInput = document.getElementById('ideaTitle');
+            const descInput = document.getElementById('ideaDescription');
+            
+            titleInput.addEventListener('input', () => {
+                document.getElementById('titleCount').textContent = titleInput.value.length;
+                formData.title = titleInput.value;
+                validateStep1();
+            });
+            
+            descInput.addEventListener('input', () => {
+                document.getElementById('descCount').textContent = descInput.value.length;
+                formData.description = descInput.value;
+                validateStep1();
+            });
+            
+            // Initial validation
+            validateStep1();
+        }
+        
+        function validateStep1() {
+            const title = document.getElementById('ideaTitle').value.trim();
+            const desc = document.getElementById('ideaDescription').value.trim();
+            const btn = document.getElementById('btnStep1');
+            // Validation: title min 10 chars, description min 100 chars
+            const isValid = title.length >= 10 && desc.length >= 100;
+            btn.disabled = !isValid;
+            
+            // Visual feedback
+            if (isValid) {
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+            
+            // Update hint
+            const hintEl = document.getElementById('step1Hint');
+            if (desc.length > 0 && desc.length < 100) {
+                const remaining = 100 - desc.length;
+                hintEl.innerHTML = `⚠️ Noch ${remaining} Zeichen erforderlich (min. 100)`;
+                hintEl.style.color = 'var(--accent-orange)';
+            } else if (desc.length >= 100) {
+                hintEl.innerHTML = '✓ Mindestanzahl erreicht';
+                hintEl.style.color = 'var(--accent-green)';
+            } else {
+                hintEl.innerHTML = '💡 Mindestens 100 Zeichen für eine gute Beschreibung';
+                hintEl.style.color = 'var(--text-tertiary)';
+            }
+        }
+        
+        // Tag Input
+        function setupTagInput() {
+            const input = document.getElementById('tagInput');
+            const container = document.getElementById('tagsInput');
+            
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const tag = input.value.trim();
+                    if (tag && !formData.tags.includes(tag)) {
+                        addTag(tag);
+                        input.value = '';
+                    }
+                }
+                if (e.key === 'Backspace' && !input.value && formData.tags.length > 0) {
+                    removeTag(formData.tags.length - 1);
+                }
+            });
+        }
+        
+        function addTag(tag) {
+            if (formData.tags.length >= 5) {
+                showToast('Maximal 5 Tags erlaubt');
+                return;
+            }
+            formData.tags.push(tag);
+            renderTags();
+            validateStep2();
+        }
+        
+        function removeTag(index) {
+            formData.tags.splice(index, 1);
+            renderTags();
+            validateStep2();
+        }
+        
+        function renderTags() {
+            const container = document.getElementById('tagsInput');
+            const input = document.getElementById('tagInput');
+            
+            // Remove existing tags
+            container.querySelectorAll('.tag-item').forEach(el => el.remove());
+            
+            // Add tags before input
+            formData.tags.forEach((tag, index) => {
+                const tagEl = document.createElement('div');
+                tagEl.className = 'tag-item';
+                tagEl.innerHTML = `${tag} <span class="tag-remove" onclick="removeTag(${index})">✕</span>`;
+                container.insertBefore(tagEl, input);
+            });
+        }
+        
+        // Category Selection
+        function selectCategory(category) {
+            formData.category = category;
+            document.querySelectorAll('.category-option').forEach(el => {
+                el.classList.toggle('selected', el.dataset.category === category);
+            });
+            validateStep2();
+        }
+        
+        function validateStep2() {
+            const btn = document.getElementById('btnStep2');
+            const isValid = formData.tags.length >= 1 && formData.category;
+            btn.disabled = !isValid;
+            if (!isValid) {
+                btn.style.opacity = '0.5';
+            } else {
+                btn.style.opacity = '1';
+            }
+            console.log('Step 2 validation:', { tags: formData.tags.length, category: formData.category, isValid });
+        }
+        
+        // Category Selection
+        function selectCategory(category) {
+            formData.category = category;
+            document.querySelectorAll('.category-option').forEach(el => {
+                el.classList.toggle('selected', el.dataset.category === category);
+            });
+            validateStep2();
+        }
+        
+        // Target Selection
+        function selectTarget(target) {
+            // Check if user can select marketplace
+            if (target === 'marketplace' && currentRole !== 'subscriber') {
+                showToast('🔒 Marktplatz nur für Subscriber');
+                return;
+            }
+            
+            formData.target = target;
+            document.querySelectorAll('.target-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            document.getElementById(`target-${target}`).classList.add('selected');
+            validateStep3();
+        }
+        
+        function validateStep3() {
+            const btn = document.getElementById('btnStep3');
+            const isValid = !!formData.target;
+            btn.disabled = !isValid;
+            if (!isValid) {
+                btn.style.opacity = '0.5';
+            } else {
+                btn.style.opacity = '1';
+            }
+        }
+        
+        // Step Navigation
+        function goToStep(step) {
+            // Hide all steps
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`step${i}`).style.display = 'none';
+            }
+            
+            // Show current step
+            document.getElementById(`step${step}`).style.display = 'block';
+            
+            // Update indicators
+            updateStepIndicators(step);
+            
+            // If going to review, populate data
+            if (step === 4) {
+                populateReview();
+            }
+        }
+        
+        function updateStepIndicators(currentStep) {
+            for (let i = 1; i <= 4; i++) {
+                const indicator = document.getElementById(`step${i}-indicator`);
+                const line = document.getElementById(`line${i}`);
+                
+                if (i < currentStep) {
+                    indicator.classList.add('completed');
+                    indicator.classList.remove('active');
+                    if (line) line.classList.add('completed');
+                } else if (i === currentStep) {
+                    indicator.classList.add('active');
+                    indicator.classList.remove('completed');
+                } else {
+                    indicator.classList.remove('active', 'completed');
+                    if (line) line.classList.remove('completed');
+                }
+            }
+        }
+        
+        // Populate Review
+        function populateReview() {
+            document.getElementById('reviewTitle').textContent = formData.title;
+            document.getElementById('reviewDescription').textContent = formData.description;
+            
+            const tagsContainer = document.getElementById('reviewTags');
+            tagsContainer.innerHTML = formData.tags.map(tag => 
+                `<span class="tag-item">${tag}</span>`
+            ).join('');
+            
+            const categories = {
+                tech: '💻 Technologie',
+                business: '💼 Business',
+                social: '👥 Social',
+                science: '🔬 Wissenschaft',
+                energy: '⚡ Energie',
+                other: '✨ Sonstiges'
+            };
+            document.getElementById('reviewCategory').textContent = categories[formData.category];
+            
+            const targets = {
+                discussion: '💬 Ideen-Diskussion',
+                marketplace: '🛒 Direkt zum Marktplatz'
+            };
+            document.getElementById('reviewTarget').textContent = targets[formData.target];
+        }
+        
+        // Submit Idea
+        function submitIdea() {
+            showToast('🚀 Idee wird gepostet...');
+            
+            // Simulate API call
+            setTimeout(() => {
+                document.getElementById('wizard').style.display = 'none';
+                document.querySelector('.progress-steps').style.display = 'none';
+                document.getElementById('successScreen').classList.add('show');
+                
+                // Update success text based on target
+                if (formData.target === 'marketplace') {
+                    document.getElementById('successText').textContent = 
+                        'Deine Idee ist jetzt direkt im Marktplatz und kann von Investoren gefunden werden.';
+                }
+            }, 1500);
+        }
+        
+        // Toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+</html>

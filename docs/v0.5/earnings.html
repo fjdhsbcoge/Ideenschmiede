@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earnings - Ideenschmiede v0.5</title>
+    <style>
+        /* ============================================
+           V0.5 EARNINGS DASHBOARD
+           Neue Seite: Investor Protection + Earnings
+           ============================================ */
+        
+        /* CSS Variables - Consistent with v0.4 */
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-tertiary: #606070;
+            --accent-primary: #e94560;
+            --accent-green: #2ecc71;
+            --accent-blue: #3498db;
+            --accent-orange: #f39c12;
+            --accent-gold: #f7931a;
+            --accent-purple: #9b59b6;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* ============================================
+           NAVIGATION (v0.4 Style)
+           ============================================ */
+        .main-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            padding: 16px 24px;
+        }
+
+        .main-nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-primary), #ff6b6b);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-item {
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .badge-free { background: var(--accent-green); color: var(--bg-primary); }
+        .badge-login { background: var(--accent-blue); color: var(--bg-primary); }
+        .badge-member { background: var(--accent-primary); color: white; }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 900px) {
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                right: 0;
+                background: var(--bg-secondary);
+                flex-direction: column;
+                padding: 16px;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .nav-menu.active { display: flex; }
+            .mobile-menu-btn { display: block; }
+        }
+
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        .main-content {
+            padding-top: 80px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-left: 24px;
+            padding-right: 24px;
+            padding-bottom: 60px;
+        }
+
+        .page-header {
+            padding: 40px 0;
+        }
+
+        .page-header h1 {
+            font-size: 36px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--accent-gold), #ffab40);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        /* ============================================
+           INVESTOR PROTECTION BANNER
+           ============================================ */
+        .protection-banner {
+            background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(233, 69, 96, 0.05) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .protection-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .protection-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .shield-icon {
+            font-size: 24px;
+        }
+
+        .vc-terms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .vc-term {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .vc-term:hover {
+            border-color: var(--accent-gold);
+            background: rgba(247, 147, 26, 0.1);
+        }
+
+        .vc-term .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            width: 300px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 100;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            margin-bottom: 8px;
+        }
+
+        .vc-term:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .vc-term-icon {
+            font-size: 18px;
+        }
+
+        /* ============================================
+           SECONDARY MARKET INFO
+           ============================================ */
+        .secondary-market-info {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(155, 89, 182, 0.1) 100%);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .secondary-market-info .icon {
+            font-size: 32px;
+        }
+
+        .secondary-market-info .content h4 {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .secondary-market-info .content p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ============================================
+           STATS BAR
+           ============================================ */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .stat-value.available { color: var(--accent-green); }
+        .stat-value.pending { color: var(--accent-orange); }
+        .stat-value.total { color: var(--accent-gold); }
+
+        /* ============================================
+           EARNINGS CARDS
+           ============================================ */
+        .earnings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .earnings-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .earnings-card:hover {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 30px rgba(247, 147, 26, 0.1);
+        }
+
+        .card-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .idea-info h3 {
+            font-size: 17px;
+            margin-bottom: 12px;
+        }
+
+        .badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .badge-lead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .badge-verified {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        .badge-reputation {
+            background: var(--accent-orange);
+            color: #000;
+        }
+
+        .badge-skin {
+            background: var(--accent-gold);
+            color: #000;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-available {
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--accent-green);
+        }
+
+        .status-locked {
+            background: rgba(243, 156, 18, 0.2);
+            color: var(--accent-orange);
+        }
+
+        .status-exit {
+            background: rgba(247, 147, 26, 0.2);
+            color: var(--accent-gold);
+        }
+
+        /* Skin in the Game Section */
+        .skin-section {
+            padding: 20px 24px;
+            background: rgba(247, 147, 26, 0.03);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .skin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .skin-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .skin-amount {
+            font-weight: 700;
+            color: var(--accent-gold);
+        }
+
+        .skin-progress {
+            background: var(--bg-primary);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .skin-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-gold), #ffab40);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .skin-explanation {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-icon {
+            cursor: help;
+            position: relative;
+        }
+
+        .info-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            width: 260px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            z-index: 10;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            margin-bottom: 8px;
+        }
+
+        /* Milestone Section */
+        .milestone-section {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .milestone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .milestone-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .milestone-current {
+            font-weight: 600;
+        }
+
+        .milestone-series {
+            font-size: 11px;
+            padding: 4px 8px;
+            background: var(--accent-blue);
+            color: white;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+
+        .milestone-steps {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .milestone-step {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+        }
+
+        .milestone-step.completed {
+            background: var(--accent-green);
+        }
+
+        .milestone-step.active {
+            background: var(--accent-gold);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .voting-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .voting-status.active {
+            color: var(--accent-green);
+        }
+
+        /* Earnings Details */
+        .earnings-details {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .detail-item {
+            text-align: center;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .detail-value.positive {
+            color: var(--accent-green);
+        }
+
+        /* Card Actions */
+        .card-actions {
+            padding: 16px 24px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-gold), #ffab40);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(247, 147, 26, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--accent-green), #27ae60);
+            color: #000;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        /* ============================================
+           INVESTOR RIGHTS SECTION
+           ============================================ */
+        .rights-section {
+            margin-top: 48px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+        }
+
+        .section-header {
+            margin-bottom: 24px;
+        }
+
+        .section-header h2 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .rights-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .right-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .right-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .right-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ============================================
+           TAX SECTION
+           ============================================ */
+        .tax-section {
+            margin-top: 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+        }
+
+        .tax-form {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .form-group input, .form-group select {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+        }
+
+        .tax-actions {
+            grid-column: span 2;
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 1024px) {
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .rights-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .earnings-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .details-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .tax-form {
+                grid-template-columns: 1fr;
+            }
+            
+            .tax-actions {
+                grid-column: span 1;
+                flex-direction: column;
+            }
+            
+            .vc-terms {
+                justify-content: center;
+            }
+            
+            .stats-bar {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ============================================
+           UTILITY
+           ============================================ */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <div class="main-nav-container">
+            <a href="index.html" class="nav-logo">
+                <div class="nav-logo-icon">⚡</div>
+                <span>Ideenschmiede</span>
+            </a>
+            <button class="mobile-menu-btn" onclick="document.getElementById('navMenu').classList.toggle('active')">☰</button>
+            <div class="nav-menu" id="navMenu">
+                <a href="discussion.html" class="nav-item">
+                    💡 Diskussion <span class="nav-badge badge-free">Frei</span>
+                </a>
+                <a href="marketplace.html" class="nav-item">
+                    🛒 Marktplatz <span class="nav-badge badge-member">Mitglied</span>
+                </a>
+                <a href="teams.html" class="nav-item">
+                    👥 Teams <span class="nav-badge badge-member">Mitglied</span>
+                </a>
+                <a href="dashboard.html" class="nav-item">
+                    📊 Dashboard <span class="nav-badge badge-login">Login</span>
+                </a>
+                <a href="profile.html" class="nav-item active">
+                    👤 Profil <span class="nav-badge badge-login">Login</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>💰 Earnings Dashboard</h1>
+            <p>Verwalte deine Earnings, Investments und Steuerdokumente</p>
+        </div>
+
+        <!-- Investor Protection Banner -->
+        <div class="protection-banner">
+            <div class="protection-header">
+                <span class="shield-icon">🛡️</span>
+                <h2>Investor Protection Mechanismen</h2>
+            </div>
+            <div class="vc-terms">
+                <div class="vc-term">
+                    <span class="vc-term-icon">🤝</span>
+                    <span>Tag-Along Rights</span>
+                    <div class="tooltip">
+                        <strong>Tag-Along Rights (Mitverkaufsrecht)</strong><br><br>
+                        Wenn Gründer ihre Anteile verkaufen, können Investoren zu denselben Konditionen mitverkaufen. Du wirst nie "ausgesperrt" oder zu schlechteren Konditionen behandelt.
+                    </div>
+                </div>
+                <div class="vc-term">
+                    <span class="vc-term-icon">🛡️</span>
+                    <span>Liquidation Preference</span>
+                    <div class="tooltip">
+                        <strong>Liquidation Preference</strong><br><br>
+                        Bei Insolvenz oder Scam werden Investoren VOR dem Team ausgezahlt. Dein Investment hat Priorität – das Team trägt das erste Risiko.
+                    </div>
+                </div>
+                <div class="vc-term">
+                    <span class="vc-term-icon">💎</span>
+                    <span>Lead Investor Verified</span>
+                    <div class="tooltip">
+                        <strong>Lead Investor Verified</strong><br><br>
+                        Erfahrene Investoren mit Track Record prüfen die Idee. Sie fungieren als Vertrauensanker und stehen für Qualität.
+                    </div>
+                </div>
+                <div class="vc-term">
+                    <span class="vc-term-icon">🔒</span>
+                    <span>Skin in the Game</span>
+                    <div class="tooltip">
+                        <strong>Skin in the Game</strong><br><br>
+                        Das Team hinterlegt 120-200% der Tranche als Pfand. Bei Scam: Automatischer Verlust für das Team, Ausschüttung an Investoren.
+                        <br><br>
+                        <em>Meilenstein 1 = erste Auszahlung ans Team</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secondary Market Info -->
+        <div class="secondary-market-info">
+            <span class="icon">🔄</span>
+            <div class="content">
+                <h4>Secondary Market: Jederzeit liquide</h4>
+                <p>Investoren können Anteile jederzeit an andere verkaufen – das Projektkapital bleibt unberührt. Keine "Bank Runs", keine plötzlichen Kapitalabflüsse. Das Team arbeitet weiter.</p>
+            </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-label">
+                    <span>💰</span> Verfügbar (Sofort)
+                </div>
+                <div class="stat-value available">₿ 0.245</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">
+                    <span>⏳</span> Pending (in Escrow)
+                </div>
+                <div class="stat-value pending">₿ 0.180</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">
+                    <span>📊</span> Aktive Investments
+                </div>
+                <div class="stat-value">4 Ideen</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">
+                    <span>📈</span> Gesamt-ROI
+                </div>
+                <div class="stat-value total">+23.5%</div>
+            </div>
+        </div>
+
+        <!-- Earnings Cards -->
+        <div class="earnings-grid">
+            <!-- Card 1 -->
+            <div class="earnings-card">
+                <div class="card-header">
+                    <div class="idea-info">
+                        <h3>Dezentrale Energiehandelsplattform</h3>
+                        <div class="badges">
+                            <span class="badge badge-lead">💎 Lead</span>
+                            <span class="badge badge-verified">✓ Verified</span>
+                            <span class="badge badge-reputation">⭐ 4.8</span>
+                            <span class="badge badge-skin">🔒 150%</span>
+                        </div>
+                    </div>
+                    <span class="status-badge status-available">💰 Auszahlbar</span>
+                </div>
+
+                <div class="skin-section">
+                    <div class="skin-header">
+                        <span class="skin-title">
+                            🔒 Skin in the Game
+                            <span class="info-icon" data-tooltip="Das Team hat 150% der aktuellen Tranche (₿ 1.5) als Pfand hinterlegt. Bei Scam geht das Geld direkt an die Investoren.">ⓘ</span>
+                        </span>
+                        <span class="skin-amount">₿ 1.50</span>
+                    </div>
+                    <div class="skin-progress">
+                        <div class="skin-progress-bar" style="width: 100%"></div>
+                    </div>
+                    <div class="skin-explanation">
+                        <span>✅ 150% Pfand aktiv – Meilenstein 2 erreicht</span>
+                    </div>
+                </div>
+
+                <div class="milestone-section">
+                    <div class="milestone-header">
+                        <span class="milestone-title">Meilenstein-Fortschritt</span>
+                        <div>
+                            <span class="milestone-current">2/5</span>
+                            <span class="milestone-series">Series A</span>
+                        </div>
+                    </div>
+                    <div class="milestone-steps">
+                        <div class="milestone-step completed"></div>
+                        <div class="milestone-step completed"></div>
+                        <div class="milestone-step active"></div>
+                        <div class="milestone-step"></div>
+                        <div class="milestone-step"></div>
+                    </div>
+                    <div class="voting-status active">
+                        <span>🗳️</span> Voting für Meilenstein 3 läuft
+                    </div>
+                </div>
+
+                <div class="earnings-details">
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">/Monat</div>
+                            <div class="detail-value positive">₿ 0.045</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Shares</div>
+                            <div class="detail-value">2.5%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">ROI</div>
+                            <div class="detail-value positive">+34%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Gesamt</div>
+                            <div class="detail-value">₿ 0.425</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    <button class="btn btn-primary">💰 Auszahlen</button>
+                    <button class="btn btn-secondary">📊 Details</button>
+                    <button class="btn btn-outline">👁️ Team prüfen</button>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="earnings-card">
+                <div class="card-header">
+                    <div class="idea-info">
+                        <h3>AI Supply Chain Tracking</h3>
+                        <div class="badges">
+                            <span class="badge badge-verified">✓ Verified</span>
+                            <span class="badge badge-reputation">⭐ 4.2</span>
+                            <span class="badge badge-skin">🔒 120%</span>
+                        </div>
+                    </div>
+                    <span class="status-badge status-locked">⏳ Gesperrt</span>
+                </div>
+
+                <div class="skin-section">
+                    <div class="skin-header">
+                        <span class="skin-title">
+                            🔒 Skin in the Game
+                            <span class="info-icon" data-tooltip="Erst nach Meilenstein 1 erfolgt die erste Auszahlung ans Team. Bis dahin ist das Pfand gesperrt.">ⓘ</span>
+                        </span>
+                        <span class="skin-amount">₿ 0.60</span>
+                    </div>
+                    <div class="skin-progress">
+                        <div class="skin-progress-bar" style="width: 100%"></div>
+                    </div>
+                    <div class="skin-explanation">
+                        <span>⏳ Erste Auszahlung nach Meilenstein 1</span>
+                    </div>
+                </div>
+
+                <div class="milestone-section">
+                    <div class="milestone-header">
+                        <span class="milestone-title">Meilenstein-Fortschritt</span>
+                        <div>
+                            <span class="milestone-current">1/5</span>
+                            <span class="milestone-series">Series A</span>
+                        </div>
+                    </div>
+                    <div class="milestone-steps">
+                        <div class="milestone-step completed"></div>
+                        <div class="milestone-step active"></div>
+                        <div class="milestone-step"></div>
+                        <div class="milestone-step"></div>
+                        <div class="milestone-step"></div>
+                    </div>
+                    <div class="voting-status">
+                        <span>🔒</span> Voting beginnt nach MVP
+                    </div>
+                </div>
+
+                <div class="earnings-details">
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">/Monat</div>
+                            <div class="detail-value">₿ 0.012</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Shares</div>
+                            <div class="detail-value">0.8%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">ROI</div>
+                            <div class="detail-value positive">+8%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Gesamt</div>
+                            <div class="detail-value">₿ 0.036</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    <button class="btn btn-secondary">📊 Details</button>
+                    <button class="btn btn-outline">👁️ Team prüfen</button>
+                </div>
+            </div>
+
+            <!-- Card 3 - Exit Ready -->
+            <div class="earnings-card">
+                <div class="card-header">
+                    <div class="idea-info">
+                        <h3>Privates dezentrales Cloud-Storage</h3>
+                        <div class="badges">
+                            <span class="badge badge-lead">💎 Lead</span>
+                            <span class="badge badge-verified">✓ Verified</span>
+                            <span class="badge badge-reputation">⭐ 4.9</span>
+                            <span class="badge badge-skin">🔒 200%</span>
+                        </div>
+                    </div>
+                    <span class="status-badge status-exit">🚪 Exit</span>
+                </div>
+
+                <div class="skin-section">
+                    <div class="skin-header">
+                        <span class="skin-title">
+                            🔒 Skin in the Game
+                            <span class="info-icon" data-tooltip="200% Pfand – maximales Vertrauen. Das Team hat alles aufs Spiel gesetzt.">ⓘ</span>
+                        </span>
+                        <span class="skin-amount">₿ 4.00</span>
+                    </div>
+                    <div class="skin-progress">
+                        <div class="skin-progress-bar" style="width: 100%"></div>
+                    </div>
+                    <div class="skin-explanation">
+                        <span>✅ Maximale Sicherheit – 200% Pfand</span>
+                    </div>
+                </div>
+
+                <div class="milestone-section">
+                    <div class="milestone-header">
+                        <span class="milestone-title">Meilenstein-Fortschritt</span>
+                        <div>
+                            <span class="milestone-current">5/5</span>
+                            <span class="milestone-series" style="background: var(--accent-green)">Series B</span>
+                        </div>
+                    </div>
+                    <div class="milestone-steps">
+                        <div class="milestone-step completed"></div>
+                        <div class="milestone-step completed"></div>
+                        <div class="milestone-step completed"></div>
+                        <div class="milestone-step completed"></div>
+                        <div class="milestone-step completed"></div>
+                    </div>
+                    <div class="voting-status active">
+                        <span>🚀</span> Series B Funding läuft – Exit möglich!
+                    </div>
+                </div>
+
+                <div class="earnings-details">
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">/Monat</div>
+                            <div class="detail-value positive">₿ 0.089</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Shares</div>
+                            <div class="detail-value">1.5%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">ROI</div>
+                            <div class="detail-value positive">+156%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Gesamt</div>
+                            <div class="detail-value">₿ 1.245</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    <button class="btn btn-success">🚪 Exit (Series B)</button>
+                    <button class="btn btn-primary">💰 Auszahlen</button>
+                    <button class="btn btn-secondary">📊 Details</button>
+                </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="earnings-card">
+                <div class="card-header">
+                    <div class="idea-info">
+                        <h3>Micro-Investing Emerging Markets</h3>
+                        <div class="badges">
+                            <span class="badge badge-verified">✓ Verified</span>
+                            <span class="badge badge-reputation">⭐ 4.5</span>
+                            <span class="badge badge-skin">🔒 180%</span>
+                        </div>
+                    </div>
+                    <span class="status-badge status-available">💰 Auszahlbar</span>
+                </div>
+
+                <div class="skin-section">
+                    <div class="skin-header">
+                        <span class="skin-title">
+                            🔒 Skin in the Game
+                            <span class="info-icon" data-tooltip="180% Pfand. Bei Scam: Automatische Liquidation und Ausschüttung an Shareholder.">ⓘ</span>
+                        </span>
+                        <span class="skin-amount">₿ 0.90</span>
+                    </div>
+                    <div class="skin-progress">
+                        <div class="skin-progress-bar" style="width: 100%"></div>
+                    </div>
+                    <div class="skin-explanation">
+                        <span>✅ 180% Pfand aktiv – Meilenstein 3 freigegeben</span>
+                    </div>
+                </div>
+
+                <div class="milestone-section">
+                    <div class="milestone-header">
+                        <span class="milestone-title">Meilenstein-Fortschritt</span>
+                        <div>
+                            <span class="milestone-current">3/5</span>
+                            <span class="milestone-series">Series A</span>
+                        </div>
+                    </div>
+                    <div class="milestone-steps">
+                        <div class="milestone-step completed"></div>
+                        <div class="milestone-step completed"></div>
+                        <div class="milestone-step completed"></div>
+                        <div class="milestone-step active"></div>
+                        <div class="milestone-step"></div>
+                    </div>
+                    <div class="voting-status">
+                        <span>✅</span> Meilenstein 3 freigegeben
+                    </div>
+                </div>
+
+                <div class="earnings-details">
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">/Monat</div>
+                            <div class="detail-value positive">₿ 0.028</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Shares</div>
+                            <div class="detail-value">1.2%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">ROI</div>
+                            <div class="detail-value positive">+45%</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Gesamt</div>
+                            <div class="detail-value">₿ 0.189</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    <button class="btn btn-primary">💰 Auszahlen</button>
+                    <button class="btn btn-secondary">📊 Details</button>
+                    <button class="btn btn-outline">👁️ Team prüfen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investor Rights Section -->
+        <div class="rights-section">
+            <div class="section-header">
+                <h2>🛡️ Deine Investoren-Rechte</h2>
+                <p>Als Investor der Ideenschmiede genießt du Schutzmechanismen, die traditionell nur VC-Investoren vorbehalten waren.</p>
+            </div>
+            <div class="rights-grid">
+                <div class="right-card">
+                    <h3>🤝 Tag-Along Rights</h3>
+                    <p>Wenn Gründer ihre Anteile verkaufen (z.B. bei Series B/C), kannst du zu denselben Konditionen mitverkaufen. Du wirst nie zu schlechteren Bedingungen behandelt oder "ausgesperrt". Fairness ist vertraglich garantiert.</p>
+                </div>
+                <div class="right-card">
+                    <h3>🛡️ Liquidation Preference</h3>
+                    <p>Bei Insolvenz oder Scam werden Investoren VOR dem Team ausgezahlt. Dein Investment hat Priorität – das Team trägt das erste und größte Risiko. Du stehst an erster Stelle.</p>
+                </div>
+                <div class="right-card">
+                    <h3>📊 Information Rights</h3>
+                    <p>Quartalsweise Updates direkt vom Team: Finanzberichte, Fortschrittsberichte, Roadmap-Updates. Transparenz ist Pflicht, nicht optional. Du weißt immer, was mit deinem Investment passiert.</p>
+                </div>
+                <div class="right-card">
+                    <h3>🗳️ Milestone Voting</h3>
+                    <p>Shareholder entscheiden gemeinsam über die Freigabe neuer Tranchen. Keine automatischen Auszahlungen – das Team muss liefern, und DU bestimmst, ob sie die nächste Runde verdient haben.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tax Section -->
+        <div class="tax-section">
+            <div class="section-header">
+                <h2>📝 Steuerliche Informationen</h2>
+                <p>Verwalte deine steuerlichen Daten für Jahresbescheinigungen und Meldungen.</p>
+            </div>
+            <div class="tax-form">
+                <div class="form-group">
+                    <label for="tax-id">Steuer-ID / TIN</label>
+                    <input type="text" id="tax-id" placeholder="z.B. 12 345 678 901">
+                </div>
+                <div class="form-group">
+                    <label for="country">Wohnsitzland</label>
+                    <select id="country">
+                        <option value="">Land auswählen...</option>
+                        <option value="DE" selected>Deutschland 🇩🇪</option>
+                        <option value="AT">Österreich 🇦🇹</option>
+                        <option value="CH">Schweiz 🇨🇭</option>
+                        <option value="NL">Niederlande 🇳🇱</option>
+                        <option value="other">Anderes Land 🌍</option>
+                    </select>
+                </div>
+                <div class="tax-actions">
+                    <button class="btn btn-secondary">💾 Speichern</button>
+                    <button class="btn btn-primary">📄 Jahresbescheinigung 2025</button>
+                    <button class="btn btn-outline">📄 Jahresbescheinigung 2024</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Role-based UI updates (consistent with v0.4)
+        let currentRole = localStorage.getItem('ideenschmiede_role') || 'visitor';
+        
+        function updateUIBasedOnRole() {
+            // Future: Show/hide elements based on role
+            // For now, all investors see the same view
+        }
+        
+        // Initialize
+        updateUIBasedOnRole();
+    </script>
+</body>
+</html>
