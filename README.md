@@ -48,30 +48,26 @@ This project follows an **AI-first specification approach**:
 ## 📁 Repository Structure
 
 ```
-├── webapp/              # 🆕 v1.2 – React-Plattform (TypeScript + Vite + Tailwind)
+├── webapp/              # ⭐ Aktive Plattform v1.2 (React + TypeScript + Vite + Tailwind)
 │   ├── src/pages/       # Landing, Diskussion, Marktplatz, Teams, Dashboard …
 │   ├── src/lib/i18n/    # de.ts – zentrale Sprachdatei (i18n-ready)
 │   └── src/lib/         # Store (Rollen, Bewerbungen, Votes), Beispieldaten
 │
-├── prototypes/          # UI prototypes and mockups
-│   ├── ideenschmiede-demo.html    # v0.1 - Basic flow demo
-│   ├── ideenschmiede-v2.html      # v0.2 - Stage visualization + profile
-│   └── process-visualization.html # Interactive process view
+├── docs/                # GitHub Pages (Einstieg) + Whitepaper
+│   ├── index.html       # Weiterleitung zur aktuellen Demo
+│   └── Ideenschmiede_Whitepaper.pdf
 │
-├── docs/                # GitHub Pages deployment
-│   ├── index.html       # Main demo (v0.1)
-│   ├── v2.html          # v0.2 demo
-│   ├── process.html     # Process visualization
-│   └── stages.html      # Stage browser
-│
-├── specs/               # Specification documents
-│   └── SPECIFICATION.md # Living spec (v0.3.0)
+├── archive/             # Historie – nichts gelöscht, nur sortiert
+│   ├── legacy-demos/    # Statische HTML-Demos v0.3–v0.5
+│   ├── prototypes/      # Frühe UI-Prototypen v0.1–v0.5
+│   ├── memory/          # Entwicklungs-Log (2026-03-12)
+│   ├── v0.2/            # v0.2 Demo
+│   └── INVESTMENT-SCENARIOS.md
 │
 ├── VISION.md            # Ideal version - core principles & decisions
 ├── BUILD.md             # Building manual - step-by-step implementation
 ├── ARCHITECTURE.md      # Technical architecture - stack, data models, APIs
-├── README.md            # This file
-└── AGENTS.md            # Workspace conventions for AI agents
+└── README.md            # This file
 ```
 
 ---
@@ -96,9 +92,7 @@ npm run build    # Produktions-Build → dist/
 - 🗣️ i18n-Infrastruktur (`de.ts`) – neue Sprachen per Datei, typsicher
 - 🌐 Landing-Sektionen „Dein Abo ist dein Stimmrecht" (Subscription statt KYC) & „Tausend Schmieden statt einer Plattform" (Föderation)
 
-**Ältere HTML-Demos (v0.4):** [https://fjdhsbcoge.github.io/Ideenschmiede/v0.4/](https://fjdhsbcoge.github.io/Ideenschmiede/v0.4/)
-
-*Interactive demo with role system, marketplace paywall, team creation, and wallet integration.*
+**Ältere HTML-Demos:** Ins Archiv umgezogen → [`archive/legacy-demos/`](archive/legacy-demos/). Die GitHub-Pages-URL zeigt jetzt eine Weiterleitungsseite zur aktuellen Plattform.
 
 ---
 
@@ -125,15 +119,14 @@ npm run build    # Produktions-Build → dist/
   - i18n-Infrastruktur (de.ts, typsicher erweiterbar)
 
 ### In Progress 🚧
-- [ ] v0.3 prototype - Team formation flow
-- [ ] Living specification document
-- [ ] Technical architecture
+- [ ] i18n-Migration der restlichen Seiten (Dashboard, Profil, Teams) auf de.ts
+- [ ] GitHub-Actions-Workflow: Build & Deploy der webapp auf Pages
+- [ ] Settings-Seite (Profil, Wallet/xpub, Benachrichtigungen)
 
 ### Planned 📋
-- [ ] Real comment system
-- [ ] Investment portfolio tracking
-- [ ] Revenue reporting UI
-- [ ] Chain-of-thought scoring
+- [ ] Backend (Auth, Datenbank, echte Persistenz) – MVP-Phase 2
+- [ ] BTCPay-Server-Anbindung (Bitcoin-Subscription, non-custodial)
+- [ ] Föderations-Protokoll (Instanzen, portable Reputation, signierte Attestierungen)
 - [ ] RGB Protocol integration (Phase 2)
 
 ---
@@ -143,8 +136,10 @@ npm run build    # Produktions-Build → dist/
 | Document | Purpose |
 |----------|---------|
 | [VISION.md](VISION.md) | Ideal version - core principles, user flows, decisions |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Technical architecture - stack, data models, APIs |
 | [BUILD.md](BUILD.md) | Building manual - step-by-step implementation guide |
-| [AGENTS.md](AGENTS.md) | Workspace conventions for AI agents |
+| [webapp/README.md](webapp/README.md) | Plattform v1.2 - Setup, Struktur, i18n |
+| [Whitepaper (PDF)](docs/Ideenschmiede_Whitepaper.pdf) | Konzept-Paper |
 
 ---
 
@@ -182,9 +177,9 @@ npm run build    # Produktions-Build → dist/
 
 ## 🔗 Links
 
-- **Live Demo:** https://fjdhsbcoge.github.io/Ideenschmiede
-- **Process View:** https://fjdhsbcoge.github.io/Ideenschmiede/process.html
-- **v0.2 Demo:** https://fjdhsbcoge.github.io/Ideenschmiede/v2.html
+- **Aktive Plattform:** [`webapp/`](webapp/) (React v1.2 – lokal via `npm run dev`)
+- **Pages-Einstieg:** https://fjdhsbcoge.github.io/Ideenschmiede
+- **Archiv (alte Demos):** [`archive/legacy-demos/`](archive/legacy-demos/)
 
 ---
 
