@@ -1,0 +1,64 @@
+name: Deploy webapp to GitHub Pages
+
+# Baut die React-Plattform (webapp/) und deployed sie auf GitHub Pages.
+# Läuft bei jedem Push auf master, der die webapp betrifft – plus manuell via "Run workflow".
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'webapp/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Nur ein Pages-Deployment gleichzeitig
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: webapp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: Dependencies installieren
+        run: npm ci
+
+      - name: Build (TypeScript + Vite)
+        run: npm run build
+
+      - name: Pages vorbereiten
+        uses: actions/configure-pages@v4
+
+      - name: Artefakt hochladen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: webapp/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Auf GitHub Pages deployen
+        id: deployment
+        uses: actions/deploy-pages@v4
