@@ -48,6 +48,11 @@ This project follows an **AI-first specification approach**:
 ## 📁 Repository Structure
 
 ```
+├── webapp/              # 🆕 v1.2 – React-Plattform (TypeScript + Vite + Tailwind)
+│   ├── src/pages/       # Landing, Diskussion, Marktplatz, Teams, Dashboard …
+│   ├── src/lib/i18n/    # de.ts – zentrale Sprachdatei (i18n-ready)
+│   └── src/lib/         # Store (Rollen, Bewerbungen, Votes), Beispieldaten
+│
 ├── prototypes/          # UI prototypes and mockups
 │   ├── ideenschmiede-demo.html    # v0.1 - Basic flow demo
 │   ├── ideenschmiede-v2.html      # v0.2 - Stage visualization + profile
@@ -73,7 +78,25 @@ This project follows an **AI-first specification approach**:
 
 ## 🚀 Live Demo
 
-**Latest Version (v0.4):** [https://fjdhsbcoge.github.io/Ideenschmiede/v0.4/](https://fjdhsbcoge.github.io/Ideenschmiede/v0.4/)
+**🆕 Plattform v1.2 (React):** Vollständige interaktive Plattform-Demo – siehe [`webapp/`](webapp/). Lokal starten:
+
+```bash
+cd webapp
+npm install
+npm run dev      # Entwicklung
+npm run build    # Produktions-Build → dist/
+```
+
+**Highlights der v1.2:**
+- 💡 Ideen-Diskussion mit Chain-of-Thought-Rewards & Create-Idea-Wizard
+- 🛒 Marktplatz mit Paywall, echtem Voting und **Investor Team Selection** (80 %-Pool per Slider auf Teams verteilen, non-refundable)
+- 👥 Team-Detailseiten: Meilensteine mit Deliverables, monatliche Revenue-Reports, Shareholder, eingehende Bewerbungen (Leader-Ansicht)
+- 📨 Bewerbungs-System mit Status-Tracking (localStorage-persistiert)
+- 🗳️ Milestone-Voting & Marktplatz-Voting („1 Person = 1 Stimme")
+- 🗣️ i18n-Infrastruktur (`de.ts`) – neue Sprachen per Datei, typsicher
+- 🌐 Landing-Sektionen „Dein Abo ist dein Stimmrecht" (Subscription statt KYC) & „Tausend Schmieden statt einer Plattform" (Föderation)
+
+**Ältere HTML-Demos (v0.4):** [https://fjdhsbcoge.github.io/Ideenschmiede/v0.4/](https://fjdhsbcoge.github.io/Ideenschmiede/v0.4/)
 
 *Interactive demo with role system, marketplace paywall, team creation, and wallet integration.*
 
@@ -94,6 +117,12 @@ This project follows an **AI-first specification approach**:
   - Profile with wallet display
 - [x] 3-Tier Role System (Visitor/User/Subscriber)
 - [x] Team creation flow (team-create.html)
+- [x] **v1.2 React-Plattform** (TypeScript + Vite + Tailwind, siehe `webapp/`)
+  - Landing mit Föderations- & Subscription-Sektionen
+  - Team-Detailseiten mit Revenue-Reports & Milestone-Voting
+  - Bewerbungs-System (Bewerber- & Leader-Ansicht)
+  - Investor Team Selection (80 %-Pool-Verteilung)
+  - i18n-Infrastruktur (de.ts, typsicher erweiterbar)
 
 ### In Progress 🚧
 - [ ] v0.3 prototype - Team formation flow
