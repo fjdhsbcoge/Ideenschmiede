@@ -2,50 +2,50 @@
 
 **The Marketplace for Ideas**
 
-*The idea-to-product value chain, rethought*
+*Die Wertschöpfungskette von der Idee zum Produkt – neu gedacht.*
 
 ---
 
-## 📝 About This Repository
+## 📝 Über dieses Repository
 
-This repository contains the development of **Ideenschmiede**, a marketplace for ideas.
+Dieses Repository enthält die Entwicklung der **Ideenschmiede**, einem Marktplatz für Ideen.
 
-**Important Transparency Notice:**
-- This repository was created and is maintained by **Kimi Claw**, an AI assistant
-- All commits marked with "Kimi Claw" are authored by an AI, not a human
-- The human collaborator is @senator-thunfisch (project owner)
-- This is an AI-human collaborative project
-
----
-
-## 🎯 What is Ideenschmiede?
-
-Ideenschmiede is a platform where:
-- **Ideators** post ideas and earn from their success
-- **Investors** discover and fund validated ideas
-- **Builders** form teams and bring ideas to life
-
-### Core Principles
-- **Non-custodial** - Platform never holds user funds
-- **Users run their own Bitcoin infrastructure** - Connect wallets, pay directly
-- **20/80 Revenue Split** - 20% to idea-owners, 80% to builders
-- **Community Validation** - One person, one vote
-- **Parallel Teams** - Multiple teams can build the same idea
-- **Trust through transparency** - Social contracts + reputation, not enforcement
+**Wichtiger Transparenz-Hinweis:**
+- Dieses Repository wurde von **Kimi Claw**, einem KI-Assistenten, erstellt und wird von ihm gepflegt
+- Alle Commits mit dem Autor „Kimi Claw" stammen von einer KI, nicht von einem Menschen
+- Der menschliche Kollaborateur ist @senator-thunfisch (Projektinhaber)
+- Dies ist ein KI-Mensch-Kollaborationsprojekt
 
 ---
 
-## 🤖 AI-Human Collaboration
+## 🎯 Was ist die Ideenschmiede?
 
-This project follows an **AI-first specification approach**:
-1. AI (Kimi Claw) creates prototypes and specifications
-2. Human reviews and provides feedback
-3. AI refines based on feedback
-4. Future AI agents can use these specifications to implement
+Die Ideenschmiede ist eine Plattform, auf der:
+- **Ideengeber** Ideen veröffentlichen und an ihrem Erfolg verdienen
+- **Investoren** von der Community validierte Ideen entdecken und finanzieren
+- **Macher** Teams bilden und Ideen zum Leben erwecken
+
+### Kernprinzipien
+- **Non-custodial** – die Plattform hält niemals Nutzergelder
+- **Eigene Bitcoin-Infrastruktur der Nutzer** – Wallets verbinden, direkt zahlen
+- **20/80-Umsatzteilung** – 20 % an Ideengeber, 80 % an Macher
+- **Community-Validierung** – 1 Person = 1 Stimme
+- **Parallele Teams** – mehrere Teams dürfen dieselbe Idee bauen
+- **Vertrauen durch Transparenz** – soziale Verträge + Reputation statt Durchsetzung
 
 ---
 
-## 📁 Repository Structure
+## 🤖 KI-Mensch-Zusammenarbeit
+
+Dieses Projekt folgt einem **KI-first-Spezifikationsansatz**:
+1. Die KI (Kimi Claw) erstellt Prototypen und Spezifikationen
+2. Der Mensch prüft und gibt Feedback
+3. Die KI verfeinert auf Basis des Feedbacks
+4. Künftige KI-Agenten können diese Spezifikationen zur Umsetzung nutzen
+
+---
+
+## 📁 Repository-Struktur
 
 ```
 ├── webapp/              # ⭐ Aktive Plattform v1.2 (React + TypeScript + Vite + Tailwind)
@@ -64,15 +64,15 @@ This project follows an **AI-first specification approach**:
 │   ├── v0.2/            # v0.2 Demo
 │   └── INVESTMENT-SCENARIOS.md
 │
-├── VISION.md            # Ideal version - core principles & decisions
-├── BUILD.md             # Building manual - step-by-step implementation
-├── ARCHITECTURE.md      # Technical architecture - stack, data models, APIs
-└── README.md            # This file
+├── VISION.md            # Idealvorstellung – Kernprinzipien & Entscheidungen
+├── BUILD.md             # Bauanleitung – Schritt-für-Schritt-Umsetzung
+├── ARCHITECTURE.md      # Technische Architektur – Stack, Datenmodelle, APIs
+└── README.md            # Diese Datei
 ```
 
 ---
 
-## 🚀 Live Demo
+## 🚀 Live-Demo
 
 **🆕 Plattform v1.2 (React):** Vollständige interaktive Plattform-Demo – siehe [`webapp/`](webapp/). Lokal starten:
 
@@ -92,85 +92,80 @@ npm run build    # Produktions-Build → dist/
 - 🗣️ i18n-Infrastruktur (`de.ts`) – neue Sprachen per Datei, typsicher
 - 🌐 Landing-Sektionen „Dein Abo ist dein Stimmrecht" (Subscription statt KYC) & „Tausend Schmieden statt einer Plattform" (Föderation)
 
-**Ältere HTML-Demos:** Ins Archiv umgezogen → [`archive/legacy-demos/`](archive/legacy-demos/). Die GitHub-Pages-URL zeigt jetzt eine Weiterleitungsseite zur aktuellen Plattform.
+**Automatisches Deployment:** Ein GitHub-Actions-Workflow (`.github/workflows/deploy.yml`) baut die webapp bei jedem Push und deployed sie auf GitHub Pages.
+
+**Ältere HTML-Demos:** Ins Archiv umgezogen → [`archive/legacy-demos/`](archive/legacy-demos/).
 
 ---
 
-## 📊 Project Status
+## 📊 Projektstatus
 
-### Completed ✅
-- [x] Vision document (VISION.md)
-- [x] Build manual (BUILD.md)
-- [x] Architecture documentation (ARCHITECTURE.md)
-- [x] v0.4 Interactive Demo with role system
-  - Landing page (DE/EN)
-  - Discussion with role-based access
-  - Marketplace with subscriber paywall
-  - Team creation and application
-  - Dashboard with role switcher
-  - Profile with wallet display
-- [x] 3-Tier Role System (Visitor/User/Subscriber)
-- [x] Team creation flow (team-create.html)
+### Abgeschlossen ✅
+- [x] Vision-Dokument (VISION.md)
+- [x] Bauanleitung (BUILD.md)
+- [x] Architektur-Dokumentation (ARCHITECTURE.md)
+- [x] Interaktive HTML-Demos v0.1–v0.5 (Archiv)
+- [x] 3-stufiges Rollensystem (Visitor/User/Subscriber)
 - [x] **v1.2 React-Plattform** (TypeScript + Vite + Tailwind, siehe `webapp/`)
   - Landing mit Föderations- & Subscription-Sektionen
   - Team-Detailseiten mit Revenue-Reports & Milestone-Voting
   - Bewerbungs-System (Bewerber- & Leader-Ansicht)
   - Investor Team Selection (80 %-Pool-Verteilung)
   - i18n-Infrastruktur (de.ts, typsicher erweiterbar)
+- [x] GitHub-Actions-Workflow: Build & Deploy der webapp auf Pages
 
-### In Progress 🚧
+### In Arbeit 🚧
 - [ ] i18n-Migration der restlichen Seiten (Dashboard, Profil, Teams) auf de.ts
-- [ ] GitHub-Actions-Workflow: Build & Deploy der webapp auf Pages
 - [ ] Settings-Seite (Profil, Wallet/xpub, Benachrichtigungen)
 
-### Planned 📋
+### Geplant 📋
 - [ ] Backend (Auth, Datenbank, echte Persistenz) – MVP-Phase 2
 - [ ] BTCPay-Server-Anbindung (Bitcoin-Subscription, non-custodial)
 - [ ] Föderations-Protokoll (Instanzen, portable Reputation, signierte Attestierungen)
-- [ ] RGB Protocol integration (Phase 2)
+- [ ] RGB-Protokoll-Integration (Phase 2)
 
 ---
 
-## 📖 Key Documents
+## 📖 Zentrale Dokumente
 
-| Document | Purpose |
-|----------|---------|
-| [VISION.md](VISION.md) | Ideal version - core principles, user flows, decisions |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Technical architecture - stack, data models, APIs |
-| [BUILD.md](BUILD.md) | Building manual - step-by-step implementation guide |
-| [webapp/README.md](webapp/README.md) | Plattform v1.2 - Setup, Struktur, i18n |
+| Dokument | Zweck |
+|----------|-------|
+| [VISION.md](VISION.md) | Idealvorstellung – Kernprinzipien, Nutzerflüsse, Entscheidungen |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Technische Architektur – Stack, Datenmodelle, APIs |
+| [BUILD.md](BUILD.md) | Bauanleitung – Schritt-für-Schritt-Umsetzung |
+| [webapp/README.md](webapp/README.md) | Plattform v1.2 – Setup, Struktur, i18n |
 | [Whitepaper (PDF)](docs/Ideenschmiede_Whitepaper.pdf) | Konzept-Paper |
 
 ---
 
-## 🏗️ The 6 Stages of an Idea
+## 🏗️ Die 6 Stufen einer Idee
 
 ```
-1. Discussion    → Post idea, gather feedback (free)
-2. Voting        → Community validates (8 days)
-3. Idea-Shares   → Fixed supply sale (14 days)
-4. Teams         → Builders apply, investors choose
-5. Building      → Milestone-based development
-6. Revenue       → 20/80 split to shareholders
+1. Diskussion    → Idee posten, Feedback sammeln (kostenlos)
+2. Voting        → Community validiert (8 Tage)
+3. Idea-Shares   → Verkauf mit fixem Angebot (14 Tage)
+4. Teams         → Macher bewerben sich, Investoren wählen
+5. Building      → Meilenstein-basierte Entwicklung
+6. Revenue       → 20/80-Verteilung an Shareholder
 ```
 
 ---
 
-## 💰 Revenue Flow
+## 💰 Geldfluss
 
-### Investment Split
+### Investitions-Aufteilung
 ```
-100% Investment
-├── 15% → Ideator (immediate)
-├── 5%  → Early contributors
-└── 80% → Team building pool
+100 % Investition
+├── 15 % → Ideengeber (sofort)
+├──  5 % → frühe Mitdenker
+└── 80 % → Team-Budget
 ```
 
-### Revenue Split
+### Umsatz-Aufteilung
 ```
-100% Team Revenue
-├── 20% → Idea-Share holders (all teams)
-└── 80% → Team-Share holders (specific team)
+100 % Team-Umsatz
+├── 20 % → Idea-Share-Halter (alle Teams)
+└── 80 % → Team-Share-Halter (dieses Team)
 ```
 
 ---
@@ -183,12 +178,12 @@ npm run build    # Produktions-Build → dist/
 
 ---
 
-## 📜 License
+## 📜 Lizenz
 
-To be determined by project owner.
+Wird vom Projektinhaber noch festgelegt.
 
 ---
 
-*Authored by Kimi Claw (AI Assistant) in collaboration with @senator-thunfisch*
+*Verfasst von Kimi Claw (KI-Assistent) in Zusammenarbeit mit @senator-thunfisch*
 
 > "Don't worry. Even if the world forgets, I'll remember for you."
