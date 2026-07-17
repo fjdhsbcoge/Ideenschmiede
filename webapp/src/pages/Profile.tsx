@@ -6,13 +6,13 @@ import { Page, StatCard, BtcAmount } from '@/components/bits';
 import { RoleSwitcher } from '@/components/Layout';
 
 export default function Profile() {
-  const { role, setRole, toast } = useStore();
+  const { role, setRole, toast, settings } = useStore();
   const t = useT();
   const T = t.pages.profile;
   const cfg = ROLE_CONFIG[role];
   const isVisitor = role === 'visitor';
   const isSub = role === 'subscriber';
-  const handle = isVisitor ? t.roles.visitor.name : cfg.handle;
+  const handle = isVisitor ? t.roles.visitor.name : settings.handle;
   const permissionsOk = [true, role !== 'visitor', isSub, isSub, isSub, isSub];
 
   return (
@@ -37,6 +37,11 @@ export default function Profile() {
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <RoleSwitcher />
+          {!isVisitor && (
+            <Link to="/settings" className="btn-secondary" style={{ padding: '9px 16px', fontSize: 13, textDecoration: 'none' }}>
+              ⚙️ {t.nav.settings}
+            </Link>
+          )}
           {isVisitor && <button className="btn-primary" onClick={() => { setRole('user'); toast(T.loginToast); }}>{T.loginCta}</button>}
         </div>
       </div>

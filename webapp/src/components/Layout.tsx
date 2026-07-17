@@ -81,6 +81,7 @@ export default function Layout() {
     { to: '/teams', icon: '👥', label: t.nav.teams, badge: t.nav.badges.member, badgeClass: 'badge-red' },
     { to: '/dashboard', icon: '📊', label: t.nav.dashboard, badge: t.nav.badges.login, badgeClass: 'badge-blue' },
     { to: '/profile', icon: '👤', label: t.nav.profile, badge: t.nav.badges.login, badgeClass: 'badge-blue' },
+    { to: '/settings', icon: '⚙️', label: t.nav.settings, badge: t.nav.badges.login, badgeClass: 'badge-blue' },
   ];
 
   const FOOTER_LINKS: [string, string][] = [

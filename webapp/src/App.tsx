@@ -13,6 +13,7 @@ import TeamApply, { TeamCreate } from '@/pages/TeamApply';
 import NotFound from '@/pages/NotFound';
 import Dashboard from '@/pages/Dashboard';
 import Profile from '@/pages/Profile';
+import Settings from '@/pages/Settings';
 import Investments from '@/pages/Investments';
 import Earnings from '@/pages/Earnings';
 
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/team-create" element={<TeamCreate />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/investments" element={<Investments />} />
             <Route path="/earnings" element={<Earnings />} />
             <Route path="*" element={<NotFound />} />

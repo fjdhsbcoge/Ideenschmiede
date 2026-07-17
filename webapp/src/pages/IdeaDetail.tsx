@@ -11,7 +11,7 @@ export default function IdeaDetail() {
   const C = t.pages.common
   const { id } = useParams()
   const idea = getIdea(id || '')
-  const { role, can, toast } = useStore()
+  const { role, can, toast, settings } = useStore()
   const [comment, setComment] = useState('')
   const [posted, setPosted] = useState<{ author: string; text: string; time: string; likes: number }[]>([])
   const [showMoveModal, setShowMoveModal] = useState(false)
@@ -37,7 +37,7 @@ export default function IdeaDetail() {
 
   const submitComment = () => {
     if (!comment.trim()) return
-    setPosted((p) => [...p, { author: '@tobias_r', text: comment.trim(), time: T.justNow, likes: 0 }])
+    setPosted((p) => [...p, { author: settings.handle, text: comment.trim(), time: T.justNow, likes: 0 }])
     setComment('')
     toast(T.commentToast)
   }

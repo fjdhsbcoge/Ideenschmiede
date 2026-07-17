@@ -27,6 +27,26 @@ export interface TeamAllocation {
   sat: number;
 }
 
+export interface Settings {
+  handle: string;
+  displayName: string;
+  bio: string;
+  payoutAddress: string;
+  xpub: string;
+  email: string;
+  notifications: boolean[]; // Reihenfolge = de.ts pages.settings.notify
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  handle: '@tobias_r',
+  displayName: '',
+  bio: '',
+  payoutAddress: '',
+  xpub: '',
+  email: '',
+  notifications: [true, true, true, true, true],
+};
+
 interface StoreState {
   role: Role;
   setRole: (r: Role) => void;
@@ -39,6 +59,9 @@ interface StoreState {
   castVote: (key: string, v: 'up' | 'down' | 'yes' | 'no') => void;
   allocations: Record<string, TeamAllocation[]>;
   saveAllocation: (ideaId: string, alloc: TeamAllocation[]) => void;
+  settings: Settings;
+  saveSettings: (patch: Partial<Settings>) => void;
+  resetDemo: () => void;
 }
 
 function load<T>(key: string, fallback: T): T {
@@ -56,6 +79,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [applications, setApplications] = useState<MyApplication[]>(() => load('ideenschmiede_applications', []));
   const [votes, setVotes] = useState<Record<string, 'up' | 'down' | 'yes' | 'no'>>(() => load('ideenschmiede_votes', {}));
   const [allocations, setAllocations] = useState<Record<string, TeamAllocation[]>>(() => load('ideenschmiede_allocations', {}));
+  const [settings, setSettings] = useState<Settings>(() => ({ ...DEFAULT_SETTINGS, ...load('ideenschmiede_settings', DEFAULT_SETTINGS) }));
 
   const addApplication = useCallback((a: Omit<MyApplication, 'id' | 'date' | 'status'>) => {
     setApplications(prev => {
@@ -96,6 +120,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('ideenschmiede_role', r);
   }, []);
 
+  const saveSettings = useCallback((patch: Partial<Settings>) => {
+    setSettings(prev => {
+      const next = { ...prev, ...patch };
+      localStorage.setItem('ideenschmiede_settings', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const resetDemo = useCallback(() => {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('ideenschmiede_'))
+      .forEach(k => localStorage.removeItem(k));
+    window.location.reload();
+  }, []);
+
   const toast = useCallback((msg: string) => {
     setToastMsg(msg);
     setToastKey(k => k + 1);
@@ -121,7 +160,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [role]);
 
   return (
-    <StoreContext.Provider value={{ role, setRole, can, toast, applications, addApplication, withdrawApplication, votes, castVote, allocations, saveAllocation }}>
+    <StoreContext.Provider value={{ role, setRole, can, toast, applications, addApplication, withdrawApplication, votes, castVote, allocations, saveAllocation, settings, saveSettings, resetDemo }}>
       {children}
       <div key={toastKey} className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>
     </StoreContext.Provider>

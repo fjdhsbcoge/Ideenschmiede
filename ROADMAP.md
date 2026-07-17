@@ -15,7 +15,7 @@ Teil 3 (ADRs).
 | # | Aufgabe | Aufwand | Status |
 |---|---|---|---|
 | 1.1 | i18n-Migration restlicher Seiten (Dashboard, Profil, Teams, Discussion …) auf `de.ts` | ~½ Tag | ✅ erledigt (v1.3) |
-| 1.2 | Settings-Seite (Profil, Wallet/xpub-Anbindung, Benachrichtigungen) | ~½ Tag | offen |
+| 1.2 | Settings-Seite (Profil, Wallet/xpub-Anbindung, Benachrichtigungen) | ~½ Tag | ✅ erledigt (v1.3) |
 | 1.3 | Kommentar-Threads (Antworten statt flacher Liste) | ~½ Tag | offen |
 | 1.4 | Whitepaper-PDF über Live-URL erreichbar (`webapp/public/`) | ~10 Min | offen |
 | 1.5 | Teilen-Funktion für Ideen (Link kopieren) | ~1 h | offen |
