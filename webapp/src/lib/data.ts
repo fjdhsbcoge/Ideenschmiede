@@ -8,6 +8,7 @@ export interface Comment {
   text: string;
   likes: number;
   score: number; // chain-of-thought score
+  replies?: Comment[]; // eine Verschachtelungsebene (Thread)
 }
 
 export interface RevenueReport {
@@ -118,8 +119,15 @@ export const ideas: Idea[] = [
     closesIn: '9 Tage',
     sharePrice: 120,
     comments: [
-      { id: 'c1', author: '@magnetwerk', role: 'subscriber', time: 'vor 1 Tag', text: 'Die FEMM-Simulationen im Repo sind solide. Habe den Motor nachgebaut – 0,3 T am Stab gemessen, passt zu den Angaben. Skin-in-game des Urhebers überzeugt mich.', likes: 28, score: 14 },
-      { id: 'c2', author: '@lisa_baut', role: 'user', time: 'vor 20 h', text: 'Wäre eine wassergekühlte Variante denkbar? Für Dauerbetrieb in der Laborautomatisierung wäre das relevant.', likes: 11, score: 6 },
+      { id: 'c1', author: '@magnetwerk', role: 'subscriber', time: 'vor 1 Tag', text: 'Die FEMM-Simulationen im Repo sind solide. Habe den Motor nachgebaut – 0,3 T am Stab gemessen, passt zu den Angaben. Skin-in-game des Urhebers überzeugt mich.', likes: 28, score: 14,
+        replies: [
+          { id: 'c1-r1', author: '@tobias_r', role: 'user', time: 'vor 22 h', text: 'Danke für den Nachbau! Hast du die Wicklungsdaten auch ins Repo gepusht? Würde sie gern in die Referenzdoku übernehmen.', likes: 6, score: 3 },
+          { id: 'c1-r2', author: '@magnetwerk', role: 'subscriber', time: 'vor 21 h', text: 'Klar – Branch `coil-measurements` ist offen. Thermie-Daten folgen am Wochenende.', likes: 9, score: 4 },
+        ] },
+      { id: 'c2', author: '@lisa_baut', role: 'user', time: 'vor 20 h', text: 'Wäre eine wassergekühlte Variante denkbar? Für Dauerbetrieb in der Laborautomatisierung wäre das relevant.', likes: 11, score: 6,
+        replies: [
+          { id: 'c2-r1', author: '@femm_felix', role: 'user', time: 'vor 12 h', text: 'Habe das mal durchgerechnet: Mit 8 mm Kühlkanälen im Trägerrohr halten wir Dauerbetrieb bei 120 % Nennlast. Erhöht aber die Fertigungskosten ~15 %.', likes: 13, score: 7 },
+        ] },
       { id: 'c3', author: '@odrive_fan', role: 'subscriber', time: 'vor 8 h', text: 'Alternativ ODrive statt SimpleFOC? Hätte mehr Leistung, aber höhere Komplexität. Eventuell als Stretch-Goal?', likes: 17, score: 9 },
     ],
     teams: [
@@ -213,7 +221,10 @@ export const ideas: Idea[] = [
     sharePrice: 250,
     comments: [
       { id: 'c4', author: '@senator-thunfisch', role: 'subscriber', time: 'vor 3 Tagen', text: 'Synergie mit dem Tubular-Motor-Projekt: Die Spulenfertigung ist fast identisch. Könnte als zweites Team im selben Ökosystem laufen.', likes: 34, score: 16 },
-      { id: 'c5', author: '@grid_operator', role: 'user', time: 'vor 2 Tagen', text: 'Netzanbindung ist der Knackpunkt. Bei 0,5–2 Hz Wellenfrequenz braucht ihr einen ordentlichen Zwischenkreis. Superkaps statt Batterie erwägen?', likes: 22, score: 12 },
+      { id: 'c5', author: '@grid_operator', role: 'user', time: 'vor 2 Tagen', text: 'Netzanbindung ist der Knackpunkt. Bei 0,5–2 Hz Wellenfrequenz braucht ihr einen ordentlichen Zwischenkreis. Superkaps statt Batterie erwägen?', likes: 22, score: 12,
+        replies: [
+          { id: 'c5-r1', author: '@senator-thunfisch', role: 'subscriber', time: 'vor 1 Tag', text: 'Superkaps sind im Konzept vorgesehen (siehe Abschnitt Energiekette). Batterie nur als Puffer für den Netzanschlusspunkt.', likes: 8, score: 5 },
+        ] },
     ],
     teams: [],
   },

@@ -2,8 +2,23 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useStore } from '@/lib/store'
 import { useT } from '@/lib/i18n'
-import { getIdea, votePercent } from '@/lib/data'
+import { getIdea, votePercent, type Comment } from '@/lib/data'
 import { Page, StageBadge, SplitBar, EmptyState, Modal, BtcAmount } from '@/components/bits'
+
+interface UiComment {
+  id: string
+  author: string
+  text: string
+  time: string
+  likes: number
+  score: number
+  role: 'user' | 'subscriber'
+  replies: UiComment[]
+}
+
+function toUi(c: Comment): UiComment {
+  return { id: c.id, author: c.author, text: c.text, time: c.time, likes: c.likes, score: c.score, role: c.role, replies: (c.replies || []).map(toUi) }
+}
 
 export default function IdeaDetail() {
   const t = useT()
@@ -13,7 +28,10 @@ export default function IdeaDetail() {
   const idea = getIdea(id || '')
   const { role, can, toast, settings } = useStore()
   const [comment, setComment] = useState('')
-  const [posted, setPosted] = useState<{ author: string; text: string; time: string; likes: number }[]>([])
+  const [posted, setPosted] = useState<UiComment[]>([])
+  const [postedReplies, setPostedReplies] = useState<Record<string, UiComment[]>>({})
+  const [replyTo, setReplyTo] = useState<string | null>(null)
+  const [replyText, setReplyText] = useState('')
   const [showMoveModal, setShowMoveModal] = useState(false)
   const [moved, setMoved] = useState(false)
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set())
@@ -35,11 +53,30 @@ export default function IdeaDetail() {
   const inMarketplace = ['voting', 'funding', 'building', 'completed'].includes(idea.stage) || moved
   const canMove = role === 'subscriber' && idea.stage === 'discussion' && !moved
 
+  const threads: UiComment[] = [
+    ...idea.comments.map((c) => {
+      const ui = toUi(c)
+      ui.replies = [...ui.replies, ...(postedReplies[c.id] || [])]
+      return ui
+    }),
+    ...posted.map((p) => ({ ...p, replies: [...p.replies, ...(postedReplies[p.id] || [])] })),
+  ]
+  const totalComments = threads.reduce((n, c) => n + 1 + c.replies.length, 0)
+
   const submitComment = () => {
     if (!comment.trim()) return
-    setPosted((p) => [...p, { author: settings.handle, text: comment.trim(), time: T.justNow, likes: 0 }])
+    setPosted((p) => [...p, { id: `p-${Date.now()}`, author: settings.handle, text: comment.trim(), time: T.justNow, likes: 0, score: 1, role: role === 'subscriber' ? 'subscriber' : 'user', replies: [] }])
     setComment('')
     toast(T.commentToast)
+  }
+
+  const submitReply = (parentId: string) => {
+    if (!replyText.trim()) return
+    const reply: UiComment = { id: `r-${Date.now()}`, author: settings.handle, text: replyText.trim(), time: T.justNow, likes: 0, score: 1, role: role === 'subscriber' ? 'subscriber' : 'user', replies: [] }
+    setPostedReplies((prev) => ({ ...prev, [parentId]: [...(prev[parentId] || []), reply] }))
+    setReplyText('')
+    setReplyTo(null)
+    toast(T.replyToast)
   }
 
   const likeComment = (cid: string) => {
@@ -50,6 +87,80 @@ export default function IdeaDetail() {
       return n
     })
   }
+
+  const openReply = (cid: string) => {
+    if (!can('comment')) { toast(T.likeToast); return }
+    setReplyTo((cur) => (cur === cid ? null : cid))
+    setReplyText('')
+  }
+
+  const renderComment = (c: UiComment, depth: 0 | 1) => (
+    <div
+      key={c.id}
+      style={
+        depth === 0
+          ? { background: 'var(--bg-primary)', borderRadius: 13, padding: '16px 18px', border: '1px solid var(--border-color)' }
+          : { borderLeft: '2px solid var(--border-strong)', paddingLeft: 16, marginLeft: 8 }
+      }
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8, flexWrap: 'wrap' }}>
+        <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>
+          {c.author[1]?.toUpperCase() || '?'}
+        </div>
+        <strong style={{ fontSize: 13.5 }}>{c.author}</strong>
+        {c.role === 'subscriber' && <span className="badge badge-orange" style={{ fontSize: 10 }}>{T.subscriberBadge}</span>}
+        <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{c.time}</span>
+        <span className="badge badge-blue" style={{ marginLeft: 'auto', fontSize: 10.5 }}>🧠 {c.score} {T.pointsSuffix}</span>
+      </div>
+      <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: 10 }}>{c.text}</p>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <button
+          className="btn-ghost"
+          style={{ fontSize: 12.5, padding: '5px 11px', color: likedComments.has(c.id) ? 'var(--accent-primary)' : undefined }}
+          onClick={() => likeComment(c.id)}
+        >
+          {likedComments.has(c.id) ? '❤️' : '🤍'} {c.likes + (likedComments.has(c.id) ? 1 : 0)} · {T.helpful}
+        </button>
+        {depth === 0 && (
+          <button
+            className="btn-ghost"
+            style={{ fontSize: 12.5, padding: '5px 11px', color: replyTo === c.id ? 'var(--accent-primary)' : undefined }}
+            onClick={() => openReply(c.id)}
+          >
+            💬 {T.reply}
+          </button>
+        )}
+      </div>
+
+      {replyTo === c.id && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+          <textarea
+            className="is-textarea"
+            rows={2}
+            autoFocus
+            placeholder={T.replyPlaceholder}
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            style={{ flex: 1, minWidth: 220, resize: 'vertical' }}
+          />
+          <div style={{ display: 'flex', gap: 6, alignSelf: 'flex-end' }}>
+            <button className="btn-primary" style={{ padding: '9px 16px', fontSize: 13 }} onClick={() => submitReply(c.id)} disabled={!replyText.trim()}>
+              {T.replySend}
+            </button>
+            <button className="btn-ghost" style={{ padding: '9px 12px', fontSize: 13 }} onClick={() => setReplyTo(null)}>
+              {T.replyCancel}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {c.replies.length > 0 && (
+        <div style={{ display: 'grid', gap: 14, marginTop: 14 }}>
+          {c.replies.map((r) => renderComment(r, 1))}
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <Page narrow>
@@ -128,7 +239,7 @@ export default function IdeaDetail() {
       {/* Comments */}
       <div className="is-card reveal" style={{ padding: '28px 30px', marginTop: 22 }}>
         <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>
-          {T.commentsTitle} ({idea.comments.length + posted.length})
+          {T.commentsTitle} ({totalComments})
         </h3>
         <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 20 }}>
           {T.commentsPointsRule}
@@ -148,30 +259,7 @@ export default function IdeaDetail() {
         )}
 
         <div style={{ display: 'grid', gap: 14 }}>
-          {[
-            ...idea.comments.map((c) => ({ id: c.id, author: c.author, text: c.text, time: c.time, likes: c.likes, score: c.score, role: c.role })),
-            ...posted.map((p, i) => ({ id: `p${i}`, author: p.author, text: p.text, time: p.time, likes: p.likes, score: 1, role: 'user' as const })),
-          ].map((c) => (
-            <div key={c.id} style={{ background: 'var(--bg-primary)', borderRadius: 13, padding: '16px 18px', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8, flexWrap: 'wrap' }}>
-                <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>
-                  {c.author[1].toUpperCase()}
-                </div>
-                <strong style={{ fontSize: 13.5 }}>{c.author}</strong>
-                {c.role === 'subscriber' && <span className="badge badge-orange" style={{ fontSize: 10 }}>{T.subscriberBadge}</span>}
-                <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{c.time}</span>
-                <span className="badge badge-blue" style={{ marginLeft: 'auto', fontSize: 10.5 }}>🧠 {c.score} {T.pointsSuffix}</span>
-              </div>
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: 10 }}>{c.text}</p>
-              <button
-                className="btn-ghost"
-                style={{ fontSize: 12.5, padding: '5px 11px', color: likedComments.has(c.id) ? 'var(--accent-primary)' : undefined }}
-                onClick={() => likeComment(c.id)}
-              >
-                {likedComments.has(c.id) ? '❤️' : '🤍'} {c.likes + (likedComments.has(c.id) ? 1 : 0)} · {T.helpful}
-              </button>
-            </div>
-          ))}
+          {threads.map((c) => renderComment(c, 0))}
         </div>
       </div>
 
