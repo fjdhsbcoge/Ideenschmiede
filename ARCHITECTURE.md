@@ -1,3 +1,165 @@
+# Ideenschmiede – Technische Architektur
+
+**Stand: v1.2 · Dieses Dokument hat zwei Ebenen:**
+- **Teil 1** beschreibt die **Ist-Architektur** der React-Plattform (`webapp/`)
+- **Teil 2** beschreibt die **Zielarchitektur** (Backend, Bitcoin, Föderation)
+- **Teil 3** hält die **Architektur-Entscheidungen (ADRs)** fest
+- Der **Anhang** enthält die historische v0.4-Doku (englisch); ihre Abschnitte
+  5–7 (Datenmodelle, API-Design, Bitcoin-Integration) bleiben gültige Vorarbeit für Teil 2.
+
+---
+
+# Teil 1: Ist-Architektur (v1.2, React-Plattform)
+
+## 1.1 Überblick
+
+Reine Frontend-Single-Page-App ohne Backend. Alle „Persistenz" liegt im
+Browser (localStorage), alle Inhalte sind Beispieldaten. Ziel dieser Stufe:
+UX, Flows und Wirtschaftslogik validieren, bevor Infrastruktur entsteht.
+
+```
+┌────────────────────────────────────────────────────────┐
+│ Browser (React 19 SPA, HashRouter)                     │
+│                                                        │
+│  LanguageProvider (de.ts)                              │
+│   └── StoreProvider (Rolle, Bewerbungen, Votes)        │
+│        └── Routes → 13 Seiten                          │
+│             ├── lib/data.ts   (Beispieldaten)          │
+│             └── localStorage  (Demo-Persistenz)        │
+└────────────────────────────────────────────────────────┘
+        │ Build: tsc -b + vite build → dist/
+        ▼
+GitHub Actions → GitHub Pages (static, base './')
+```
+
+## 1.2 Stack
+
+| Ebene | Technologie | Begründung |
+|---|---|---|
+| UI | React 19 + TypeScript (strikt) | Typsicherheit bis in die Sprachdatei |
+| Build | Vite 7, `base: './'` | Läuft in jedem Unterpfad ohne Server-Config |
+| Styling | Tailwind 3.4 + eigenes Token-System (`index.css`) | Geschwindigkeit + volle Kontrolle über die Forge-Ästhetik |
+| Routing | `react-router` **HashRouter** | Deep Links auf GitHub Pages ohne Rewrites |
+| State | React Context + localStorage | Kein Backend nötig; Migration zu API später gekapselt möglich |
+| i18n | Eigene Lösung: `de.ts` + `useT()`, `Dictionary = typeof de` | Typsicher, null Laufzeit-Overhead, trivial erweiterbar |
+
+## 1.3 Zugriffsmatrix (implementiert)
+
+| Fähigkeit | Visitor | User | Subscriber |
+|---|:---:|:---:|:---:|
+| Lesen (alle öffentlichen Seiten) | ✅ | ✅ | ✅ |
+| Ideen posten, kommentieren | ❌ | ✅ | ✅ |
+| Voting, Investieren, Teams, Marktplatz | ❌ | ❌ | ✅ |
+
+Technisch: `useStore().can(action)` als Guard vor jeder Aktion; Paywall als
+Vollbild-Overlay (`components/bits.tsx → Paywall`).
+
+## 1.4 Demo-Persistenz (localStorage)
+
+| Schlüssel | Inhalt |
+|---|---|
+| `ideenschmiede_role` | Gewählte Rolle (visitor/user/subscriber) |
+| `ideenschmiede_applications` | Eigene Team-Bewerbungen |
+| `ideenschmiede_votes` | Abgegebene Stimmen (Ideen- & Milestone-Voting) |
+| `ideenschmiede_allocations` | Investor Team Selection (80 %-Pool-Verteilung) |
+
+**Migrationspfad:** Jeder dieser Schlüssel entspricht später 1:1 einem
+API-Endpunkt (siehe Anhang §6). Der Store ist die einzige Stelle, die dann
+von localStorage auf HTTP umgestellt wird.
+
+## 1.5 Deployment
+
+GitHub Actions (`.github/workflows/deploy.yml`): `npm ci → npm run build →
+actions/deploy-pages`. Trigger: Push auf `master` mit Änderungen an
+`webapp/**` (Doku-Commits deployen nicht). HashRouter + relative Base ⇒
+keine Server-Rewrites nötig, Custom Domain per CNAME anschließbar.
+
+---
+
+# Teil 2: Zielarchitektur
+
+## 2.1 Stufenplan
+
+```
+v1.2 (jetzt)        v2.0 MVP               v3.0 Netzwerk
+Frontend-Demo   →   Backend + echtes    →  Föderation:
+                    Geld (Bitcoin)         viele Instanzen
+```
+
+## 2.2 MVP-Backend (v2.0)
+
+| Komponente | Vorschlag | Anmerkung |
+|---|---|---|
+| API | Node 20 + Hono (REST) oder tRPC | Leichtgewichtig, TypeScript durchgängig |
+| DB | PostgreSQL | Datenmodelle siehe Anhang §5 (weiterhin gültig) |
+| Auth | **LNURL-auth** (Lightning-Login) oder E-Mail+Passwort | LNURL passt zu Bitcoin-only: Login = Schlüssel, kein Passwort, keine E-Mail nötig |
+| Zahlungen | **BTCPay Server** (selbst gehostet) | Non-custodial, BTC + Lightning, Subscription & Investments als Invoices |
+| Verifikation | mempool.space API | On-chain-Prüfung ohne eigenen Fullnode (Phase 1) |
+| Hosting | VPS (Hetzner o. ä.) + nginx + Let's Encrypt | Docker Compose: app, postgres, btcpay |
+
+**Unverändert aus der Vision:** Die Plattform hält **niemals** Nutzergelder.
+BTCPay erzeugt Invoices auf Wallets der Empfänger (Ideengeber/Teams);
+die Plattform sieht nur Zahlungsnachweise (xpub/Webhook).
+
+## 2.3 Sybil-Schutz: Subscription als Stimmrecht (siehe ADR-003)
+
+- Voting/Investieren/Teams erfordern eine aktive Subscription ($120/Jahr in BTC).
+- Die Quittung ist ein **signiertes Attest**: `Instanz signiert (pubkey, gültig_bis)` –
+  keine personenbezogenen Daten, nur Zahlungsnachweis + Schlüssel.
+- Das Attest-Format ist föderationsfähig: Andere Instanzen können es später
+  anerkennen (oder eigene Subscriptions verlangen).
+
+## 2.4 Föderation (v3.0) – „Tausend Schmieden"
+
+**Prinzip:** Keine Zentralplattform. Unabhängige Instanzen, jede mit eigener
+Sprache, Regeln, Subscription. Ideenschmiede Deutschland = erste Instanz.
+
+| Baustein | Design |
+|---|---|
+| Identität | Schlüsselpaar pro Nutzer (Nostr-Stil), keine zentrale Account-DB |
+| Reputation | Signierte, append-only Attestierungen („Milestone M2 bestätigt von 47 Investoren, Instanz A") – portierbar, instanzübergreifend prüfbar |
+| Voting | Immer lokal auf der Heimat-Instanz der Idee; Mehrfach-Subscription auf mehreren Instanzen = legitime Mehrfachmitgliedschaft |
+| Zahlungen | Bleiben reine Bitcoin-Transaktionen – funktionieren instanzübergreifend ohne Protokolländerung |
+| Datenaustausch | Ideen-Referenzen + Atteste über ein schlankes Relay-Protokoll (Anlehnung an Nostr-Relay-Semantik); Moderation bleibt instanz-lokal |
+
+**Was bewusst NICHT dezentralisiert wird:** Moderation, Paywall,
+Discovery-Ranking. Diese bleiben Instanz-Hoheit – Dezentralisierung
+zwischen Communities, nicht innerhalb einer Community.
+
+## 2.5 Offene technische Fragen (für v2.0-Planung)
+
+1. LNURL-auth als primärer Login, oder E-Mail parallel? (UX vs. Purismus)
+2. BTCPay: eine Instanz pro Schmiede oder geteilter Shop?
+3. Milestone-Escrow: 2-of-3-Multisig (Investor/Team/Plattform-Schiedsrichter)
+   vs. reputationsbasierte Tranchen ohne Escrow? (Vision: soziale Verträge;
+   Multisig wäre Fallback bei Streit)
+4. Rechtlicher Rahmen Investments in DE (VermAnlG/WpHG) → steuert, ob
+   „Shares" als reine Spenden+Beteiligung oder anders strukturiert werden.
+
+---
+
+# Teil 3: Architektur-Entscheidungen (ADRs)
+
+| # | Entscheidung | Status | Begründung |
+|---|---|---|---|
+| ADR-001 | **HashRouter** statt BrowserRouter | ✅ aktiv | Deep Links auf GitHub Pages ohne Server-Rewrites; Custom-Domain-tauglich |
+| ADR-002 | **Dateibasiertes i18n** (`de.ts`, typsicher) statt i18next | ✅ aktiv | Kein Laufzeit-Overhead; Vollständigkeit per Compiler erzwungen; Launch deutsch-only |
+| ADR-003 | **Subscription als einziger Sybil-Schutz** | ✅ beschlossen | Ökonomisch statt bürokratisch: kein KYC, keine Biometrie, keine Einladungs-Oligarchie. $120/Jahr macht 100 Sockenpuppen zu teuer |
+| ADR-004 | **Föderation statt Zentralplattform** | ✅ beschlossen | Keine Plattform, die alles besitzt; Identität + Reputation portierbar; jede Kultur eigene Instanz und Sprache |
+| ADR-005 | **Deutschland-First** (Sprache, Rechtsraum, Community) | ✅ beschlossen | Fokus vor Breite; Internationalisierung via i18n + neue Instanzen, nicht via Sprachmischung |
+| ADR-006 | **Non-custodial von Tag eins** | ✅ aktiv | Plattform hält nie Keys/Gelder; BTCPay-Invoices direkt an Empfänger-Wallets |
+| ADR-007 | **AI-first-Entwicklung** mit Transparenz-Regel | ✅ aktiv | Commits von KI tragen Autor „Kimi Claw"; Mensch reviewed |
+
+---
+
+# Anhang: Ursprüngliche v0.4-Architektur (englisch, historisch)
+
+> **Einordnung:** Abschnitte 1–4 und 8 beschreiben die archivierten
+> HTML-Demos (siehe `archive/legacy-demos/`) und sind überholt.
+> **Abschnitte 5–7 und 9–12 (Datenmodelle, API-Design, Bitcoin-Integration,
+> Security, Performance, Testing, offene Fragen) bleiben die gültige
+> Vorarbeit für Teil 2** und werden bei der MVP-Umsetzung hierher überführt.
+
 # Ideenschmiede Technical Architecture
 
 **Version:** 2.2  
