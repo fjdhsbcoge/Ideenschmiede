@@ -1,10 +1,13 @@
 import { Link } from 'react-router';
 import { useStore, fmtSat } from '@/lib/store';
+import { useT } from '@/lib/i18n';
 import { earningsByMonth, earningsEvents } from '@/lib/data';
 import { Page, PageHeader, StatCard, BtcAmount, EmptyState } from '@/components/bits';
 
 export default function Earnings() {
   const { role } = useStore();
+  const t = useT();
+  const T = t.pages.earnings;
   const total = earningsEvents.reduce((s, e) => s + e.amount, 0);
   const maxBar = Math.max(...earningsByMonth.map(e => e.value));
 
@@ -12,23 +15,23 @@ export default function Earnings() {
     return (
       <Page narrow>
         <PageHeader title="💸 Erträge" />
-        <EmptyState icon="🔒" title="Anmeldung erforderlich" text="Melde dich an, um deine Erträge zu sehen." action={<Link to="/profile" className="btn-primary">Anmelden</Link>} />
+        <EmptyState icon="🔒" title={T.loginTitle} text={T.loginText} action={<Link to="/profile" className="btn-primary">{t.pages.common.loginCta}</Link>} />
       </Page>
     );
   }
 
   return (
     <Page narrow>
-      <PageHeader title="💸 Erträge im Detail" subtitle="Revenue-Shares, Milestone-Boni und Chain-of-Thought Rewards – vollständig transparent." />
+      <PageHeader title={T.title} subtitle={T.subtitle} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 26 }}>
-        <StatCard icon="💰" label="Gesamt" value={`${fmtSat(total)} sat`} sub="letzte 3 Monate" accent="var(--accent-green)" />
-        <StatCard icon="📊" label="Ø pro Monat" value={`${fmtSat(Math.round(earningsByMonth.reduce((s, e) => s + e.value, 0) / earningsByMonth.length))} sat`} />
-        <StatCard icon="🥇" label="Bester Monat" value={`${fmtSat(maxBar)} sat`} sub="Juli 2026" />
+        <StatCard icon="💰" label={T.statTotal} value={`${fmtSat(total)} sat`} sub={T.statTotalSub} accent="var(--accent-green)" />
+        <StatCard icon="📊" label={T.statAvg} value={`${fmtSat(Math.round(earningsByMonth.reduce((s, e) => s + e.value, 0) / earningsByMonth.length))} sat`} />
+        <StatCard icon="🥇" label={T.statBest} value={`${fmtSat(maxBar)} sat`} sub={T.statBestSub} />
       </div>
 
       <div className="is-card reveal" style={{ padding: '26px 28px', marginBottom: 20 }}>
-        <h3 className="font-display" style={{ fontSize: 17, fontWeight: 700, marginBottom: 20 }}>📈 6-Monats-Verlauf</h3>
+        <h3 className="font-display" style={{ fontSize: 17, fontWeight: 700, marginBottom: 20 }}>{T.chartTitle}</h3>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
           {earningsByMonth.map(e => (
             <div key={e.month} className="bar-col">
@@ -41,7 +44,7 @@ export default function Earnings() {
       </div>
 
       <div className="is-card reveal" style={{ padding: '26px 28px' }}>
-        <h3 className="font-display" style={{ fontSize: 17, fontWeight: 700, marginBottom: 16 }}>🧾 Auszahlungen</h3>
+        <h3 className="font-display" style={{ fontSize: 17, fontWeight: 700, marginBottom: 16 }}>{T.payoutsTitle}</h3>
         <div style={{ display: 'grid', gap: 10 }}>
           {earningsEvents.map((e, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 13, background: 'var(--bg-primary)', borderRadius: 12, padding: '13px 16px', border: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
@@ -63,9 +66,8 @@ export default function Earnings() {
         <div style={{ display: 'flex', gap: 13, alignItems: 'flex-start' }}>
           <span style={{ fontSize: 22 }}>🔍</span>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-            <strong style={{ color: 'var(--text-primary)' }}>Radikale Transparenz:</strong> Alle Umsatzberichte der Teams sind öffentlich,
-            alle Auszahlungen on-chain nachprüfbar. Teams mit konsistenter Berichterstattung erhalten das Badge
-            <span className="badge badge-green" style={{ marginLeft: 5, fontSize: 10.5 }}>✓ Verifizierter Reporter</span>.
+            <strong style={{ color: 'var(--text-primary)' }}>{T.transparencyTitle}</strong> {T.transparencyText}
+            <span className="badge badge-green" style={{ marginLeft: 5, fontSize: 10.5 }}>{T.verifiedBadge}</span>.
           </p>
         </div>
       </div>

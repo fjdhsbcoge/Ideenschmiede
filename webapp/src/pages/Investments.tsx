@@ -1,22 +1,24 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useStore, fmtSat } from '@/lib/store';
+import { useT } from '@/lib/i18n';
 import { myInvestments } from '@/lib/data';
 import { Page, PageHeader, StatCard, BtcAmount, EmptyState } from '@/components/bits';
 
-const FILTERS = ['Alle', 'Aktiv', 'Pending', 'Abgeschlossen'] as const;
-const SORTS = [['date', 'Datum'], ['amount', 'Betrag'], ['roi', 'ROI'], ['earnings', 'Ertrag']] as const;
+const SORT_KEYS = ['date', 'amount', 'roi', 'earnings'] as const;
 
 export default function Investments() {
   const { role } = useStore();
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('Alle');
-  const [sort, setSort] = useState<(typeof SORTS)[number][0]>('date');
+  const t = useT();
+  const T = t.pages.investments;
+  const [filter, setFilter] = useState(0);
+  const [sort, setSort] = useState<(typeof SORT_KEYS)[number]>('date');
 
   const list = useMemo(() => {
     let l = [...myInvestments];
-    if (filter === 'Aktiv') l = l.filter(i => i.status === 'aktiv');
-    if (filter === 'Pending') l = l.filter(i => i.status === 'pending');
-    if (filter === 'Abgeschlossen') l = l.filter(i => i.status === 'abgeschlossen');
+    if (filter === 1) l = l.filter(i => i.status === 'aktiv');
+    if (filter === 2) l = l.filter(i => i.status === 'pending');
+    if (filter === 3) l = l.filter(i => i.status === 'abgeschlossen');
     l.sort((a, b) => {
       if (sort === 'amount') return b.amount - a.amount;
       if (sort === 'roi') return b.roi - a.roi;
@@ -33,36 +35,36 @@ export default function Investments() {
   if (role === 'visitor') {
     return (
       <Page narrow>
-        <PageHeader title="📈 Meine Investments" />
-        <EmptyState icon="🔒" title="Anmeldung erforderlich" text="Melde dich an, um deine Investments zu sehen." action={<Link to="/profile" className="btn-primary">Anmelden</Link>} />
+        <PageHeader title={T.title} />
+        <EmptyState icon="🔒" title={t.pages.common.loginRequired} text={T.loginText} action={<Link to="/profile" className="btn-primary">{t.pages.common.loginCta}</Link>} />
       </Page>
     );
   }
 
   return (
     <Page>
-      <PageHeader title="📈 Meine Investments" subtitle="Vollständige Übersicht: Idea-Shares, Team-Shares, Erträge und ROI." />
+      <PageHeader title={T.title} subtitle={T.subtitle} />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 26 }}>
-        <StatCard icon="💼" label="Investiert" value={`${fmtSat(total)} sat`} sub={`${myInvestments.length} Positionen`} />
-        <StatCard icon="📈" label="Erträge" value={`${fmtSat(earned)} sat`} sub="seit März 2026" accent="var(--accent-green)" />
-        <StatCard icon="🚀" label="ROI gesamt" value={`+${roi.toFixed(1)} %`} accent="var(--accent-green)" />
-        <StatCard icon="⏳" label="Aktiv" value={String(myInvestments.filter(i => i.status === 'aktiv').length)} sub={`${myInvestments.filter(i => i.status === 'pending').length} pending`} />
+        <StatCard icon="💼" label={T.statInvested} value={`${fmtSat(total)} sat`} sub={T.statPositions(myInvestments.length)} />
+        <StatCard icon="📈" label={T.statEarnings} value={`${fmtSat(earned)} sat`} sub={T.statEarningsSub} accent="var(--accent-green)" />
+        <StatCard icon="🚀" label={T.statRoi} value={`+${roi.toFixed(1)} %`} accent="var(--accent-green)" />
+        <StatCard icon="⏳" label={T.statActive} value={String(myInvestments.filter(i => i.status === 'aktiv').length)} sub={T.statPending(myInvestments.filter(i => i.status === 'pending').length)} />
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 22, flexWrap: 'wrap', alignItems: 'center' }}>
-        {FILTERS.map(f => (
-          <button key={f} className={`is-tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>{f}</button>
+        {T.filters.map((f, i) => (
+          <button key={f} className={`is-tab ${filter === i ? 'active' : ''}`} onClick={() => setFilter(i)}>{f}</button>
         ))}
-        <select className="is-select" style={{ width: 170, marginLeft: 'auto', padding: '9px 13px', fontSize: 13.5 }} value={sort} onChange={e => setSort(e.target.value as typeof sort)}>
-          {SORTS.map(([v, l]) => <option key={v} value={v}>Sortieren: {l}</option>)}
+        <select className="is-select" style={{ width: 190, marginLeft: 'auto', padding: '9px 13px', fontSize: 13.5 }} value={sort} onChange={e => setSort(e.target.value as typeof sort)}>
+          {SORT_KEYS.map((k, i) => <option key={k} value={k}>{T.sortLabel}{T.sorts[i]}</option>)}
         </select>
       </div>
 
       <div className="is-card reveal" style={{ padding: '8px 18px', overflowX: 'auto' }}>
         <table className="is-table">
           <thead>
-            <tr><th>Idee</th><th>Typ</th><th>Datum</th><th>Betrag</th><th>Shares</th><th>Ertrag</th><th>ROI</th><th>Status</th></tr>
+            <tr>{T.table.map(h => <th key={h}>{h}</th>)}</tr>
           </thead>
           <tbody>
             {list.map(inv => (
@@ -81,7 +83,7 @@ export default function Investments() {
                 <td className="font-mono" style={{ fontSize: 12.5, color: 'var(--text-secondary)' }}>{inv.shares > 0 ? `${inv.shares.toLocaleString('de-DE')}k` : '–'}</td>
                 <td><span style={{ color: 'var(--accent-green)' }}><BtcAmount sat={inv.earnings} size={12.5} /></span></td>
                 <td style={{ fontWeight: 700, color: inv.roi > 0 ? 'var(--accent-green)' : 'var(--text-tertiary)' }}>{inv.roi > 0 ? `+${inv.roi}%` : '–'}</td>
-                <td><span className={`badge ${inv.status === 'aktiv' ? 'badge-green' : inv.status === 'pending' ? 'badge-orange' : 'badge-neutral'}`}>{inv.status}</span></td>
+                <td><span className={`badge ${inv.status === 'aktiv' ? 'badge-green' : inv.status === 'pending' ? 'badge-orange' : 'badge-neutral'}`}>{T.status[inv.status]}</span></td>
               </tr>
             ))}
           </tbody>
@@ -89,7 +91,7 @@ export default function Investments() {
       </div>
 
       <p style={{ fontSize: 12.5, color: 'var(--text-tertiary)', marginTop: 16, textAlign: 'center' }}>
-        Alle Positionen non-custodial – die Keys liegen bei dir. Transaktionen on-chain verifizierbar.
+        {T.footerNote}
       </p>
     </Page>
   );

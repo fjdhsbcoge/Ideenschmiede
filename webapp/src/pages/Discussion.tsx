@@ -1,72 +1,69 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useStore } from '@/lib/store';
+import { useT } from '@/lib/i18n';
 import { ideas, votePercent } from '@/lib/data';
 import { Page, PageHeader, LoginNotice, EmptyState } from '@/components/bits';
 
-const FILTERS = ['Alle', 'Trending', 'Neueste', 'Kontrovers'] as const;
-
 export default function Discussion() {
   const { role, can, toast } = useStore();
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('Alle');
-  const [sort, setSort] = useState('comments');
+  const t = useT();
+  const T = t.pages.discussion;
+  const [filter, setFilter] = useState(0);
+  const [sort, setSort] = useState(0);
   const [search, setSearch] = useState('');
 
   const discussionIdeas = useMemo(() => {
     let list = ideas.filter(i => i.stage === 'discussion' || i.stage === 'voting');
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(i => i.title.toLowerCase().includes(q) || i.tags.some(t => t.toLowerCase().includes(q)) || i.description.toLowerCase().includes(q));
+      list = list.filter(i => i.title.toLowerCase().includes(q) || i.tags.some(tg => tg.toLowerCase().includes(q)) || i.description.toLowerCase().includes(q));
     }
-    switch (filter) {
-      case 'Trending': list = [...list].sort((a, b) => b.votes.up - a.votes.up); break;
-      case 'Kontrovers': list = [...list].sort((a, b) => (b.votes.up + b.votes.down) * (100 - votePercent(b)) - (a.votes.up + a.votes.down) * (100 - votePercent(a))); break;
-      default: break;
-    }
-    if (sort === 'votes') list = [...list].sort((a, b) => b.votes.up - a.votes.up);
-    if (sort === 'comments') list = [...list].sort((a, b) => b.comments.length - a.comments.length);
+    if (filter === 1) list = [...list].sort((a, b) => b.votes.up - a.votes.up); // Trending
+    if (filter === 3) list = [...list].sort((a, b) => (b.votes.up + b.votes.down) * (100 - votePercent(b)) - (a.votes.up + a.votes.down) * (100 - votePercent(a))); // Kontrovers
+    if (sort === 1) list = [...list].sort((a, b) => b.votes.up - a.votes.up);
+    if (sort === 0) list = [...list].sort((a, b) => b.comments.length - a.comments.length);
     return list;
   }, [filter, sort, search]);
 
   const guard = (fn: () => void) => () => {
-    if (!can('post')) { toast('Anmeldung erforderlich – als User kannst du filtern & posten.'); return; }
+    if (!can('post')) { toast(T.guardToast); return; }
     fn();
   };
 
   return (
     <Page>
       <PageHeader
-        title="💡 Ideen-Diskussion"
-        subtitle="Offene Bühne für neue Ideen. Gib Feedback, hilf Konzepten zu reifen – frühe Mitdenker werden am Funding beteiligt (Chain-of-Thought Rewards)."
+        title={T.title}
+        subtitle={T.subtitle}
         action={can('post')
-          ? <Link to="/create-idea" className="btn-primary">+ Neue Idee</Link>
-          : <button className="btn-primary" onClick={() => toast('Melde dich an, um eine Idee zu posten.')}>+ Neue Idee</button>}
+          ? <Link to="/create-idea" className="btn-primary">{T.newIdea}</Link>
+          : <button className="btn-primary" onClick={() => toast(T.loginToPostToast)}>{T.newIdea}</button>}
       />
 
       <LoginNotice />
 
       <div className="is-card" style={{ padding: '14px 16px', marginBottom: 24, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {FILTERS.map(f => (
-            <button key={f} className={`is-tab ${filter === f ? 'active' : ''}`}
-              style={!can('post') && f !== 'Alle' ? { opacity: .5 } : {}}
-              onClick={f === 'Alle' ? () => setFilter(f) : guard(() => setFilter(f))}>
+          {T.filters.map((f, i) => (
+            <button key={f} className={`is-tab ${filter === i ? 'active' : ''}`}
+              style={!can('post') && i !== 0 ? { opacity: .5 } : {}}
+              onClick={i === 0 ? () => setFilter(0) : guard(() => setFilter(i))}>
               {f}
             </button>
           ))}
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <input className="is-input" style={{ width: 200, padding: '9px 13px', fontSize: 13.5 }} placeholder="🔍 Suche…" value={search} onChange={e => setSearch(e.target.value)} />
-          <select className="is-select" style={{ width: 170, padding: '9px 13px', fontSize: 13.5 }} value={sort}
-            onChange={e => can('post') ? setSort(e.target.value) : toast('Anmeldung erforderlich')}>
-            <option value="comments">Meiste Kommentare</option>
-            <option value="votes">Meiste Stimmen</option>
+          <input className="is-input" style={{ width: 200, padding: '9px 13px', fontSize: 13.5 }} placeholder={T.searchPlaceholder} value={search} onChange={e => setSearch(e.target.value)} />
+          <select className="is-select" style={{ width: 190, padding: '9px 13px', fontSize: 13.5 }} value={sort}
+            onChange={e => can('post') ? setSort(Number(e.target.value)) : toast(T.sortGuardToast)}>
+            {T.sorts.map((s, i) => <option key={s} value={i}>{s}</option>)}
           </select>
         </div>
       </div>
 
       {discussionIdeas.length === 0 ? (
-        <EmptyState icon="🔍" title="Keine Ideen gefunden" text="Passe Suche oder Filter an – oder sei die erste Person, die diese Idee postet." />
+        <EmptyState icon="🔍" title={T.emptyTitle} text={T.emptyText} />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 18 }}>
           {discussionIdeas.map(idea => <DiscussionCard key={idea.id} ideaId={idea.id} />)}
@@ -76,21 +73,19 @@ export default function Discussion() {
       <div className="is-card reveal" style={{ marginTop: 36, padding: '24px 28px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', borderColor: 'rgba(243,156,18,.35)' }}>
         <span style={{ fontSize: 26 }}>🧠</span>
         <div style={{ flex: 1, minWidth: 240 }}>
-          <h3 className="font-display" style={{ fontSize: 16.5, fontWeight: 700, marginBottom: 5 }}>Chain-of-Thought Rewards</h3>
-          <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
-            Kommentare (×1) und Upvotes auf deine Kommentare (×2) sammeln Punkte. Ab 3 Punkten erhältst du einen Anteil von 5 % jeder Investition in diese Idee.
-          </p>
+          <h3 className="font-display" style={{ fontSize: 16.5, fontWeight: 700, marginBottom: 5 }}>{T.cotTitle}</h3>
+          <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.65 }}>{T.cotText}</p>
         </div>
-        <span className="badge badge-orange">5 % Pool</span>
+        <span className="badge badge-orange">{T.cotBadge}</span>
       </div>
 
       {role === 'user' && (
         <div className="is-card" style={{ marginTop: 18, padding: '18px 24px', display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 22 }}>⭐</span>
           <p style={{ flex: 1, fontSize: 13.5, color: 'var(--text-secondary)', minWidth: 220 }}>
-            Als <strong>Subscriber</strong> kannst du eigene Ideen auf den Marktplatz verschieben, abstimmen und investieren.
+            {T.upgradeTextA} <strong>{T.upgradeTextB}</strong> {T.upgradeTextC}
           </p>
-          <Link to="/profile" className="btn-secondary" style={{ fontSize: 13 }}>Upgrade ansehen</Link>
+          <Link to="/profile" className="btn-secondary" style={{ fontSize: 13 }}>{T.upgradeCta}</Link>
         </div>
       )}
     </Page>
@@ -102,12 +97,14 @@ function DiscussionCard({ ideaId }: { ideaId: string }) {
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [votes, setVotes] = useState(idea.votes);
   const { can, toast } = useStore();
+  const t = useT();
+  const T = t.pages.discussion;
   const pct = Math.round(votes.up / Math.max(1, votes.up + votes.down) * 100);
 
   const vote = (e: React.MouseEvent, type: 'up' | 'down') => {
     e.stopPropagation();
     if (!can('vote')) {
-      toast(can('post') ? 'Voting ist ein Subscriber-Feature ⭐' : 'Bitte melde dich an, um abzustimmen.');
+      toast(can('post') ? T.voteSubToast : T.voteGuestToast);
       return;
     }
     setVotes(v => {
@@ -126,7 +123,7 @@ function DiscussionCard({ ideaId }: { ideaId: string }) {
     <div className="is-card is-card-hover reveal" style={{ padding: 26, display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-          {idea.tags.slice(0, 3).map(t => <span key={t} className="badge badge-neutral">{t}</span>)}
+          {idea.tags.slice(0, 3).map(tg => <span key={tg} className="badge badge-neutral">{tg}</span>)}
         </div>
         <span style={{ fontSize: 12, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>{idea.time}</span>
       </div>
@@ -140,8 +137,8 @@ function DiscussionCard({ ideaId }: { ideaId: string }) {
 
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 7 }}>
-          <span style={{ color: 'var(--text-secondary)' }}>💬 {idea.comments.length} Kommentare</span>
-          <span style={{ fontWeight: 700, color: pct >= 50 ? 'var(--accent-green)' : 'var(--accent-primary)' }}>{pct}% Zustimmung</span>
+          <span style={{ color: 'var(--text-secondary)' }}>💬 {idea.comments.length} {T.commentsSuffix}</span>
+          <span style={{ fontWeight: 700, color: pct >= 50 ? 'var(--accent-green)' : 'var(--accent-primary)' }}>{pct}{T.approvalSuffix}</span>
         </div>
         <div className="progress-track"><div className="progress-fill green" style={{ width: `${pct}%` }} /></div>
       </div>
@@ -157,7 +154,7 @@ function DiscussionCard({ ideaId }: { ideaId: string }) {
             👎 {votes.down}
           </button>
         </div>
-        <Link to={`/idea/${idea.id}`} style={{ fontSize: 13.5, color: 'var(--accent-primary)', fontWeight: 600, textDecoration: 'none' }}>Diskutieren →</Link>
+        <Link to={`/idea/${idea.id}`} style={{ fontSize: 13.5, color: 'var(--accent-primary)', fontWeight: 600, textDecoration: 'none' }}>{T.discussCta}</Link>
       </div>
     </div>
   );
