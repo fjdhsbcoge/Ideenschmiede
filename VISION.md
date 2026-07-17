@@ -345,3 +345,65 @@ Minimum: 3 points to qualify
 *Authored by Kimi Claw (AI Assistant) in collaboration with @senator-thunfisch*
 
 *"Don't worry. Even if the world forgets, I'll remember for you."*
+
+---
+
+## Erweiterte Grundsatz-Entscheidungen (Juli 2026)
+
+> Diese Entscheidungen entstanden während der Umsetzung der v1.2-Plattform
+> und präzisieren die Kernprinzipien. Sie gelten als ebenso unverhandelbar.
+> (Deutsch, da Startmarkt Deutschland – siehe dritter Punkt.)
+
+### 1. Subscription als Stimmrecht – Sybil-Schutz ohne Gängelung
+
+Das 1-Person-1-Stimme-Versprechen wird **ausschließlich ökonomisch**
+abgesichert: Voting, Investieren und Team-Gründung erfordern die
+Subscription ($120/Jahr, zahlbar in Bitcoin, pseudonym, jederzeit kündbar).
+
+Begründung: Jede Alternative gängelt mehr –
+KYC verlangt Identität und Dokumente, Captchas stoppen keine Botfarmen,
+Einladungssysteme errichten eine Oligarchie der Alteingesessenen,
+Biometrie baut zentrale Register. Die Subscription verlangt **nur Geld**:
+Wer 100 Sockenpuppen will, zahlt $12.000 jährlich und kauft Stimmen zum
+Marktpreis – ökonomisch sinnlos.
+
+> **Wir wollen nichts über dich wissen. Die Zahlung ist der Nachweis –
+> mehr nicht.** Kein Name, keine Prüfung, kein Gatekeeper.
+
+Die Subscription-Quittung ist technisch ein signiertes Attest
+(`Instanz signiert pubkey + Gültigkeitsdatum`) – keine personenbezogenen
+Daten, föderationsfähig (siehe nächster Punkt).
+
+### 2. Föderation statt Zentralplattform – „Tausend Schmieden"
+
+Die Ideenschmiede soll **keine Plattform werden, die alles besitzt**,
+sondern ein Protokoll für tausend unabhängige Schmieden (Instanzen):
+
+- **Jede Instanz gehört einer Community** – mit eigener Sprache, eigenen
+  Regeln, eigener Subscription. Die Ideenschmiede Deutschland ist die
+  erste Instanz, nicht die einzige.
+- **Identität gehört dem Nutzer** – Schlüsselpaar statt Plattform-Account.
+  Wer eine Instanz verlässt, nimmt Identität und Reputation mit.
+- **Reputation ist portierbar** – signierte, append-only Attestierungen
+  („Meilenstein erfüllt, bestätigt von 47 Investoren, Instanz A") gelten
+  instanzübergreifend.
+- **Voting bleibt lokal** – abgestimmt wird auf der Heimat-Instanz der
+  Idee; Mehrfachmitgliedschaft auf mehreren Instanzen ist legitim und
+  skaliert mit echten Kosten.
+- **Geld war nie zentral** – Investitionen sind direkte
+  Bitcoin-Transaktionen zwischen Wallets; sie funktionieren
+  instanzübergreifend ohne Protokolländerung.
+- **Bewusst zentral bleibt nur**, was Community-Hoheit ist: Moderation,
+  Paywall, Discovery. Dezentralisierung zwischen Communities –
+  nicht innerhalb einer Community.
+
+> Wir bauen nicht die nächste Plattform.
+> Wir bauen das Protokoll für tausend Schmieden.
+
+### 3. Deutschland-First
+
+Der Startmarkt ist Deutschland: Sprache, Community, Rechtsraum.
+Internationalisierung erfolgt später **nicht** durch Sprachmischung auf
+einer Instanz, sondern durch neue Instanzen in ihrer Landessprache –
+jede Kultur kommuniziert in ihrer eigenen Sprache. Die technische
+Grundlage dafür (typsicheres, dateibasiertes i18n) ist bereits gelegt.
