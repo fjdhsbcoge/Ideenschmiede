@@ -1,6 +1,9 @@
 name: Deploy webapp to GitHub Pages
 
-# Baut die React-Plattform (webapp/) und deployed sie auf GitHub Pages.
+# Baut die React-Plattform (webapp/) und legt das Ergebnis in docs/ ab.
+# GitHub Pages serviert dieses Repo aus "master /docs" – dadurch zeigt
+# https://fjdhsbcoge.github.io/Ideenschmiede/ nach jedem Push automatisch
+# die aktuellste Version, ohne manuellen Eingriff.
 # Läuft bei jedem Push auf master, der die webapp betrifft – plus manuell via "Run workflow".
 
 on:
@@ -12,21 +15,16 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write # nötig, um den docs/-Commit zu pushen
 
-# Nur ein Pages-Deployment gleichzeitig
+# Nur ein Deployment gleichzeitig
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: webapp
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,26 +37,24 @@ jobs:
           cache-dependency-path: webapp/package-lock.json
 
       - name: Dependencies installieren
+        working-directory: webapp
         run: npm ci
 
       - name: Build (TypeScript + Vite)
+        working-directory: webapp
         run: npm run build
 
-      - name: Pages vorbereiten
-        uses: actions/configure-pages@v4
+      - name: Build nach docs/ spiegeln
+        run: rsync -a --delete webapp/dist/ docs/
 
-      - name: Artefakt hochladen
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: webapp/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Auf GitHub Pages deployen
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: docs/-Commit pushen
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs
+          if git diff --cached --quiet; then
+            echo "Keine Änderungen am Build – nichts zu deployen."
+            exit 0
+          fi
+          git commit -m "Deploy: webapp-Build nach docs/ [skip ci]"
+          git push
