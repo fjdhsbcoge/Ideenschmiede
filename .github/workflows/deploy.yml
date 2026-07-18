@@ -1,9 +1,10 @@
 name: Deploy webapp to GitHub Pages
 
-# Baut die React-Plattform (webapp/) und legt das Ergebnis in docs/ ab.
-# GitHub Pages serviert dieses Repo aus "master /docs" – dadurch zeigt
-# https://fjdhsbcoge.github.io/Ideenschmiede/ nach jedem Push automatisch
-# die aktuellste Version, ohne manuellen Eingriff.
+# Baut die React-Plattform (webapp/) und deployed sie auf zwei Wegen:
+#  1. deploy-docs:  Build → docs/ committen (greift, wenn Pages-Quelle = "master /docs")
+#  2. deploy-pages: Build → actions/deploy-pages (greift, wenn Pages-Quelle = "GitHub Actions")
+# So zeigt https://fjdhsbcoge.github.io/Ideenschmiede/ unabhängig von der
+# Pages-Einstellung immer die aktuellste Version.
 # Läuft bei jedem Push auf master, der die webapp betrifft – plus manuell via "Run workflow".
 
 on:
@@ -15,7 +16,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write # nötig, um den docs/-Commit zu pushen
+  contents: write # docs/-Commit pushen
+  pages: write    # actions/deploy-pages
+  id-token: write # actions/deploy-pages
 
 # Nur ein Deployment gleichzeitig
 concurrency:
@@ -23,7 +26,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -44,6 +47,29 @@ jobs:
         working-directory: webapp
         run: npm run build
 
+      - name: Pages-Artefakt hochladen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: webapp/dist
+
+  deploy-docs:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: Dependencies installieren & Build
+        working-directory: webapp
+        run: npm ci && npm run build
+
       - name: Build nach docs/ spiegeln
         run: rsync -a --delete webapp/dist/ docs/
 
@@ -58,3 +84,17 @@ jobs:
           fi
           git commit -m "Deploy: webapp-Build nach docs/ [skip ci]"
           git push
+
+  deploy-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    # Schlägt nur fehl, solange die Pages-Quelle nicht auf "GitHub Actions" steht –
+    # dann übernimmt deploy-docs die Auslieferung.
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: https://fjdhsbcoge.github.io/Ideenschmiede/
+    steps:
+      - name: Auf GitHub Pages deployen (Actions-Quelle)
+        id: deployment
+        uses: actions/deploy-pages@v4
