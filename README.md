@@ -4,6 +4,15 @@
 
 *Die Wertschöpfungskette von der Idee zum Produkt – neu gedacht.*
 
+## 🔴 Live-Demo
+
+[![Live-Demo](https://img.shields.io/badge/Live--Demo-online-54763a?style=for-the-badge&logo=githubpages&logoColor=white)](https://fjdhsbcoge.github.io/Ideenschmiede/)
+
+**https://fjdhsbcoge.github.io/Ideenschmiede/**
+
+Diese Seite wird bei jedem Push auf `master` (Änderungen an `webapp/**`) automatisch
+per GitHub Actions neu gebaut und deployed – sie zeigt **immer die aktuellste Version**.
+
 ---
 
 ## 📝 Über dieses Repository
