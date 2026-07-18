@@ -6,9 +6,9 @@
 
 ## 🔴 Live-Demo
 
-[![Live-Demo](https://img.shields.io/badge/Live--Demo-online-54763a?style=for-the-badge&logo=githubpages&logoColor=white)](https://fjdhsbcoge.github.io/Ideenschmiede/)
+[![Live-Demo](https://img.shields.io/badge/Live--Demo-online-54763a?style=for-the-badge&logo=githubpages&logoColor=white)](https://ideenschmiede-forum.de/)
 
-**https://fjdhsbcoge.github.io/Ideenschmiede/**
+**https://ideenschmiede-forum.de/**
 
 Diese Seite wird bei jedem Push auf `master` (Änderungen an `webapp/**`) automatisch
 per GitHub Actions neu gebaut und deployed – sie zeigt **immer die aktuellste Version**.
@@ -182,7 +182,7 @@ npm run build    # Produktions-Build → dist/
 ## 🔗 Links
 
 - **Aktive Plattform:** [`webapp/`](webapp/) (React v1.2 – lokal via `npm run dev`)
-- **Pages-Einstieg:** https://fjdhsbcoge.github.io/Ideenschmiede
+- **Pages-Einstieg:** https://ideenschmiede-forum.de
 - **Archiv (alte Demos):** [`archive/legacy-demos/`](archive/legacy-demos/)
 
 ---
