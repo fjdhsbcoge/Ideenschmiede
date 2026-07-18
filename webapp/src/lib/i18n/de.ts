@@ -34,6 +34,7 @@ export const de = {
     ossTitle: 'Open Source',
     ossRepo: 'GitHub-Repository',
     ossDocs: 'Vision · Architektur · Build-Dokumentation',
+    ossWhitepaper: 'Whitepaper (PDF)',
     legal: 'Ideenschmiede · Interaktive Demo v1.0 · Alle Daten sind Beispieldaten · Keine echte Zahlungsabwicklung',
   },
 
