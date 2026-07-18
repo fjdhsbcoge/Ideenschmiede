@@ -31,7 +31,7 @@ Deployment per Push.
 
 | # | Aufgabe | Aufwand | Status |
 |---|---|---|---|
-| 2.1 | Pages-Quelle auf „GitHub Actions" umstellen (einmalig, manuell) | 5 Min | ⏳ wartet auf Inhaber |
+| 2.1 | Pages-Quelle auf „GitHub Actions" umstellen (einmalig, manuell) | 5 Min | ✅ erledigt – live: https://fjdhsbcoge.github.io/Ideenschmiede/ |
 | 2.2 | Custom Domain in Pages eintragen + DNS (CNAME/A-Records) | ~1 h + DNS-Propagation | offen |
 | 2.3 | HTTPS erzwingen (Let's Encrypt via GitHub) | automatisch | offen |
 | 2.4 | Impressum + Datenschutzerklärung (Pflicht in DE) | ~1 h + juristische Prüfung | offen |
