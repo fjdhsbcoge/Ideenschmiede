@@ -4,6 +4,7 @@ import { useStore, fmtSat, type TeamAllocation } from '@/lib/store'
 import { useT } from '@/lib/i18n'
 import { ideas, type Idea } from '@/lib/data'
 import { Page, PageHeader, Paywall, Modal, SplitBar, BtcAmount, StageBadge } from '@/components/bits'
+import { ShareButton } from '@/components/ShareMenu'
 
 export default function Marketplace() {
   const t = useT()
@@ -134,6 +135,7 @@ function MarketCard({ idea, onInvest, onVote }: { idea: Idea; onInvest: () => vo
             <Link to={`/team-apply?idea=${idea.id}`} className="btn-secondary" style={{ justifyContent: 'center', fontSize: 13.5, padding: '11px 16px' }}>{T.applyAsTeam}</Link>
           </>
         )}
+        <ShareButton compact ideaId={idea.id} title={idea.title} description={idea.description} />
       </div>
     </div>
   )

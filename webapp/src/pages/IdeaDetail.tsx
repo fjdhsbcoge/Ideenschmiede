@@ -4,6 +4,7 @@ import { useStore } from '@/lib/store'
 import { useT } from '@/lib/i18n'
 import { getIdea, votePercent, type Comment } from '@/lib/data'
 import { Page, StageBadge, SplitBar, EmptyState, Modal, BtcAmount } from '@/components/bits'
+import { ShareButton } from '@/components/ShareMenu'
 
 interface UiComment {
   id: string
@@ -164,7 +165,10 @@ export default function IdeaDetail() {
 
   return (
     <Page narrow>
-      <Link to="/discussion" style={{ fontSize: 13.5, color: 'var(--text-tertiary)', textDecoration: 'none' }}>{T.back}</Link>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+        <Link to="/discussion" style={{ fontSize: 13.5, color: 'var(--text-tertiary)', textDecoration: 'none' }}>{T.back}</Link>
+        <ShareButton ideaId={idea.id} title={idea.title} description={idea.description} />
+      </div>
 
       <div className="is-card reveal visible" style={{ padding: '30px 32px', marginTop: 16 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>

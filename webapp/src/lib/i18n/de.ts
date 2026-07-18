@@ -715,6 +715,15 @@ export const de = {
       savedToast: '✅ Einstellungen gespeichert',
       invalidHandleToast: '⚠️ Handle muss mit @ beginnen (mind. 3 Zeichen)',
     },
+
+    share: {
+      button: 'Teilen',
+      title: '📤 Idee teilen',
+      copyLink: '🔗 Link kopieren',
+      copiedToast: '🔗 Link in die Zwischenablage kopiert',
+      copyFallback: 'Link manuell kopieren:',
+      viaEmail: 'E-Mail',
+    },
   },
 };
 

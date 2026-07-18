@@ -4,6 +4,7 @@ import { useStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
 import { ideas, votePercent } from '@/lib/data';
 import { Page, PageHeader, LoginNotice, EmptyState } from '@/components/bits';
+import { ShareButton } from '@/components/ShareMenu';
 
 export default function Discussion() {
   const { role, can, toast } = useStore();
@@ -153,6 +154,7 @@ function DiscussionCard({ ideaId }: { ideaId: string }) {
             style={{ padding: '7px 14px', fontSize: 13, borderColor: userVote === 'down' ? 'var(--accent-primary)' : undefined, color: userVote === 'down' ? 'var(--accent-primary)' : undefined }}>
             👎 {votes.down}
           </button>
+          <ShareButton compact ideaId={idea.id} title={idea.title} description={idea.description} />
         </div>
         <Link to={`/idea/${idea.id}`} style={{ fontSize: 13.5, color: 'var(--accent-primary)', fontWeight: 600, textDecoration: 'none' }}>{T.discussCta}</Link>
       </div>
