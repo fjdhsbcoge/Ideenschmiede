@@ -141,9 +141,9 @@ const { role, setRole, can, toast, applications, votes, allocations } = useStore
 
 Alle Tokens und Komponenten-Klassen liegen in `src/index.css`:
 
-- **Farben:** `--accent-primary` `#e94560`, `--accent-orange` `#f39c12`,
-  `--accent-green` `#2ecc71`, `--accent-blue` `#3498db`, `--accent-bitcoin` `#f7931a`,
-  Hintergrund `#0a0a0f`/`#12121a`/`#1a1a25`
+- **Farben:** `--accent-primary` `#54763a` (Eichengrün, siehe ADR-008),
+  `--accent-orange` `#f39c12`, `--accent-green` `#2ecc71`, `--accent-blue` `#3498db`,
+  `--accent-bitcoin` `#f7931a`, Hintergrund `#0a0a0f`/`#12121a`/`#1a1a25`
 - **Bausteine:** `.is-card`, `.btn-primary/-secondary/-ghost`, `.badge-*`,
   `.is-input/-select/-textarea`, `.progress-track/-fill`, `.is-table`,
   `.modal-*`, `.toast`, `.reveal` (Scroll-Animation via `useReveal()`)

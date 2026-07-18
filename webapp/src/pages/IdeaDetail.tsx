@@ -207,7 +207,7 @@ export default function IdeaDetail() {
 
         {/* Marketplace info */}
         {inMarketplace && idea.fundingGoal && (
-          <div style={{ marginTop: 20, background: 'linear-gradient(160deg, rgba(243,156,18,.1), rgba(233,69,96,.07))', borderRadius: 14, padding: '20px 22px', border: '1px solid rgba(243,156,18,.3)' }}>
+          <div style={{ marginTop: 20, background: 'linear-gradient(160deg, rgba(243,156,18,.1), rgba(84, 118, 58,.07))', borderRadius: 14, padding: '20px 22px', border: '1px solid rgba(243,156,18,.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
               <h3 className="font-display" style={{ fontSize: 16, fontWeight: 700 }}>{T.marketStatus}</h3>
               <Link to="/marketplace" className="btn-primary" style={{ fontSize: 13, padding: '9px 18px' }}>{T.toMarketplace}</Link>
@@ -223,7 +223,7 @@ export default function IdeaDetail() {
 
         {/* Move to marketplace CTA */}
         {canMove && (
-          <div style={{ marginTop: 20, background: 'rgba(233,69,96,.08)', borderRadius: 14, padding: '18px 22px', border: '1px solid rgba(233,69,96,.35)', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ marginTop: 20, background: 'rgba(84, 118, 58,.08)', borderRadius: 14, padding: '18px 22px', border: '1px solid rgba(84, 118, 58,.35)', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 24 }}>🚀</span>
             <div style={{ flex: 1, minWidth: 200 }}>
               <strong style={{ fontSize: 14.5 }}>{T.moveTitle}</strong>

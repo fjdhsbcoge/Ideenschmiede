@@ -341,7 +341,7 @@ export default function TeamDetail() {
           ) : (
             <div style={{ display: 'grid', gap: 14 }}>
               {apps.map((a) => (
-                <div key={a.id} style={{ background: 'var(--bg-primary)', borderRadius: 13, padding: '18px 20px', border: `1px solid ${a.status === 'offen' ? 'var(--border-color)' : a.status === 'angenommen' ? 'rgba(46,204,113,.4)' : 'rgba(233,69,96,.3)'}` }}>
+                <div key={a.id} style={{ background: 'var(--bg-primary)', borderRadius: 13, padding: '18px 20px', border: `1px solid ${a.status === 'offen' ? 'var(--border-color)' : a.status === 'angenommen' ? 'rgba(46,204,113,.4)' : 'rgba(84, 118, 58,.3)'}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 9 }}>
                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple, #9b59b6))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 }}>{a.applicant[1].toUpperCase()}</div>
                     <strong style={{ fontSize: 14.5 }}>{a.applicant}</strong>

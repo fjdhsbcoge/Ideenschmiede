@@ -143,7 +143,7 @@ export default function Settings() {
         </div>
 
         {/* Demo-Bereich */}
-        <div className="is-card" style={{ padding: '22px 26px', borderColor: 'rgba(233,69,96,.3)' }}>
+        <div className="is-card" style={{ padding: '22px 26px', borderColor: 'rgba(84, 118, 58,.3)' }}>
           <h3 className="font-display" style={{ fontSize: 15.5, fontWeight: 700, marginBottom: 6 }}>{T.demoTitle}</h3>
           <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 14 }}>{T.demoNote}</p>
           <button

@@ -23,7 +23,7 @@ export default function Profile() {
           width: 84, height: 84, borderRadius: 24, flexShrink: 0,
           background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-orange))',
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38,
-          boxShadow: '0 12px 30px -8px rgba(233,69,96,.4)',
+          boxShadow: '0 12px 30px -8px rgba(84, 118, 58,.4)',
         }}>{cfg.icon}</div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>

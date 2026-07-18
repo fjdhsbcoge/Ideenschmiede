@@ -103,7 +103,7 @@ export default function CreateIdea() {
                   style={{
                     padding: '9px 16px', fontSize: 13.5,
                     borderColor: form.tags.includes(tag) ? 'var(--accent-primary)' : undefined,
-                    background: form.tags.includes(tag) ? 'rgba(233,69,96,.14)' : undefined,
+                    background: form.tags.includes(tag) ? 'rgba(84, 118, 58,.14)' : undefined,
                     color: form.tags.includes(tag) ? '#ff8ba0' : undefined,
                   }}
                 >

@@ -149,6 +149,7 @@ zwischen Communities, nicht innerhalb einer Community.
 | ADR-005 | **Deutschland-First** (Sprache, Rechtsraum, Community) | ✅ beschlossen | Fokus vor Breite; Internationalisierung via i18n + neue Instanzen, nicht via Sprachmischung |
 | ADR-006 | **Non-custodial von Tag eins** | ✅ aktiv | Plattform hält nie Keys/Gelder; BTCPay-Invoices direkt an Empfänger-Wallets |
 | ADR-007 | **AI-first-Entwicklung** mit Transparenz-Regel | ✅ aktiv | Commits von KI tragen Autor „Kimi Claw"; Mensch reviewed |
+| ADR-008 | **Markenfarbe Eichengrün** („Sommereiche" `#54763a`) statt Pink `#e94560` | ✅ aktiv | Handwerklich-natürliche Identität; Gradient Eichengrün→Gold→Bitcoin; semantisches Grün (`#2ecc71`, Voting) bleibt getrennt; dunkles Theme bleibt |
 
 ---
 

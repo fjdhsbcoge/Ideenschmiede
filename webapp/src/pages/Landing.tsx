@@ -15,7 +15,7 @@ export default function Landing() {
     <div>
       {/* HERO */}
       <section style={{ position: 'relative', overflow: 'hidden', padding: '96px 22px 84px', textAlign: 'center' }}>
-        <div className="ember-glow" style={{ width: 520, height: 520, background: 'rgba(233,69,96,.16)', top: -180, left: '50%', transform: 'translateX(-78%)' }} />
+        <div className="ember-glow" style={{ width: 520, height: 520, background: 'rgba(84, 118, 58,.16)', top: -180, left: '50%', transform: 'translateX(-78%)' }} />
         <div className="ember-glow" style={{ width: 420, height: 420, background: 'rgba(243,156,18,.12)', bottom: -160, left: '50%', transform: 'translateX(-18%)' }} />
         <div style={{ position: 'relative', maxWidth: 880, margin: '0 auto' }}>
           <div className="badge badge-orange reveal" style={{ marginBottom: 22, fontSize: 12, padding: '6px 14px' }}>
@@ -259,7 +259,7 @@ export default function Landing() {
 
       {/* CTA */}
       <section style={{ padding: '90px 22px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div className="ember-glow" style={{ width: 460, height: 460, background: 'rgba(233,69,96,.13)', top: -120, left: '50%', transform: 'translateX(-50%)' }} />
+        <div className="ember-glow" style={{ width: 460, height: 460, background: 'rgba(84, 118, 58,.13)', top: -120, left: '50%', transform: 'translateX(-50%)' }} />
         <div style={{ position: 'relative', maxWidth: 680, margin: '0 auto' }}>
           <h2 className="font-display reveal" style={{ fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 700, letterSpacing: '-.02em', marginBottom: 16 }}>
             {L.ctaTitle}

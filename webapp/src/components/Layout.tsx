@@ -44,7 +44,7 @@ export function RoleSwitcher({ compact = false }: { compact?: boolean }) {
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                   padding: '10px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                  background: r === role ? 'rgba(233,69,96,.12)' : 'transparent',
+                  background: r === role ? 'rgba(84, 118, 58,.12)' : 'transparent',
                   color: 'var(--text-primary)', textAlign: 'left',
                 }}
               >
@@ -102,8 +102,8 @@ export default function Layout() {
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--text-primary)', flexShrink: 0 }}>
             <div style={{
               width: 34, height: 34, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'linear-gradient(135deg, var(--accent-primary), #ff6b6b)', fontSize: 17,
-              boxShadow: '0 6px 18px -4px rgba(233,69,96,.5)',
+              background: 'linear-gradient(135deg, var(--accent-primary), #7fa653)', fontSize: 17,
+              boxShadow: '0 6px 18px -4px rgba(84, 118, 58,.5)',
             }}>⚡</div>
             <span className="font-display" style={{ fontWeight: 700, fontSize: 19, letterSpacing: '-.01em' }}>Ideenschmiede</span>
           </Link>
@@ -166,7 +166,7 @@ export default function Layout() {
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '40px 22px 34px', display: 'grid', gap: 28, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, var(--accent-primary), #ff6b6b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>⚡</div>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, var(--accent-primary), #7fa653)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>⚡</div>
               <span className="font-display" style={{ fontWeight: 700 }}>Ideenschmiede</span>
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.7 }}>
