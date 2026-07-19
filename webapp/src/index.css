@@ -285,3 +285,24 @@ body {
 @media (max-width: 768px) {
   .modal-box { padding: 26px 22px; }
 }
+
+/* Landing: Hover-Tooltip für Prozess-Schritte */
+.step-hover { cursor: pointer; }
+.step-hover .step-tip {
+  position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%) translateY(4px);
+  width: max-content; max-width: 300px; padding: 10px 14px; border-radius: 10px;
+  background: var(--bg-elevated); border: 1px solid var(--border-strong);
+  box-shadow: 0 10px 32px rgba(0,0,0,.45); font-size: 12.5px; color: var(--text-secondary);
+  line-height: 1.55; opacity: 0; visibility: hidden; transition: all .18s ease; z-index: 40;
+  pointer-events: none; text-align: left; font-weight: 400;
+}
+.step-hover:hover .step-tip, .step-hover:focus-within .step-tip {
+  opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0);
+}
+.step-hover .step-tip::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 6px solid transparent; border-top-color: var(--border-strong);
+}
+.step-hover:hover .is-card, .step-hover:focus-within .is-card {
+  border-color: var(--accent-primary);
+}

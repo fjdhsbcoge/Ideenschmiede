@@ -103,15 +103,98 @@ export const de = {
       },
     ],
 
+    roleDetails: [
+      {
+        intro: 'Du bringst die Idee – die Ideenschmiede bringt Feedback, Kapital und die Teams, die sie bauen.',
+        bullets: [
+          'Posten ist kostenlos: Sofort öffentlich sichtbar und von der Community diskutiert',
+          '15 % jeder Investition sofort: Bei ₿ 1,00 Funding sind das ₿ 0,15 direkt an dich',
+          '20 % aller Team-Umsätze dauerhaft über Idea-Shares – auch ohne eigenes Unternehmen',
+          'Skin-in-the-game: Du hinterlegst einen kleinen Eigenanteil (≥ 1 % der Bewertung) – das schafft Vertrauen bei Investoren',
+          'Kein Gatekeeping: Keine Bewerbung, keine Jury – die Community entscheidet',
+        ],
+        outro: 'Kurz: Du denkst, andere bauen – und du verdienst an jedem Erfolg mit.',
+      },
+      {
+        intro: 'Du investierst nicht in Versprechen, sondern in von der Community geprüfte Ideen und Teams mit Skin-in-the-game.',
+        bullets: [
+          'Idea-Shares: Beteilige dich an der Idee selbst – du verdienst an allen Teams dieser Idee mit (20 %-Pool)',
+          'Team-Shares: Wähle gezielt das stärkste Team und sichere dir Anteile an seinen 80 % Umsatz',
+          'Investor Team Selection: Du bestimmst selbst, wie dein 80 %-Pool auf konkurrierende Teams verteilt wird',
+          'Meilenstein-Schutz: Gelder fließen in Tranchen – scheitert ein Team, bekommst du das Restbudget zurück',
+          'Stimmrecht inklusive: Du votest über Meilenstein-Freigaben deiner Investments',
+        ],
+        outro: 'Alles on-chain, alles transparent: Jede Transaktion ist öffentlich verifizierbar.',
+      },
+      {
+        intro: 'Du willst bauen statt pitchen? Hier bekommst du Funding, Teamgeist – und 80 % des Umsatzes.',
+        bullets: [
+          'Bewirb dich mit Fahrplan, Meilensteinen und Budget – nicht mit Hochglanz-Pitch',
+          'Skin-in-the-game (≥ 5 % des Ziels) beweist Ernsthaftigkeit und zieht Investoren an',
+          'Funding in Tranchen: Erfüllter Meilenstein → Investoren-Vote → nächste Zahlung',
+          '80 % aller Umsätze und Exits gehören deinem Team – umgekehrt zum klassischen Modell',
+          'Wettbewerb erwünscht: Auch als zweites oder drittes Team einer Idee kannst du gewinnen',
+        ],
+        outro: 'Bauen, liefern, verdienen. Der Rest ist transparent.',
+      },
+    ],
+
     processTitle: 'Von der Idee zum Profit',
     processSub: 'Sechs Stufen. Kein Gatekeeping. Jede Stufe ist transparent und nachvollziehbar.',
+    processHint: '💡 Fahre mit der Maus über einen Schritt für eine Kurzinfo – klicke für die ausführliche Beschreibung.',
+    moreInfo: 'Mehr Informationen',
+    closeModal: 'Schließen',
     steps: [
-      { title: 'Diskussion', text: 'Idee posten, Feedback sammeln, Konzept verfeinern. Kostenlos und offen für alle.' },
-      { title: 'Voting', text: 'Die Community entscheidet: Ist die Idee es wert, gebaut zu werden? 1 Person = 1 Stimme.' },
-      { title: 'Idea-Shares', text: 'Investoren kaufen Anteile an der Idee. Der Ideengeber erhält 15 % sofort, 5 % gehen an frühe Mitdenker.' },
-      { title: 'Teams', text: 'Macher bewerben sich mit Fahrplan, Budget und Skin-in-the-game. Investoren wählen ihre Teams. Mehrere Teams pro Idee? Ausdrücklich erwünscht.' },
-      { title: 'Building', text: 'Meilenstein-basierte Entwicklung. Gelder werden in Tranchen freigegeben, Investoren stimmen über Fortschritt ab.' },
-      { title: 'Revenue', text: 'Umsatz fließt: 20 % an Idea-Share-Halter, 80 % an Team-Share-Halter. Transparent, öffentlich, überprüfbar.' },
+      {
+        title: 'Diskussion', text: 'Idee posten, Feedback sammeln, Konzept verfeinern. Kostenlos und offen für alle.',
+        tip: 'Kostenlos & offen: Jede Idee startet hier – auch ohne Anmeldung lesbar.',
+        details: [
+          'Die Diskussion ist der Eingang der Ideenschmiede: kostenlos, offen, pseudonym möglich. Ohne Anmeldung kannst du alles mitlesen.',
+          'Jede Idee bekommt ein Stimmungsbild (👍/👎) und Kommentare mit Chain-of-Thought-Punkten. Die wertvollsten Beiträge werden sichtbar belohnt – die 5-%-Mitdenker-Quote fließt später an genau diese Accounts.',
+          'Erreicht eine Idee genug Zustimmung, kann ein Subscriber sie per Klick auf den Marktplatz heben. Kein Gatekeeper, keine Jury.',
+        ],
+      },
+      {
+        title: 'Voting', text: 'Die Community entscheidet: Ist die Idee es wert, gebaut zu werden? 1 Person = 1 Stimme.',
+        tip: '1 Person = 1 Stimme – abgesichert über die Subscription. Klicken für Details zum Sybil-Schutz.',
+        details: [
+          'Auf dem Marktplatz stimmt die Community darüber ab, ob eine Idee ins Funding geht. Eine Stimme pro Person – manipulationsresistent, ohne dass wir irgendetwas über dich wissen müssen.',
+          'Der ganze Trick dahinter: Das Stimmrecht kostet Geld statt Daten.',
+        ],
+      },
+      {
+        title: 'Idea-Shares', text: 'Investoren kaufen Anteile an der Idee. Der Ideengeber erhält 15 % sofort, 5 % gehen an frühe Mitdenker.',
+        tip: '15 % Ideengeber · 5 % Mitdenker · 80 % Team-Budget. Klicken für den genauen Geldfluss.',
+        details: [
+          'Mit Idea-Shares beteiligst du dich an der Idee selbst – du verdienst an allen Teams dieser Idee mit, egal welches Team am Ende gewinnt.',
+          'So verteilt sich jede Investition sofort:',
+        ],
+      },
+      {
+        title: 'Teams', text: 'Macher bewerben sich mit Fahrplan, Budget und Skin-in-the-game. Investoren wählen ihre Teams. Mehrere Teams pro Idee? Ausdrücklich erwünscht.',
+        tip: 'Konkurrierende Teams pro Idee erwünscht – Wettbewerb statt Monopol.',
+        details: [
+          'Teams bewerben sich auf Ideen mit Fahrplan, Meilensteinen, Budget und Skin-in-the-game (≥ 5 % des Funding-Ziels) – nicht mit Hochglanz-Pitchdecks.',
+          'Mehrere Teams pro Idee sind ausdrücklich erwünscht: Konkurrierende Umsetzungen erhöhen die Erfolgswahrscheinlichkeit. Investoren verteilen ihren 80 %-Pool selbst auf die Teams ihrer Wahl (Investor Team Selection).',
+          'Team-Allokationen sind öffentlich und nicht erstattungsfähig: Wer setzt, steht dazu.',
+        ],
+      },
+      {
+        title: 'Building', text: 'Meilenstein-basierte Entwicklung. Gelder werden in Tranchen freigegeben, Investoren stimmen über Fortschritt ab.',
+        tip: 'Tranchen statt Vertrauen: Erst liefern, dann freigeben.',
+        details: [
+          'Das Funding fließt nicht auf einmal, sondern in Tranchen – eine pro Meilenstein.',
+          'Das Team meldet einen Meilenstein als erfüllt → die Investoren stimmen ab → bei Mehrheit wird die Tranche freigegeben. Deliverables und Zahlungen sind öffentlich dokumentiert.',
+          'Scheitert ein Team, fließt das Restbudget zurück an die Investoren. Keine schwarzen Kassen, kein Wegsehen.',
+        ],
+      },
+      {
+        title: 'Revenue', text: 'Umsatz fließt: 20 % an Idea-Share-Halter, 80 % an Team-Share-Halter. Transparent, öffentlich, überprüfbar.',
+        tip: '20 % an Idea-Shares, 80 % an Team-Shares. Klicken für die Aufteilung.',
+        details: [
+          'Sobald das Produkt Umsatz macht (oder ein Exit passiert), wird konsequent verteilt:',
+        ],
+      },
     ],
 
     moneyTitle: 'Wohin das Geld fließt',
