@@ -25,6 +25,37 @@ export function isIdeaStage(value: unknown): value is IdeaStage {
   return typeof value === 'string' && (IDEA_STAGES as readonly string[]).includes(value);
 }
 
+/**
+ * Stufen eines Teams. Quelle ist das Schema:
+ * api/migrations/001_init.sql, teams_status_check.
+ *
+ * Warum als Konstante und nicht als Vereinigungstyp im Interface: genau wie
+ * bei IDEA_STAGES erzwingt erst die abgeleitete Liste Vollstaendigkeit in
+ * jeder Record<TeamStatus, ...>-Tabelle. Zuvor fehlten dem Frontend zwei
+ * Werte ('applying', 'funded'), die das Schema kennt - ein Nachschlagen in
+ * der Farb- oder Beschriftungstabelle lief dann ins Leere und die Anzeige
+ * blieb leer, ohne Fehlermeldung.
+ */
+export const TEAM_STATUSES = ['applying', 'funding', 'funded', 'building', 'completed'] as const;
+
+/** Stufen eines Teams, abgeleitet aus {@link TEAM_STATUSES}. */
+export type TeamStatus = (typeof TEAM_STATUSES)[number];
+
+/** Typwaechter fuer Team-Stufen, fuer Werte von ausserhalb (API, Speicher). */
+export function isTeamStatus(value: unknown): value is TeamStatus {
+  return typeof value === 'string' && (TEAM_STATUSES as readonly string[]).includes(value);
+}
+
+/**
+ * Die Bewerbung auf ein Team hat einen EIGENEN Wertebereich, der nichts mit
+ * dem Team-Status zu tun hat. Beide lagen zuvor in derselben i18n-Tabelle,
+ * was die Verwechslung beguenstigte.
+ */
+export const APPLICATION_STATUSES = ['offen', 'angenommen', 'abgelehnt'] as const;
+
+/** Status einer Team-Bewerbung, abgeleitet aus {@link APPLICATION_STATUSES}. */
+export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
+
 export interface Comment {
   id: string;
   author: string;
@@ -62,7 +93,7 @@ export interface TeamApplication {
   hours: number;
   message: string;
   date: string;
-  status: 'offen' | 'angenommen' | 'abgelehnt';
+  status: ApplicationStatus;
 }
 
 export interface TeamMember {
@@ -80,7 +111,7 @@ export interface Team {
   fundingGoal: number; // sat
   raised: number; // sat
   skinInGame: number; // sat
-  status: 'funding' | 'building' | 'completed';
+  status: TeamStatus;
   milestones: { title: string; done: boolean; dueDate: string; budget: number; deliverables?: string[] }[];
   verified: boolean;
   memberList?: TeamMember[];
@@ -150,6 +181,22 @@ export const STAGE_META: Record<IdeaStage, StageMeta> = {
   marketplace: { onMarketplace: true, showsFunding: true, openForTeams: true },
   active: { onMarketplace: true, showsFunding: true, openForTeams: true },
   completed: { onMarketplace: true, showsFunding: true, openForTeams: false },
+};
+
+/**
+ * Farbklasse je Team-Stufe fuer die Anzeige.
+ *
+ * `Record<TeamStatus, string>` erzwingt Vollstaendigkeit: fehlte ein Wert,
+ * rendert die Anzeige `class="badge undefined"` - sichtbar falsch, aber
+ * ohne Fehlermeldung. Genau das war der Fall, solange das Frontend nur drei
+ * der fuenf Stufen kannte.
+ */
+export const TEAM_STATUS_CLASS: Record<TeamStatus, string> = {
+  applying: 'badge-blue',
+  funding: 'badge-orange',
+  funded: 'badge-purple',
+  building: 'badge-green',
+  completed: 'badge-neutral',
 };
 
 export const ideas: Idea[] = [

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useStore, fmtSat, fmtBtc, useReveal } from '@/lib/store';
 import { useT } from '@/lib/i18n';
-import { STAGE_LABELS, STAGE_META, isIdeaStage, votePercent, type Idea, type IdeaStage } from '@/lib/data';
+import { STAGE_LABELS, STAGE_META, TEAM_STATUS_CLASS, isIdeaStage, isTeamStatus, votePercent, type Idea, type IdeaStage, type TeamStatus } from '@/lib/data';
 
 /**
  * Farbe je Stufe. `Record<IdeaStage, string>`: fehlt eine Stufe, bricht
@@ -48,6 +48,28 @@ export function StageBadge({ stage }: { stage: IdeaStage }) {
   }
 
   return <span className={`badge ${STAGE_BADGE_CLASS[stage]}`}>{STAGE_LABELS[stage]}</span>;
+}
+
+/**
+ * Zeigt die Stufe eines Teams an - nach demselben Muster wie StageBadge.
+ *
+ * Warum auch hier eine Laufzeitpruefung: das Schema kennt FUENF Team-Stufen
+ * (applying, funding, funded, building, completed), das Frontend kannte nur
+ * drei. Eine Stufe aus dem Backend lief damit in eine leere Anzeige.
+ */
+export function TeamStatusBadge({ status }: { status: TeamStatus }) {
+  const t = useT();
+
+  if (!isTeamStatus(status)) {
+    const raw = String(status);
+    return (
+      <span className="badge badge-red" title={t.pages.common.stageUnknownHint}>
+        ⚠️ {t.pages.common.stageUnknown} <span className="font-mono">„{raw}"</span>
+      </span>
+    );
+  }
+
+  return <span className={`badge ${TEAM_STATUS_CLASS[status]}`}>{t.pages.common.teamStatus[status]}</span>;
 }
 
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {

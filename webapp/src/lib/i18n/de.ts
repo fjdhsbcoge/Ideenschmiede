@@ -278,6 +278,27 @@ export const de = {
       // (siehe StageBadge in components/bits.tsx).
       stageUnknown: 'Unbekannte Stufe',
       stageUnknownHint: 'Diese Stufe kennt das Frontend nicht – Wert aus der API:',
+
+      // Beschriftungen der Team-Stufen. Vollstaendig nach dem Schema
+      // (teams_status_check): applying, funding, funded, building, completed.
+      // Zuvor fehlten 'applying' und 'funded' - eine Stufe aus dem Backend
+      // lief damit in eine leere Anzeige. Der Typ Record<TeamStatus, string>
+      // erzwingt jetzt Vollstaendigkeit.
+      teamStatus: {
+        applying: 'Bewerbungsphase',
+        funding: 'Funding läuft',
+        funded: 'Finanziert',
+        building: 'Im Aufbau',
+        completed: 'Abgeschlossen',
+      },
+
+      // Eigener Wertebereich: der Status einer Team-BEWERBUNG hat nichts mit
+      // dem Team-Status zu tun. Beide lagen zuvor in derselben Tabelle.
+      applicationStatus: {
+        offen: 'offen',
+        angenommen: 'angenommen',
+        abgelehnt: 'abgelehnt',
+      },
     },
 
     notFound: {
@@ -636,7 +657,6 @@ export const de = {
       withdrawnToast: 'Bewerbung zurückgezogen.',
       appliedAt: 'Beworben am',
       projectPrefix: 'Projekt: ',
-      status: { funding: 'Funding läuft', building: 'Im Aufbau', completed: 'Abgeschlossen', offen: 'offen', angenommen: 'angenommen', abgelehnt: 'abgelehnt' },
     },
 
     teamForm: {
@@ -766,7 +786,6 @@ export const de = {
       submit: 'Bewerbung absenden',
       joinSubOnlyToast: 'Teambeitritt ist ein Subscriber-Feature ⭐',
       sentToast: (name: string) => `📨 Bewerbung an ${name} gesendet!`,
-      status: { funding: 'Funding läuft', building: 'Im Aufbau', completed: 'Abgeschlossen' },
     },
 
     settings: {

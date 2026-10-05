@@ -3,14 +3,16 @@ import { Link } from 'react-router'
 import { useStore, fmtSat } from '@/lib/store'
 import { useT } from '@/lib/i18n'
 import { ideas, type Team } from '@/lib/data'
-import { Page, PageHeader, BtcAmount, EmptyState } from '@/components/bits'
+import { Page, PageHeader, BtcAmount, EmptyState, TeamStatusBadge } from '@/components/bits'
 import { JoinTeamModal } from '@/pages/TeamDetail'
 
 const ALL_TEAMS: (Team & { ideaTitle: string })[] = ideas.flatMap((i) =>
   (i.teams || []).map((tm) => ({ ...tm, ideaTitle: i.title }))
 )
 
-const STATUS_CLASS: Record<Team['status'], string> = { funding: 'badge-orange', building: 'badge-green', completed: 'badge-neutral' }
+// Die Farbtabelle liegt in lib/data.ts (TEAM_STATUS_CLASS) - dort ist sie an
+// TeamStatus gebunden, also vollstaendig. Eine zweite Tabelle hier waere eine
+// zweite Wahrheit, die auseinanderlaufen kann.
 
 export default function Teams() {
   const t = useT()
@@ -78,7 +80,7 @@ export default function Teams() {
                     </div>
                   </div>
                   <span className={`badge ${a.status === 'offen' ? 'badge-orange' : a.status === 'angenommen' ? 'badge-green' : 'badge-red'}`}>
-                    {T.status[a.status]}
+                    {t.pages.common.applicationStatus[a.status]}
                   </span>
                   {a.status === 'offen' && (
                     <button className="btn-ghost" style={{ fontSize: 12.5 }} onClick={() => { withdrawApplication(a.id); toast(T.withdrawnToast) }}>
@@ -140,7 +142,7 @@ function TeamCard({ team, onJoin }: { team: Team & { ideaTitle: string }; onJoin
             <Link to={`/team/${team.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
               <h3 className="font-display" style={{ fontSize: 19, fontWeight: 700 }}>{team.name}</h3>
             </Link>
-            <span className={`badge ${STATUS_CLASS[team.status]}`}>{T.status[team.status]}</span>
+            <TeamStatusBadge status={team.status} />
             {team.verified && <span className="badge badge-green">{t.pages.marketplace.verifiedBadge}</span>}
           </div>
           <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 5 }}>
@@ -197,7 +199,7 @@ function TeamCard({ team, onJoin }: { team: Team & { ideaTitle: string }; onJoin
           disabled={!!myApp}
           onClick={() => (can('teams') ? onJoin() : toast(T.joinSubOnlyToast))}
         >
-          {myApp ? `📨 ${T.status[myApp.status]}` : T.apply}
+          {myApp ? `📨 ${t.pages.common.applicationStatus[myApp.status]}` : T.apply}
         </button>
       </div>
     </div>

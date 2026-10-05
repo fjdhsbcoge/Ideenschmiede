@@ -3,9 +3,11 @@ import { Link, useParams } from 'react-router'
 import { useStore, fmtSat } from '@/lib/store'
 import { useT } from '@/lib/i18n'
 import { ideas, type Team, type TeamApplication } from '@/lib/data'
-import { Page, Modal, BtcAmount, EmptyState } from '@/components/bits'
+import { Page, Modal, BtcAmount, EmptyState, TeamStatusBadge } from '@/components/bits'
 
-const STATUS_CLASS: Record<Team['status'], string> = { funding: 'badge-orange', building: 'badge-green', completed: 'badge-neutral' }
+// Die Farbtabelle liegt in lib/data.ts (TEAM_STATUS_CLASS) und ist dort an
+// TeamStatus gebunden, also vollstaendig. Eine zweite Tabelle hier waere eine
+// zweite Wahrheit.
 
 export function findTeam(teamId: string): { team: Team; ideaTitle: string } | null {
   for (const i of ideas) {
@@ -116,7 +118,7 @@ export default function TeamDetail() {
           <div style={{ flex: 1, minWidth: 260 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
               <h1 className="font-display" style={{ fontSize: 'clamp(22px, 3.4vw, 30px)', fontWeight: 700, letterSpacing: '-.02em' }}>{team.name}</h1>
-              <span className={`badge ${STATUS_CLASS[team.status]}`}>{T.status[team.status]}</span>
+              <TeamStatusBadge status={team.status} />
               {team.verified && <span className="badge badge-green">{t.pages.marketplace.verifiedBadge}</span>}
             </div>
             <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
@@ -141,7 +143,7 @@ export default function TeamDetail() {
               disabled={!!myApp}
               onClick={() => (can('teams') ? setJoinOpen(true) : toast(T.joinSubOnlyToast))}
             >
-              {myApp ? `${T.applicationPrefix}${TS.status[myApp.status]}` : T.join}
+              {myApp ? `${T.applicationPrefix}${t.pages.common.applicationStatus[myApp.status]}` : T.join}
             </button>
           </div>
         </div>
@@ -346,7 +348,7 @@ export default function TeamDetail() {
                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple, #9b59b6))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 }}>{a.applicant[1].toUpperCase()}</div>
                     <strong style={{ fontSize: 14.5 }}>{a.applicant}</strong>
                     <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{a.date} · ⏱ {a.hours} {T.hoursSuffix}</span>
-                    <span className={`badge ${a.status === 'offen' ? 'badge-orange' : a.status === 'angenommen' ? 'badge-green' : 'badge-red'}`} style={{ marginLeft: 'auto' }}>{TS.status[a.status]}</span>
+                    <span className={`badge ${a.status === 'offen' ? 'badge-orange' : a.status === 'angenommen' ? 'badge-green' : 'badge-red'}`} style={{ marginLeft: 'auto' }}>{t.pages.common.applicationStatus[a.status]}</span>
                   </div>
                   <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginBottom: 7 }}><strong>{T.skillsLabel}</strong> {a.skills}</div>
                   <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: a.status === 'offen' ? 13 : 0 }}>„{a.message}"</p>
