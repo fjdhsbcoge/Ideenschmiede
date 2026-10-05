@@ -63,8 +63,23 @@ ADR-006 wird damit in der Datenbank durchgesetzt, nicht nur dokumentiert.
 Datenverlust: der Wert ist später nicht rekonstruierbar. Konkret gilt:
 
 - `vote_up`/`vote_down` ← `idea_votes`, per Trigger vollständig neu gezählt
-- `raised_sat`/`investor_count` ← `idea_investments`, per Trigger
+- `raised_sat`/`investor_count` in `ideas` ← `idea_investments`, per Trigger
+- `raised_sat`/`investor_count` in `teams` ← `team_investments`, per Trigger
 - `comment_count` ← `idea_comments` (Migration 002)
+
+### Warum zwei Ledger, nicht eines
+
+Idea-Shares und Team-Shares sind **getrennt verkäufliche Beteiligungen**:
+
+| | Idea-Shares | Team-Shares |
+|---|---|---|
+| Rolle | Series-A-Runde der Idee | Beteiligung an **einem** Team |
+| Wann kaufbar | während der Marktplatzphase | **jederzeit**, auch später |
+| Ertrag aus | **allen** Teams der Idee (20 %) | **einem** Team (80 %) |
+
+Wer Idea-Shares hält, verdient an allen Teams; wer Team-Shares hält, an
+einem. Ein gemeinsames Ledger könnte diese beiden Ansprüche nicht trennen,
+und keine Auszahlung wäre mehr begründbar.
 
 ### Aufzählungen
 
@@ -90,8 +105,9 @@ ausführbar — nicht nur unsauber:
 | `subscriptions` | Abo **mit Historie** | das Abo ist das Stimmrecht (ADR-003); ohne Historie ist eine Stimme nach Ablauf nicht mehr begründbar |
 | `ideas` | Ideen | — |
 | `idea_votes` | **Einzelstimmen** | ein Zähler ist eine Behauptung, Einzelstimmen sind ein Beweis |
-| **`idea_investments`** | **Ledger der Direktzahlungen** | **ohne dieses Ledger ist die 20/80-Aufteilung nicht berechenbar.** Ein Zähler `raised_sat` ohne Quelle ist wertlos |
+| **`idea_investments`** | **Ledger der Idea-Shares** | **ohne dieses Ledger ist die 20/80-Aufteilung nicht berechenbar.** Ein Zähler `raised_sat` ohne Quelle ist wertlos |
 | `teams` | Teams, genau eine Idee | — |
+| **`team_investments`** | **Ledger der Team-Shares** | Team-Shares werden **separat und jederzeit** gekauft. Ohne eigenes Ledger ist die Team-Seite der 80 % nicht berechenbar |
 | `milestones` | Meilensteine eines Teams | — |
 
 ## Nachweisregeln

@@ -8,7 +8,7 @@ die die Aufgabe bewusst offen gelassen hat.
 
 | Datei | Zweck |
 |---|---|
-| `001_init.sql` | Migration 001. Die vier Kernentitaeten `users`, `ideas`, `teams`, `milestones` — plus die drei Tabellen, die aus den Entscheidungen unten folgen: `subscriptions`, `user_wallets`, `idea_votes` — plus das Ledger `idea_investments`, ohne das die 20/80-Aufteilung nicht berechenbar waere. |
+| `001_init.sql` | Migration 001. Die vier Kernentitaeten `users`, `ideas`, `teams`, `milestones` — plus die drei Tabellen, die aus den Entscheidungen unten folgen: `subscriptions`, `user_wallets`, `idea_votes` — plus die **zwei** Ledger `idea_investments` und `team_investments`, ohne die die 20/80-Aufteilung nicht berechenbar waere. |
 
 Quelle: `ARCHITECTURE.md` Anhang 5 (Datenmodell), `ROADMAP.md` Phase 3.1.
 
@@ -35,15 +35,35 @@ Ohne laufende Datenbank, im Postgres-Dialekt geparst:
     python .../maschine/pruefe_sql.py api/migrations/001_init.sql
     python .../maschine/pruefe_vertrag.py api/migrations/001_init.sql
 
-Ergebnis fuer diese Datei: 70 Statements, 8 Tabellen, alle vier Kerntabellen
-vorhanden, keine Gleitkomma-Spalten, 11 Fremdschluessel (alle mit `ON DELETE`),
-23 Indizes, `ERGEBNIS: PARSE OK`. Der Vertragspruefer meldet
-`ERGEBNIS: KONFORM zu api/CONTRACT.md` — ohne Warnungen.
+Ergebnis fuer diese Datei: 81 Statements, 9 Tabellen (alle neun
+Pflichtentitaeten des Vertrags), keine Gleitkomma-Spalten, 13 Fremdschluessel
+(alle mit `ON DELETE`), 26 Indizes, `ERGEBNIS: PARSE OK`. Der Vertragspruefer
+meldet `ERGEBNIS: KONFORM zu api/CONTRACT.md` — ohne Warnungen.
 
-Statische Pruefung genuegt nicht. Die Datei wurde zusaetzlich gegen
-`postgres:16-alpine` (16.15) mit `ON_ERROR_STOP=1` eingespielt und danach mit
+Statische Pruefung genuegt nicht — ein Parser bestaetigt nichts ueber das
+Laufzeitverhalten von Triggern und Constraints. Die Datei wurde zusaetzlich
+gegen `postgres:16-alpine` mit `ON_ERROR_STOP=1` eingespielt und danach mit
 Funktionstests je Geschaeftsregel geprueft: Ledger -> Zaehler, ADR-003,
 strukturelle Wiederholung, Nachweisregel.
+
+Fuer das Team-Ledger wurde im selben Lauf ein `DO`-Block mit inneren
+`EXCEPTION`-Zweigen ausgefuehrt. Er prueft nicht „ob ein Fehler kommt“, sondern
+den **konkreten SQLSTATE**:
+
+| Fall | erwartet | Ergebnis |
+|---|---|---|
+| Team-Kauf hebt `teams.raised_sat` und `investor_count` | 500 sat / 2 Investoren | bestanden |
+| zweiter Beleg desselben Investors | Geld +100, Investorenzahl bleibt | bestanden |
+| doppelte `txid` | `23505` | bestanden |
+| `amount_sat = 0` | `23514` | bestanden |
+| `amount_sat < 0` | `23514` | bestanden |
+| `txid` im Falschformat | `23514` | bestanden |
+| Team mit Belegen loeschen | `23503` (RESTRICT) | bestanden |
+| Team ohne Belege loeschen | gelingt | bestanden |
+| `team_id`-Wechsel per UPDATE | verlassenes Team 400/1, Ziel 103/2 — kein Geisterzaehler | bestanden |
+| `team_investor_shares` | 8000/2000 bp, 1 von 3 sat = 3333 bp | bestanden |
+| Nachweis „Zaehler = Ledger“ ueber alle Teams | 0 Abweichungen | bestanden |
+| DELETE aus dem Ledger | senkt beide Zaehler | bestanden |
 
 ---
 
@@ -218,7 +238,9 @@ SQL ist `snake_case`, die API aus `ARCHITECTURE.md` Anhang 5 ist `camelCase`.
 | `team.proposal.timeline` | `teams.timeline_months` |
 | `team.skinInGame` | `teams.skin_in_game_sat` |
 | `milestone.fundingRelease` | `milestones.funding_release_sat` |
-| Investitionsbeleg | `idea_investments` (`amount_sat`, `txid`) |
+| Investitionsbeleg Idea-Shares | `idea_investments` (`amount_sat`, `txid`) |
+| Investitionsbeleg Team-Shares | `team_investments` (`amount_sat`, `txid`) |
+| `team.raised` / `team.investors` | `teams.raised_sat` / `teams.investor_count` |
 | `milestone.dueDate` | `milestones.due_date` |
 
 ### Warum `discussion` und `marketplace` Spalten sind und keine Tabellen
@@ -237,6 +259,7 @@ den Vertrag aus 5.2 woertlich bedienen kann:
 | `idea_discussion` | `idea_id`, `opened_at`, `comment_count`, `vote_up`, `vote_down` |
 | `idea_marketplace` | `idea_id`, `opened_at`, `closes_at`, `funding_goal_sat`, `raised_sat`, `investor_count`, `creator_share_bp` |
 | `idea_investor_shares` | `idea_id`, `investor_id`, `invested_sat`, `total_sat`, `share_bp` |
+| `team_investor_shares` | `team_id`, `investor_id`, `invested_sat`, `total_sat`, `share_bp` |
 
 `idea_marketplace` enthaelt nur Ideen mit eroeffneter Marktphase — das entspricht
 dem optionalen `marketplace?` aus dem Interface. Die phase-uebergreifende Struktur
@@ -271,6 +294,8 @@ einer Stelle gebuendelt.
 | `idea_votes.subscription_id` → `subscriptions` | `SET NULL` | Die Stimme ueberlebt das Aufraeumen der Abrechnung; sie bleibt gueltig. |
 | `teams.idea_id` → `ideas` | `CASCADE` | Ein Team ohne Idee hat keinen Auftrag. |
 | `teams.leader_id` → `users` | `RESTRICT` | Eine Teamleitung wird uebergeben, nicht geloescht. |
+| `team_investments.team_id` → `teams` | `RESTRICT` | Geldbelege werden nicht mitgeloescht — auch nicht mittelbar ueber das `CASCADE` von `teams.idea_id`. Ein Team mit Belegen ist nicht loeschbar. |
+| `team_investments.investor_id` → `users` | `RESTRICT` | Das Loeschen eines Kontos darf keine Zahlungsgeschichte mitnehmen. |
 | `milestones.team_id` → `teams` | `CASCADE` | Meilensteine gehoeren zum Team. |
 
 **Indizes auf allen Fremdschluesseln — mit einer bewussten Ausnahme.**
@@ -279,6 +304,18 @@ einer Stelle gebuendelt.
 `idea_id` beginnt und die FK-Pruefung damit vollstaendig bedient. Ein zweiter Index
 waere reine Schreiblast auf dem heissesten Schreibpfad des Schemas. Alle uebrigen
 Fremdschluessel haben einen eigenen Index.
+
+Beide Ledger tragen je drei Indizes: den FK-Index auf der Bezugsspalte, den
+FK-Index auf dem Investor und den Auswertungsindex
+`(bezug_id, created_at DESC)` — genau die Abfrage, aus der `raised_sat`,
+`investor_count` und die Anteile entstehen. Die Bezugsspalte ist in **jedem**
+dieser Indizes die erste Spalte (`CONTRACT.md`, Abschnitt „Indizes“): ein Index
+`(created_at, team_id)` wuerde die FK-Pruefung auf `team_id` nicht bedienen.
+Der Auswertungsindex `(team_id, created_at DESC)` deckt die FK-Pruefung auf
+`team_id` bereits ab; `team_investments_team_id_idx` ist damit streng genommen
+redundant und bleibt nur aus Symmetrie zu `idea_investments` stehen. Wer
+Schreiblast sparen will, kann ihn in einer spaeteren Migration streichen —
+funktional aendert er nichts.
 
 ---
 
@@ -299,40 +336,88 @@ wegen genau solcher Namen nicht zusammenfuehrbar:
 | `milestones.funding_release` | `milestones.funding_release_sat` |
 | `subscriptions.payment_tx_hash` | `subscriptions.payment_txid` |
 
-### `idea_investments` — das Ledger, ohne das die 20/80-Aufteilung nicht geht
+### Die zwei Ledger: `idea_investments` und `team_investments`
 
 Ein Zaehler ist eine Behauptung, ein Ledger ist der Beweis. `ideas.raised_sat`
 und `ideas.investor_count` sind deshalb nur noch die gepflegte Abkuerzung von
-`idea_investments`; geschrieben werden sie ausschliesslich von
-`idea_investments_sync_counters` (INSERT, UPDATE, DELETE) und vollstaendig neu
-berechnet. `investor_count` zaehlt Investoren, nicht Zahlungen: wer zweimal
+`idea_investments`, `teams.raised_sat` und `teams.investor_count` die von
+`team_investments`. Geschrieben werden sie ausschliesslich von den beiden
+Trigger-Funktionen `idea_investments_sync_counters` und
+`team_investments_sync_counters` (INSERT, UPDATE, DELETE) und dort vollstaendig
+neu berechnet. `investor_count` zaehlt Investoren, nicht Zahlungen: wer zweimal
 einzahlt, ist ein Investor mit zwei Belegen.
 
-| Spalte | Typ | Regel |
+**Warum zwei Tabellen und nicht eine mit einer Typ-Spalte** begruendet
+`CONTRACT.md` im Abschnitt „Warum zwei Ledger, nicht eines“: Idea-Shares und
+Team-Shares sind getrennt verkaufbare Beteiligungen.
+
+| | Idea-Shares | Team-Shares |
 |---|---|---|
-| `idea_id` | `uuid` | `REFERENCES ideas (id) ON DELETE RESTRICT`, Index |
-| `investor_id` | `uuid` | `REFERENCES users (id) ON DELETE RESTRICT`, Index |
-| `amount_sat` | `bigint` | `> 0` |
-| `txid` | `text` | 64 Hexzeichen, `UNIQUE` |
-| `created_at` | `timestamptz` | `DEFAULT now()` |
+| Rolle | Series-A-Runde der Idee | Beteiligung an **einem** Team |
+| Wann kaufbar | waehrend der Marktplatzphase | **jederzeit**, auch spaeter |
+| Ertrag aus | **allen** Teams der Idee (20 %) | **einem** Team (80 %) |
+
+Wer Idea-Shares haelt, verdient an allen Teams; wer Team-Shares haelt, an einem.
+Ein gemeinsames Ledger koennte diese beiden Ansprueche nicht trennen — und keine
+Auszahlung waere mehr begruendbar. Zwei getrennte Tabellen sind deshalb keine
+Redundanz, sondern die Voraussetzung dafuer, dass `team_investor_shares`
+ueberhaupt eine andere Zahl liefern *darf* als `idea_investor_shares`.
+
+Beide Ledger sind **deckungsgleich aufgebaut** — gleiche Spaltennamen, gleiche
+Typen, gleiche Regeln, nur die Bezugstabelle wechselt von der Idee zum Team.
+Unterschiedlich benannte Felder in zwei Ledgern waeren genau die Divergenz, die
+`CONTRACT.md` ausschliessen will.
+
+| Spalte | `idea_investments` | `team_investments` | Regel |
+|---|---|---|---|
+| Bezug | `idea_id` → `ideas` | `team_id` → `teams` | `ON DELETE RESTRICT`, Index |
+| Investor | `investor_id` → `users` | `investor_id` → `users` | `ON DELETE RESTRICT`, Index |
+| Betrag | `amount_sat bigint` | `amount_sat bigint` | `CHECK (amount_sat > 0)` |
+| Beleg | `txid text` | `txid text` | 64 Hexzeichen, `UNIQUE` |
+| Zeit | `created_at timestamptz` | `created_at timestamptz` | `DEFAULT now()` |
 
 `RESTRICT` statt `CASCADE` ist gewaehlt, nicht gesetzt: Geldbelege werden nicht
 mitgeloescht. Eine finanzierte Idee ist damit nicht loeschbar, solange Zahlungen
 auf sie zeigen — sonst verschwindet die Spur des Geldes mit der Idee.
 
+Beim Team-Ledger ist dieselbe Regel eine Ebene tiefer entscheidend:
+`teams.idea_id` → `ideas` ist `CASCADE` (ein Team ohne Idee hat keinen
+Auftrag). Ohne `RESTRICT` auf `team_investments.team_id` haette das Loeschen
+einer Idee die Team-Shares-Belege mitgerissen — die 80-Prozent-Seite waere
+spurlos verschwunden. Das `RESTRICT` des Ledgers schlaegt das `CASCADE` der
+Elternzeile: ein Team mit Belegen ist nicht loeschbar.
+
+Der Zaehler `teams.raised_sat` war bis zu dieser Fassung ein von der Anwendung
+geschriebener Wert („noch ohne Quelltabelle“). Mit `team_investments` ist diese
+Luecke geschlossen: beide Team-Zaehler haben eine Quelle, einen einzigen
+Schreiber und sind jederzeit aus dem Ledger rekonstruierbar.
+
 ### Anteile sind Basispunkte
 
 `ideas.creator_share_bp` ist `smallint`, `DEFAULT 2000` — die 20 Prozent der
 Idee-Seite, 10000 bp = 100 Prozent, nie ein Bruch. Investorenanteile werden
-**nicht** gespeichert, sondern in `idea_investor_shares` ganzzahlig berechnet
-(`invested_sat * 10000 / total_sat`). Die ganzzahlige Division schneidet ab;
-ausgezahlt wird deshalb nach `invested_sat`, `share_bp` ist die Anzeige.
+**nicht** gespeichert, sondern ganzzahlig berechnet
+(`invested_sat * 10000 / total_sat`): `idea_investor_shares` fuer den Anspruch
+gegenueber der Idee, `team_investor_shares` fuer den Anspruch gegenueber einem
+Team. Zwei Ansprueche, zwei Views — eine gemeinsame View koennte die 20 und die
+80 Prozent nicht auseinanderhalten. Die ganzzahlige Division schneidet ab; die
+Summe der `share_bp` eines Pools kann deshalb knapp unter 10000 liegen.
+Ausgezahlt wird nach `invested_sat` (exakt), `share_bp` ist die Anzeige.
 
-**Offener Punkt, ausdruecklich vermerkt:** fuer `teams.raised_sat` gibt es im
-Vertrag noch keine Quelltabelle — die Team-Seite der 80 Prozent ist nicht Teil
-der Pflichtentitaeten. Bis das festgelegt ist, bleibt die Spalte ein von der
-Anwendung geschriebener Wert. Dieselbe Defektklasse wie `ideas.raised` vor dem
-Ledger, hier aber sichtbar und nicht stillschweigend.
+**Ehemals offener Punkt, jetzt geschlossen:** `teams.raised_sat` hatte keine
+Quelltabelle — dieselbe Defektklasse wie `ideas.raised` vor dem Ledger. Der
+Vertrag fuehrt `team_investments` inzwischen unter den Pflichtentitaeten, und
+die Migration liefert die Tabelle mit: `teams.raised_sat` und
+`teams.investor_count` werden ausschliesslich von
+`team_investments_sync_counters` geschrieben und vollstaendig neu gezaehlt.
+Damit ist die Team-Seite der 80 Prozent genauso beweisbar wie die Idea-Seite.
+
+`teams.investor_count` ist dabei die einzige Spalte, die der Vertrag nennt,
+das Schema aber noch nicht hatte: der Vertrag fuehrt „`raised_sat`/
+`investor_count` in `teams` ← `team_investments`, per Trigger“ und braucht
+dafuer beide Spalten. Die Spalte traegt den kanonischen Namen aus der
+Zaehler-Tabelle des Vertrags (`investor_count`, nicht `investors`) und
+dieselbe `CHECK (>= 0)` wie ihr Gegenstueck in `ideas`.
 
 ---
 
@@ -344,7 +429,7 @@ Ledger, hier aber sichtbar und nicht stillschweigend.
 | `idea_comments` (Tabelle) | Nicht Teil der vier Kernentitaeten. Der Zaehler `ideas.comment_count` existiert bereits, weil der Vertrag ihn verlangt; die Tabelle und ihr Trigger folgen in Migration 002. Bis dahin bleibt der Zaehler bei 0. |
 | `team_members` | 5.4 kennt nur `leaderId`. Mitgliedschaft ist ein eigenes Thema (Rollen, Austritt, Reputation) und wird nicht mitgeraten. |
 | `budget_items` (`proposal.budget`) | 5.4 nennt `BudgetItem[]`, definiert die Struktur aber nicht. Eine Tabelle auf Verdacht waere geraten. |
-| Zahlungsabwicklung, Auszahlungen, Treuhand | Widerspricht ADR-006. Die Plattform rechnet mit Betraegen, sie haelt sie nicht. Belegt wird eine Zahlung im Ledger `idea_investments`; ausgefuehrt wird sie nie von der Plattform. |
+| Zahlungsabwicklung, Auszahlungen, Treuhand | Widerspricht ADR-006. Die Plattform rechnet mit Betraegen, sie haelt sie nicht. Belegt wird eine Zahlung in den Ledgern `idea_investments` (Idea-Shares) und `team_investments` (Team-Shares); ausgefuehrt wird sie nie von der Plattform. |
 
 ## Geldbetraege
 
@@ -355,7 +440,8 @@ Abfrage nicht geraten werden muss.
 
 Betroffene Spalten: `ideas.funding_goal_sat`, `ideas.raised_sat`,
 `teams.funding_goal_sat`, `teams.raised_sat`, `teams.skin_in_game_sat`,
-`milestones.funding_release_sat`, `idea_investments.amount_sat`.
+`milestones.funding_release_sat`, `idea_investments.amount_sat`,
+`team_investments.amount_sat`.
 
 `subscriptions.payment_amount` ist der einzige Betrag ohne `_sat`-Suffix; der
 Vertragspruefer fuehrt ihn in seiner Ausnahmeliste. Die Einheit steht als
