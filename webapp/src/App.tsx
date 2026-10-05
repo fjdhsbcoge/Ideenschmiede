@@ -17,6 +17,7 @@ import Settings from '@/pages/Settings';
 import Investments from '@/pages/Investments';
 import Earnings from '@/pages/Earnings';
 import Datenschutz from '@/pages/Datenschutz';
+import Impressum from '@/pages/Impressum';
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/investments" element={<Investments />} />
             <Route path="/earnings" element={<Earnings />} />
             <Route path="/datenschutz" element={<Datenschutz />} />
+            <Route path="/impressum" element={<Impressum />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

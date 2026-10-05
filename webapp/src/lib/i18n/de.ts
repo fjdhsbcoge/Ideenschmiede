@@ -28,7 +28,7 @@ export const de = {
     taglineA: 'The Marketplace for Ideas.',
     taglineB: 'Die Wertschöpfungskette von der Idee zum Produkt – neu gedacht.',
     platform: 'Plattform',
-    links: { discussion: 'Ideen-Diskussion', marketplace: 'Marktplatz', teams: 'Teams', process: 'Prozess', datenschutz: 'Datenschutz' },
+    links: { discussion: 'Ideen-Diskussion', marketplace: 'Marktplatz', teams: 'Teams', process: 'Prozess', impressum: 'Impressum', datenschutz: 'Datenschutz' },
     principlesTitle: 'Prinzipien',
     principles: ['₿ Bitcoin-only', '⚖️ 20/80 Fairness', '🗳️ 1 Person = 1 Stimme', '🔍 Radikale Transparenz'],
     ossTitle: 'Open Source',
@@ -814,8 +814,12 @@ export const de = {
 
       responsibleTitle: '1. Verantwortlicher',
       responsibleIntro: 'Verantwortlich für diese Website ist:',
-      responsiblePlaceholder: '[Name und Anschrift des Verantwortlichen]',
-      responsibleNote: '⚠️ Dieser Eintrag ist ein Platzhalter und muss vor der Veröffentlichung durch den Betreiber ausgefüllt werden. Eine Kontaktmöglichkeit ist für Betroffene gesetzlich vorgeschrieben.',
+      responsibleName: 'Tobias Rickert',
+      responsibleStreet: 'Schillerstraße 62a',
+      responsibleCity: '48599 Gronau',
+      responsibleCountry: 'Deutschland',
+      responsibleEmail: 'tobias-rickert@web.de',
+      responsibleNote: 'Vollständige Angaben nach § 5 DDG findest du im Impressum. Datenschutzanfragen sind an die oben genannte E-Mail-Adresse zu richten.',
       responsiblePrivacy: 'Datenschutzanfragen werden ausschließlich über die oben genannte Kontaktmöglichkeit bearbeitet.',
       responsibleTech: 'Technischer Kontakt für diese Anwendung: das öffentliche GitHub-Repository des Projekts.',
 
@@ -871,9 +875,45 @@ export const de = {
 
       statusTitle: '6. Stand',
       statusStandLabel: 'Stand dieser Erklärung:',
-      statusStandValue: '[Datum beim Ausfüllen eintragen]',
+      statusStandValue: '5. Oktober 2026',
       statusChangeText: 'Diese Erklärung beschreibt ausschließlich den aktuellen Stand: eine reine Frontend-Demo ohne Backend. Mit der Umsetzung des MVP-Backends (Roadmap Phase 3) ändert sich das grundlegend – dann entstehen serverseitige Speicherung, Nutzerkonten und Zahlungsvorgänge. Diese Erklärung wird vor diesem Schritt überarbeitet und veröffentlicht.',
       statusNote: 'Maßgeblich ist immer die auf dieser Seite veröffentlichte Fassung.',
+      backToHome: '← Zur Startseite',
+    },
+
+    impressum: {
+      title: '⚖️ Impressum',
+      subtitle: 'Pflichtangaben nach § 5 des Digitale-Dienste-Gesetzes (DDG). Dieses Impressum gilt für die gesamte Plattform Ideenschmiede.',
+
+      providerTitle: '1. Angaben gemäß § 5 DDG',
+      providerIntro: 'Diensteanbieter und damit verantwortlich für dieses Angebot ist:',
+      providerName: 'Tobias Rickert',
+      providerStreet: 'Schillerstraße 62a',
+      providerCity: '48599 Gronau',
+      providerCountry: 'Deutschland',
+      providerEmailLabel: 'E-Mail',
+      providerEmail: 'tobias-rickert@web.de',
+      providerContactNote: 'Kontaktaufnahme ist ausschließlich über die oben genannte E-Mail-Adresse möglich. Eine Telefonnummer wird für dieses Angebot nicht mitgeteilt.',
+
+      contentTitle: '2. Verantwortlich für den Inhalt',
+      contentText: 'Verantwortlich für journalistisch-redaktionelle Inhalte ist die im Abschnitt 1 genannte Person, erreichbar unter der dort angegebenen E-Mail-Adresse.',
+
+      projectTitle: '3. Art des Angebots',
+      projectText: 'Der Betrieb erfolgt derzeit als privates Projekt. Die Plattform ist ein nicht kommerzielles Projekt; ein Unternehmen ist nicht eingetragen.',
+
+      liabilityTitle: '4. Haftung für Links',
+      liabilityIntro: 'Dieses Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte kein Einfluss besteht. Für diese fremden Inhalte wird keine Gewähr übernommen; verantwortlich ist stets der jeweilige Anbieter oder Betreiber der verlinkten Seiten.',
+      liabilityCheck: 'Die verlinkten Seiten wurden zum Zeitpunkt der Verlinkung auf mögliche Rechtsverstöße überprüft. Rechtswidrige Inhalte waren zu diesem Zeitpunkt nicht erkennbar. Eine permanente inhaltliche Kontrolle der verlinkten Seiten ist ohne konkrete Anhaltspunkte einer Rechtsverletzung nicht zumutbar.',
+      liabilityRemove: 'Bei Bekanntwerden von Rechtsverletzungen werden derartige Links unverzüglich entfernt.',
+
+      copyrightTitle: '5. Urheberrecht',
+      copyrightCode: 'Der Quellcode dieser Plattform steht unter der Lizenz des Repositorys, in dem er veröffentlicht ist. Das Repository ist über den Link „GitHub-Repository" im Fußbereich dieser Seite erreichbar; maßgeblich ist die dort hinterlegte Lizenz.',
+      copyrightContent: 'Die Inhalte dieser Plattform – insbesondere Texte, Grafiken und das Erscheinungsbild – sind urheberrechtlich geschützt. Eine Verwendung außerhalb der Grenzen des Urheberrechts bedarf der vorherigen schriftlichen Zustimmung.',
+
+      statusTitle: '6. Stand',
+      statusStandLabel: 'Stand dieses Impressums:',
+      statusStandValue: '5. Oktober 2026',
+      statusChangeText: 'Dieses Impressum wird angepasst, sobald sich die Angaben zum Anbieter ändern – insbesondere bei Eintragung eines Unternehmens oder Aufnahme eines kommerziellen Betriebs.',
       backToHome: '← Zur Startseite',
     },
   },

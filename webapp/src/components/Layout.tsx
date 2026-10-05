@@ -90,6 +90,7 @@ export default function Layout() {
     [t.footer.links.teams, '/teams'],
     [t.footer.links.process, '/#prozess'],
     [t.footer.links.datenschutz, '/datenschutz'],
+    [t.footer.links.impressum, '/impressum'],
   ];
 
   return (

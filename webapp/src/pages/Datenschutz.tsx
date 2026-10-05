@@ -53,12 +53,15 @@ export default function Datenschutz() {
 
       <Section title={T.responsibleTitle}>
         <Body>{T.responsibleIntro}</Body>
-        <div style={{ display: 'flex', gap: 13, alignItems: 'flex-start', background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', borderRadius: 12, padding: '16px 18px' }}>
-          <span style={{ fontSize: 20 }}>✍️</span>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{T.responsiblePlaceholder}</div>
-            <p style={{ fontSize: 12.5, color: 'var(--text-tertiary)', lineHeight: 1.7, marginTop: 6 }}>{T.responsibleNote}</p>
+        <div style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-strong)', borderRadius: 12, padding: '16px 18px' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{T.responsibleName}</div>
+          <div style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.7, marginTop: 4 }}>
+            {T.responsibleStreet}<br />{T.responsibleCity}<br />{T.responsibleCountry}
           </div>
+          <div style={{ marginTop: 8, fontSize: 13.5 }}>
+            <a href={`mailto:${T.responsibleEmail}`} style={{ color: 'var(--accent-primary)' }}>{T.responsibleEmail}</a>
+          </div>
+          <p style={{ fontSize: 12.5, color: 'var(--text-tertiary)', lineHeight: 1.7, marginTop: 10 }}>{T.responsibleNote}</p>
         </div>
         <div style={{ marginTop: 14 }}>
           <Body>{T.responsiblePrivacy}</Body>
