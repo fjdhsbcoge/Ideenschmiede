@@ -23,9 +23,32 @@
  * Umbenennung von Bedeutung.
  */
 import { Hono } from 'hono';
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
+import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { Sql } from 'postgres';
+import {
+  AUTH_ERROR_REASONS,
+  AuthError,
+  authConfigFromEnv,
+  completeAuth,
+  createChallenge,
+  createSessionToken,
+  findChallenge,
+  isAuthAction,
+  isK1,
+  isLinkingKey,
+  parseSessionToken,
+  SESSION_COOKIE_NAME,
+  SESSION_TTL_SECONDS,
+  verifySignature,
+  type AuthAction,
+  type AuthConfig,
+  type AuthErrorReason,
+  type AuthResult,
+} from './auth.js';
+import { findUserById, toPublicUser, type UserRecord } from './authStore.js';
 import { getDb, pingDb } from './db.js';
 import { API_VERSION } from './version.js';
 
@@ -36,8 +59,16 @@ export const MAX_LIMIT = 100;
 export const MAX_OFFSET = 1_000_000;
 
 interface AppEnv {
-  Variables: { db: Sql };
+  Variables: { db: Sql; auth: AuthConfig };
 }
+
+/**
+ * Die Lebensdauer des Sitzungs-Cookies entspricht dem JWT (exp). Zwei
+ * verschiedene Fristen waeren ein Cookie, das noch mitgeschickt wird, obwohl
+ * das Token laengst abgelaufen ist - oder umgekehrt eines, das zu frueh
+ * verschwindet.
+ */
+const SESSION_COOKIE_MAX_AGE = SESSION_TTL_SECONDS;
 
 // -----------------------------------------------------------------------------
 // Die dokumentierte Antwortform (ARCHITECTURE.md Anhang 5.2, interface Idea)
@@ -229,11 +260,26 @@ const IDEAS_QUERY = (db: Sql, limit: number, offset: number) =>
      ORDER BY i.created_at DESC, i.id DESC
      LIMIT ${limit} OFFSET ${offset}`;
 
-export function createApp(db: Sql = getDb()): Hono<AppEnv> {
+export interface CreateAppOptions {
+  /**
+   * Geheimnis und Basis-URL. Ohne Angabe aus der Umgebung; fehlt dort etwas,
+   * wirft schon createApp - die API startet dann gar nicht erst (siehe
+   * src/server.ts).
+   */
+  auth?: AuthConfig;
+}
+
+export function createApp(db: Sql = getDb(), options: CreateAppOptions = {}): Hono<AppEnv> {
+  // Bewusst OHNE Standardwert: ein fest eingebautes SESSION_SECRET waere ein
+  // Geheimnis, das in der Versionsverwaltung steht, und eine geratene
+  // AUTH_BASE_URL wuerde alle Nutzer an eine fremde Domain binden. Fehlt einer
+  // der Werte, bricht der Start mit Klartext ab - genau wie bei DATABASE_URL.
+  const auth = options.auth ?? authConfigFromEnv();
   const app = new Hono<AppEnv>();
 
   app.use('*', async (c, next) => {
     c.set('db', db);
+    c.set('auth', auth);
     await next();
   });
 
@@ -283,6 +329,145 @@ export function createApp(db: Sql = getDb()): Hono<AppEnv> {
   });
 
   // ---------------------------------------------------------------------------
+  // LNURL-auth (Roadmap Phase 3.2)
+  // ---------------------------------------------------------------------------
+  // Pfade ohne Versionspraefix - wie die bestehenden Endpunkte dieser API
+  // (/health, /api/ideas). ARCHITECTURE.md Anhang 6.1 nennt /api/v1/...; die
+  // Abweichung ist im README unter "Entscheidungen und offene Punkte"
+  // festgehalten und gemeldet, nicht stillschweigend gemacht.
+  //
+  // POST /api/auth/challenge
+  //
+  // Erzeugt die k1 und liefert die fertige LNURL fuer den QR-Code. Der
+  // Aufrufer schickt KEINE URL und keine Domain: die Callback-Adresse kommt
+  // ausschliesslich aus AUTH_BASE_URL. Wuerde der Host der Anfrage verwendet,
+  // haette derselbe Nutzer je nach Aufrufweg einen anderen linkingKey - und
+  // damit ein anderes Konto (Spezifikation: "if auth.site.com was initially
+  // chosen then changing it to login.site.com will result in different account
+  // for each user").
+  app.post('/api/auth/challenge', async (c) => {
+    const config = authOf(c);
+    let action: AuthAction = 'login';
+    const body = await readJsonBody(c.req.raw);
+    if (body !== null && body.action !== undefined) {
+      if (!isAuthAction(body.action)) {
+        return authFailure(c, 400, AUTH_ERROR_REASONS.invalidRequest, `Unbekannte action: ${JSON.stringify(body.action)}`);
+      }
+      action = body.action;
+    }
+
+    // action=link haengt einen WEITEREN Schluessel an ein BESTEHENDES Konto.
+    // Ohne Sitzung gibt es kein Konto - die Herausforderung entsteht deshalb
+    // gar nicht erst. Der Wert bleibt trotzdem im Enum (Spezifikation) und in
+    // der Datenbank erlaubt; der Ablauf selbst ist nicht Teil dieses Schritts.
+    if (action === 'link') {
+      const nutzer = await currentUser(c);
+      if (nutzer === null) {
+        return authFailure(c, 401, AUTH_ERROR_REASONS.linkNotSupported);
+      }
+      return authFailure(c, 501, AUTH_ERROR_REASONS.linkNotSupported);
+    }
+
+    const challenge = await createChallenge(c.get('db'), action, config);
+
+    // expiresAt als ISO-8601 mit Z - dieselbe Zeitform wie jeder andere
+    // Zeitstempel dieser API (toJsonSafe).
+    return c.json({
+      k1: challenge.k1,
+      lnurl: challenge.lnurl,
+      expiresAt: challenge.expiresAt.toISOString(),
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // GET /api/auth/callback?tag=login&k1=&key=&sig=&action=
+  // ---------------------------------------------------------------------------
+  // Die Spezifikation nennt k1, key und sig. `tag` und `action` sind Teil der
+  // URL, damit ein Wallet, das die LNURL zerlegt, den Standardfall erkennt;
+  // massgeblich fuer die Pruefung ist der action-Wert aus der DATENBANK, nicht
+  // der aus der URL. Ein Aufrufer, der die action nachtraeglich aendert, kann
+  // damit nichts erreichen.
+  app.get('/api/auth/callback', async (c) => {
+    const config = authOf(c);
+    const k1 = c.req.query('k1');
+    const key = c.req.query('key');
+    const sig = c.req.query('sig');
+
+    if (!isK1(k1) || !isLinkingKey(key) || sig === undefined || sig === '') {
+      return authFailure(c, 400, AUTH_ERROR_REASONS.invalidRequest, 'Erwartet werden k1 (64 Hexzeichen), key (33 Byte compressed, hex) und sig (DER, hex).');
+    }
+
+    const challenge = await findChallenge(c.get('db'), k1);
+    if (challenge === null) {
+      return authFailure(c, 401, AUTH_ERROR_REASONS.unknownChallenge);
+    }
+    if (challenge.expiresAt.getTime() <= config.now()) {
+      return authFailure(c, 401, AUTH_ERROR_REASONS.expiredChallenge);
+    }
+
+    // Erst die Signatur, dann wird verbraucht. Umgekehrt koennte jeder mit
+    // geratenen Signaturen fremde Herausforderungen verbrennen.
+    try {
+      verifySignature(k1, key, sig);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return authFailure(c, 401, error.reason);
+      }
+      throw error;
+    }
+
+    let result: AuthResult;
+    try {
+      result = await completeAuth(c.get('db'), k1, key, config);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return authFailure(c, 401, error.reason);
+      }
+      throw error;
+    }
+
+    const token = createSessionToken(result.userId, config);
+    const nutzer = await findUserById(c.get('db'), result.userId);
+
+    setCookie(c, SESSION_COOKIE_NAME, token, sessionCookieOptions(secureCookies()));
+
+    // Die dokumentierte Erfolgsantwort der Spezifikation ist { status: 'OK' }.
+    // Sie bleibt genau so - und traegt zusaetzlich das Token und den Nutzer,
+    // damit ein Client, der keine Cookies haelt (CLI, spaetere App), sich die
+    // Sitzung nicht aus dem Set-Cookie-Kopf zusammensuchen muss.
+    return c.json({
+      status: 'OK',
+      token,
+      userId: result.userId,
+      user: nutzer === null ? null : toPublicUser(nutzer),
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // POST /api/auth/logout
+  // ---------------------------------------------------------------------------
+  // Verwirft die Sitzung. Das Token wird nicht widerrufen - es gibt keine
+  // Sitzungstabelle (Vorgabe) -, sondern geloescht: danach schickt der Client
+  // es nicht mehr mit. Die kurze Lebensdauer aus SESSION_TTL_SECONDS begrenzt,
+  // wie lange ein bereits kopiertes Token noch gilt.
+  app.post('/api/auth/logout', (c) => {
+    deleteCookie(c, SESSION_COOKIE_NAME, sessionCookieOptions(secureCookies()));
+    return c.json({ status: 'OK' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // GET /api/users/me
+  // ---------------------------------------------------------------------------
+  // Der angemeldete Nutzer. Ohne gueltige Sitzung: 401.
+  app.get('/api/users/me', async (c) => {
+    const nutzer = await currentUser(c);
+    if (nutzer === null) {
+      return authFailure(c, 401, AUTH_ERROR_REASONS.unauthorized);
+    }
+    return c.json({ user: toPublicUser(nutzer) });
+  });
+
+  // ---------------------------------------------------------------------------
   // Fehler als JSON, nicht als HTML-Stacktrace
   // ---------------------------------------------------------------------------
   app.notFound((c) =>
@@ -308,6 +493,126 @@ export function createApp(db: Sql = getDb()): Hono<AppEnv> {
   });
 
   return app;
+}
+
+
+// -----------------------------------------------------------------------------
+// Hilfsfunktionen fuer die Auth-Routen
+// -----------------------------------------------------------------------------
+
+function authOf(c: Context<AppEnv>): AuthConfig {
+  return c.get('auth');
+}
+
+/**
+ * Die dokumentierte Fehlerform der Spezifikation: { status: 'ERROR', reason }.
+ * Sie unterscheidet sich bewusst von der Fehlerform der uebrigen Endpunkte
+ * ({ error: { code, message } }): LNURL-auth-Clients (Wallets) werten die
+ * Antwort aus, und die Spezifikation schreibt diese Form vor. Ein Wallet soll
+ * nicht gezwungen sein, eine API-eigene Huelle zu verstehen.
+ */
+function authFailure(
+  c: Context<AppEnv>,
+  status: ContentfulStatusCode,
+  reason: AuthErrorReason,
+  detail?: string,
+): Response {
+  // Die Ursache bleibt im Serverprotokoll, wenn sie ueber die Standardantwort
+  // hinausgeht - nach aussen geht eine knappe, feste Begruendung.
+  if (detail !== undefined) {
+    console.warn(`[auth] ${reason}: ${detail}`);
+  }
+  return c.json({ status: 'ERROR', reason }, status);
+}
+
+/**
+ * JSON-Koerper, oder null. Ein leerer Koerper ist kein Fehler (die Vorgabe
+ * action=login greift), ungueltiges JSON schon - stillschweigend darauf zu
+ * verzichten hiesse, eine kaputte Anfrage als gueltige zu behandeln.
+ */
+async function readJsonBody(req: globalThis.Request): Promise<Record<string, unknown> | null> {
+  const text = (await req.text()).trim();
+  if (text === '') {
+    return null;
+  }
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      throw new HTTPException(400, { message: 'Der Anfragekoerper muss ein JSON-Objekt sein.' });
+    }
+    return parsed as Record<string, unknown>;
+  } catch (error) {
+    if (error instanceof HTTPException) {
+      throw error;
+    }
+    throw new HTTPException(400, { message: 'Der Anfragekoerper ist kein gueltiges JSON.' });
+  }
+}
+
+/**
+ * Der angemeldete Nutzer, oder null.
+ *
+ * Zwei Wege zum selben Token, weil es zwei Arten von Clients gibt:
+ *   - Cookie: der Browser (das Cookie setzt der Callback selbst).
+ *   - Authorization: Bearer <token>: CLI und spaetere App, die keine Cookies
+ *     halten; das Token kommt aus der Antwort des Callbacks.
+ *
+ * Das Token wird gegen das Geheimnis geprueft (Signatur UND Ablauf) und der
+ * Nutzer danach aus der Datenbank gelesen. Ein geloeschter Nutzer hat damit
+ * sofort keine Sitzung mehr - das Token allein genuegt nicht.
+ */
+async function currentUser(c: Context<AppEnv>): Promise<UserRecord | null> {
+  const token = readToken(c);
+  if (token === null) {
+    return null;
+  }
+  const session = parseSessionToken(token, authOf(c));
+  if (session === null) {
+    return null;
+  }
+  return findUserById(c.get('db'), session.userId);
+}
+
+/** Das Sitzungs-Token aus Cookie oder Authorization-Kopf - sonst null. */
+function readToken(c: Context<AppEnv>): string | null {
+  const ausCookie = getCookie(c, SESSION_COOKIE_NAME);
+  if (ausCookie !== undefined && ausCookie !== '') {
+    return ausCookie;
+  }
+  const kopf = c.req.header('authorization');
+  if (kopf !== undefined && kopf.startsWith('Bearer ')) {
+    const token = kopf.slice('Bearer '.length).trim();
+    return token === '' ? null : token;
+  }
+  return null;
+}
+
+/**
+ * secure nur in production. Im Entwicklungsbetrieb laeuft die API ueber http;
+ * ein secure-Cookie wuerde der Browser dann verwerfen, und die Anmeldung waere
+ * scheinbar erfolgreich, ohne zu wirken.
+ */
+function secureCookies(): boolean {
+  return process.env.NODE_ENV === 'production';
+}
+
+/** Die Attribute, die ein Sitzungs-Cookie tragen muss. */
+interface SessionCookieOptions {
+  httpOnly: boolean;
+  sameSite: 'Lax';
+  path: string;
+  maxAge: number;
+  secure: boolean;
+}
+
+function sessionCookieOptions(secure: boolean): SessionCookieOptions {
+  return {
+    httpOnly: true,
+    sameSite: 'Lax',
+    path: '/',
+    maxAge: SESSION_COOKIE_MAX_AGE,
+    secure,
+  };
 }
 
 // -----------------------------------------------------------------------------

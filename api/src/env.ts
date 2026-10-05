@@ -14,6 +14,21 @@ import 'dotenv/config';
 export interface Env {
   /** Verbindungszeichenfolge zum PostgreSQL - Pflichtwert, kein Standardwert. */
   readonly DATABASE_URL: string;
+  /**
+   * Geheimnis der Sitzungs-Token (HS256) - Pflichtwert, kein Standardwert.
+   * Ein geratenes Geheimnis bedeutet: jeder kann sich ein gueltiges Token
+   * ausstellen. Deshalb dieselbe Regel wie bei DATABASE_URL: fehlt es, startet
+   * die API nicht.
+   */
+  readonly SESSION_SECRET: string;
+  /**
+   * Basis-URL dieser Instanz fuer LNURL-auth - Pflichtwert, kein Standardwert.
+   * Sie bestimmt den Domainnamen, den das Wallet in den linkingKey einrechnet
+   * (siehe api/README.md, "Domainbindung"). Ein Standardwert waere hier
+   * besonders schaedlich: localhost waere eine Domain, an die sich Nutzer
+   * binden und die es spaeter nicht mehr gibt.
+   */
+  readonly AUTH_BASE_URL: string;
   /** Port der HTTP-Schnittstelle. Standard: 3000. */
   readonly PORT: number;
   /** Adresse, auf der gelauscht wird. Standard: 127.0.0.1 (nicht oeffentlich). */
@@ -25,6 +40,13 @@ export const DEFAULT_PORT = 3000;
 export const DEFAULT_HOST = '127.0.0.1';
 export const MIN_PORT = 1;
 export const MAX_PORT = 65_535;
+/**
+ * Untergrenze fuer SESSION_SECRET. HMAC-SHA256 selbst nimmt beliebig lange
+ * Schluessel, aber ein kurzes Geheimnis ist der schwaechste Teil der Kette und
+ * faellt bei einer Online-Woerterbuchsuche zuerst. 32 Zeichen sind keine
+ * kryptografische Grenze, sondern eine Untergrenze gegen "geheim" und "test".
+ */
+export const MIN_SESSION_SECRET_LENGTH = 32;
 
 const NODE_ENVS = ['development', 'test', 'production'] as const;
 
@@ -68,6 +90,36 @@ export function loadEnv(source: EnvSource = process.env): Env {
     );
   }
 
+  // SESSION_SECRET ebenfalls ohne Standardwert - aus demselben Grund wie oben.
+  // Zusaetzlich geprueft wird nur die LAENGE, nicht der Inhalt: ob ein Geheimnis
+  // wirklich geheim ist, kann diese Funktion nicht wissen.
+  const sessionSecret = (source.SESSION_SECRET ?? '').trim();
+  if (sessionSecret === '') {
+    problems.push(
+      `SESSION_SECRET fehlt (Pflichtwert ohne Standardwert), mindestens ${MIN_SESSION_SECRET_LENGTH} Zeichen - z.B. mit \`node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"\` erzeugen`,
+    );
+  } else if (sessionSecret.length < MIN_SESSION_SECRET_LENGTH) {
+    problems.push(
+      `SESSION_SECRET ist zu kurz (${sessionSecret.length} Zeichen, mindestens ${MIN_SESSION_SECRET_LENGTH} noetig)`,
+    );
+  }
+
+  // AUTH_BASE_URL bestimmt den Domainnamen, an den sich Wallets binden. Sie muss
+  // absolut sein: aus "auth.example.com" laesst sich kein Callback bauen, und
+  // aus einer relativen Angabe wuerde stillschweigend der Host der Anfrage -
+  // genau die Abhaengigkeit, die hier ausgeschlossen werden soll.
+  const authBaseUrl = (source.AUTH_BASE_URL ?? '').trim();
+  if (authBaseUrl === '') {
+    problems.push(
+      'AUTH_BASE_URL fehlt (Pflichtwert ohne Standardwert), z.B. https://auth.ideenschmiede.example - sie bestimmt die Domain, an die Wallets den linkingKey binden',
+    );
+  } else {
+    const problem = validateAuthBaseUrl(authBaseUrl);
+    if (problem !== null) {
+      problems.push(problem);
+    }
+  }
+
   const rawPort = (source.PORT ?? '').trim();
   let port = DEFAULT_PORT;
   if (rawPort !== '') {
@@ -99,7 +151,50 @@ export function loadEnv(source: EnvSource = process.env): Env {
     throw new EnvError(problems);
   }
 
-  return { DATABASE_URL: databaseUrl, PORT: port, HOST: host, NODE_ENV: nodeEnv };
+  return {
+    DATABASE_URL: databaseUrl,
+    SESSION_SECRET: sessionSecret,
+    AUTH_BASE_URL: normalizeAuthBaseUrl(authBaseUrl),
+    PORT: port,
+    HOST: host,
+    NODE_ENV: nodeEnv,
+  };
+}
+
+/**
+ * Prueft die Basis-URL. Liefert die Mangelbeschreibung oder null.
+ *
+ * Bewusst streng: nur http(s), kein Query, kein Fragment, kein Benutzer/Passwort.
+ * Ein Query-Teil waere ein Zeichen dafuer, dass hier eine fertige Callback-URL
+ * steht - die Anhaengsel (tag, k1, action) haengt diese API selbst an.
+ */
+export function validateAuthBaseUrl(value: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return `AUTH_BASE_URL ist keine gueltige absolute URL: "${value}" - erwartet z.B. https://auth.ideenschmiede.example`;
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return `AUTH_BASE_URL muss mit http:// oder https:// beginnen (erhalten: "${parsed.protocol}//")`;
+  }
+  if (parsed.username !== '' || parsed.password !== '') {
+    return 'AUTH_BASE_URL darf keine Zugangsdaten enthalten';
+  }
+  if (parsed.search !== '' || parsed.hash !== '') {
+    return 'AUTH_BASE_URL darf keinen Query- und keinen Fragment-Teil enthalten (tag, k1 und action haengt die API selbst an)';
+  }
+  return null;
+}
+
+/**
+ * Kanonische Form der Basis-URL: ohne Schraegstrich am Ende. Damit entsteht der
+ * Callback immer aus derselben Zeichenkette - zwei Schreibweisen derselben
+ * Domain ("...example" und "...example/") wuerden sonst zwei verschiedene
+ * LNURLs ergeben, obwohl sie dieselbe Domain meinen.
+ */
+export function normalizeAuthBaseUrl(value: string): string {
+  return value.replace(/\/+$/, '');
 }
 
 /** Zugangsdaten gehoeren nicht in Logs, Fehlermeldungen oder HTTP-Antworten. */
