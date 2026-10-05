@@ -3,19 +3,37 @@
 -- =============================================================================
 -- Bildet die vier Kernentitaeten aus ARCHITECTURE.md Anhang 5 ab:
 --   users, ideas, teams, milestones
--- plus die beiden Hilfstabellen, die aus den offenen Entscheidungen folgen:
+-- plus die Hilfstabellen, die aus den offenen Entscheidungen folgen:
 --   subscriptions (Entscheidung 2), user_wallets (Entscheidung 1)
--- und idea_votes (Entscheidung 4).
+-- und die beiden Belegtabellen, ohne die die Zaehler wertlos waeren:
+--   idea_votes (Entscheidung 4), idea_investments (Ledger der Direktzahlungen)
 --
--- Verbindliche Leitplanken:
+-- Verbindliche Leitplanken (api/CONTRACT.md ist der kanonische Datenvertrag):
 --   * ADR-006 (non-custodial): jeder Geldbetrag ist Satoshi und damit eine
---     GANZE ZAHL. Jede Geldspalte ist BIGINT; in dieser Datei kommt kein
---     einziger Gleitkomma- oder Festkommatyp vor.
+--     GANZE ZAHL. Jede Geldspalte ist BIGINT und endet auf _sat; in dieser
+--     Datei kommt kein einziger Gleitkomma- oder Festkommatyp vor.
+--   * Anteile sind Basispunkte (smallint/integer, 10000 = 100 Prozent),
+--     niemals ein Bruch. Investorenanteile werden NICHT gespeichert, sondern
+--     in der View idea_investor_shares ganzzahlig berechnet.
 --   * ADR-003: das Abonnement ist das Stimmrecht. Deshalb ist es eine eigene
 --     Tabelle mit Historie (nicht eine Spalte), und deshalb setzt die
 --     Datenbank selbst durch, dass nur Abonnenten stimmen koennen.
+--   * Jeder Zaehler hat eine Quelltabelle und genau einen Schreiber (Trigger):
+--       vote_up / vote_down         <- idea_votes
+--       raised_sat / investor_count <- idea_investments
+--       comment_count               <- idea_comments (Migration 002)
+--     Ein Zaehler ohne Quelltabelle waere Datenverlust: der Wert ist spaeter
+--     nicht rekonstruierbar.
 --   * Alle Zeitstempel sind TIMESTAMPTZ (immer absolut, nie lokal).
---   * Jeder Fremdschluessel hat eine ON DELETE-Regel und einen Index.
+--   * Jeder Fremdschluessel hat eine ON DELETE-Regel und Indexabdeckung.
+--
+-- Kanonische Bezeichner (ersetzt die frueheren Arbeitsnamen):
+--   vote_up (nicht votes_up), vote_down (nicht votes_down),
+--   comment_count (nicht comments), investor_count (nicht investors),
+--   raised_sat (nicht raised), funding_goal_sat (nicht funding_goal),
+--   skin_in_game_sat (nicht skin_in_game),
+--   funding_release_sat (nicht funding_release),
+--   payment_txid (nicht payment_tx_hash).
 --
 -- Konvention: SQL-Bezeichner in snake_case. Die API-Schicht mappt sie auf die
 -- camelCase-Felder aus ARCHITECTURE.md Anhang 5 (siehe README.md).
@@ -79,7 +97,12 @@ CREATE TABLE subscriptions (
 
     -- Belegkette fuer ADR-006: die Plattform haelt kein Geld, sie kennt nur die
     -- Transaktion, mit der jemand sein Stimmrecht bezahlt hat.
-    payment_tx_hash    text,
+    -- Kanonisch ist payment_txid - nicht payment_tx_hash (CONTRACT.md).
+    payment_txid       text,
+    -- payment_amount traegt bewusst keinen _sat-Suffix: der Vertrag fuehrt
+    -- diesen Beleg in seiner Ausnahmeliste. Die Einheit steht unten in
+    -- COMMENT ON COLUMN, damit sie beim Schreiben einer Abfrage nicht geraten
+    -- werden muss.
     payment_amount     bigint,
 
     created_at         timestamptz NOT NULL DEFAULT now(),
@@ -89,7 +112,11 @@ CREATE TABLE subscriptions (
     CONSTRAINT subscriptions_period_check
         CHECK (expires_at > started_at),
     CONSTRAINT subscriptions_payment_amount_check
-        CHECK (payment_amount IS NULL OR payment_amount > 0)
+        CHECK (payment_amount IS NULL OR payment_amount > 0),
+    -- Eine Transaktionskennung ist 64 Hexzeichen. Entweder liegt ein Beleg
+    -- vor oder gar keiner - ein halber Beleg waere nicht nachpruefbar.
+    CONSTRAINT subscriptions_payment_txid_check
+        CHECK (payment_txid IS NULL OR payment_txid ~ '^[0-9a-fA-F]{64}$')
 );
 
 -- ADR-003: ein Stimmrecht, nicht zwei. Ein Nutzer kann hoechstens EIN aktives
@@ -124,7 +151,13 @@ CREATE TABLE user_wallets (
     -- Erzwingt, dass wirklich ein Extended PUBLIC Key gespeichert wird:
     -- xpub/ypub/zpub (Mainnet) und tpub/upub/vpub (Testnet/Signet).
     CONSTRAINT user_wallets_public_key_check
-        CHECK (xpub ~ '^(xpub|ypub|zpub|tpub|upub|vpub)[1-9A-HJ-NP-Za-km-z]{50,120}$')
+        CHECK (xpub ~ '^(xpub|ypub|zpub|tpub|upub|vpub)[1-9A-HJ-NP-Za-km-z]{50,120}$'),
+    -- CONTRACT.md: "Private Schluessel (WIF-, xprv-Praefixe) werden per CHECK
+    -- abgewiesen - ADR-006 wird damit in der Datenbank durchgesetzt."
+    -- Die Whitelist oben leistet das bereits; diese Regel benennt die
+    -- verbotenen Praefixe ausdruecklich, damit die Absicht pruefbar bleibt.
+    CONSTRAINT user_wallets_no_private_key_check
+        CHECK (xpub !~* '^(xprv|yprv|zprv|tprv|uprv|vprv)')
 );
 
 CREATE UNIQUE INDEX user_wallets_user_xpub_key ON user_wallets (user_id, xpub);
@@ -154,16 +187,22 @@ CREATE TABLE ideas (
 
     -- discussion-Phase (nicht optional: entsteht mit dem Idea)
     discussion_opened_at  timestamptz NOT NULL DEFAULT now(),
-    comments              bigint      NOT NULL DEFAULT 0,
-    votes_up              bigint      NOT NULL DEFAULT 0,
-    votes_down            bigint      NOT NULL DEFAULT 0,
+    comment_count         integer     NOT NULL DEFAULT 0,
+    vote_up               integer     NOT NULL DEFAULT 0,
+    vote_down             integer     NOT NULL DEFAULT 0,
 
     -- marketplace-Phase (optional: erst ab stage 'marketplace' gefuellt)
     marketplace_opened_at timestamptz,
     marketplace_closes_at timestamptz,
-    funding_goal          bigint,
-    raised                bigint      NOT NULL DEFAULT 0,
-    investors             bigint      NOT NULL DEFAULT 0,
+    funding_goal_sat      bigint,
+    raised_sat            bigint      NOT NULL DEFAULT 0,
+    investor_count        integer     NOT NULL DEFAULT 0,
+
+    -- 20/80-Aufteilung als Basispunkte (Vertrag: 10000 = 100 Prozent, nie ein
+    -- Bruch). 2000 bp sind die 20 Prozent der Idee-Seite, die restlichen
+    -- 8000 bp die Team-Seite. Der Wert ist eine Policy, kein Geldbetrag -
+    -- deshalb kein _sat-Suffix und smallint statt bigint.
+    creator_share_bp      smallint    NOT NULL DEFAULT 2000,
 
     created_at            timestamptz NOT NULL DEFAULT now(),
     updated_at            timestamptz NOT NULL DEFAULT now(),
@@ -183,12 +222,17 @@ CREATE TABLE ideas (
 
     -- Zaehler koennen nicht negativ werden - auch nicht durch einen Bug im
     -- Anwendungscode, der sie direkt schreibt.
-    CONSTRAINT ideas_comments_check     CHECK (comments >= 0),
-    CONSTRAINT ideas_votes_up_check     CHECK (votes_up >= 0),
-    CONSTRAINT ideas_votes_down_check   CHECK (votes_down >= 0),
-    CONSTRAINT ideas_raised_check       CHECK (raised >= 0),
-    CONSTRAINT ideas_investors_check    CHECK (investors >= 0),
-    CONSTRAINT ideas_funding_goal_check CHECK (funding_goal IS NULL OR funding_goal > 0),
+    CONSTRAINT ideas_comment_count_check  CHECK (comment_count  >= 0),
+    CONSTRAINT ideas_vote_up_check        CHECK (vote_up        >= 0),
+    CONSTRAINT ideas_vote_down_check      CHECK (vote_down      >= 0),
+    CONSTRAINT ideas_raised_sat_check     CHECK (raised_sat     >= 0),
+    CONSTRAINT ideas_investor_count_check CHECK (investor_count >= 0),
+    CONSTRAINT ideas_funding_goal_sat_check
+        CHECK (funding_goal_sat IS NULL OR funding_goal_sat > 0),
+
+    -- 10000 bp = 100 Prozent. Mehr waere keine Aufteilung mehr.
+    CONSTRAINT ideas_creator_share_bp_check
+        CHECK (creator_share_bp BETWEEN 0 AND 10000),
 
     CONSTRAINT ideas_marketplace_window_check
         CHECK (marketplace_closes_at IS NULL
@@ -196,14 +240,15 @@ CREATE TABLE ideas (
                OR marketplace_closes_at > marketplace_opened_at),
 
     -- Die marketplace-Phase ist entweder ganz offen oder ganz zu. Ein Idea mit
-    -- closes_at, aber ohne funding_goal waere ein halb eroeffneter Marktplatz.
+    -- closes_at, aber ohne funding_goal_sat waere ein halb eroeffneter
+    -- Marktplatz.
     CONSTRAINT ideas_marketplace_all_or_nothing_check
         CHECK ((marketplace_opened_at IS NULL
                 AND marketplace_closes_at IS NULL
-                AND funding_goal IS NULL)
+                AND funding_goal_sat IS NULL)
             OR (marketplace_opened_at IS NOT NULL
                 AND marketplace_closes_at IS NOT NULL
-                AND funding_goal IS NOT NULL))
+                AND funding_goal_sat IS NOT NULL))
 );
 
 CREATE INDEX ideas_author_id_idx ON ideas (author_id);
@@ -253,7 +298,56 @@ CREATE INDEX idea_votes_created_at_idx      ON idea_votes (created_at DESC);
 
 
 -- =============================================================================
--- 6. teams
+-- 6. idea_investments  (Ledger der Direktzahlungen - Pflichtentitaet)
+-- =============================================================================
+-- CONTRACT.md nennt dieses Ledger unverzichtbar: "ohne dieses Ledger ist die
+-- 20/80-Aufteilung nicht berechenbar. Ein Zaehler raised_sat ohne Quelle ist
+-- wertlos." Deshalb steht jede Direktzahlung als eigene Zeile hier, und
+-- ideas.raised_sat / ideas.investor_count sind nur noch die gepflegte
+-- Abkuerzung davon - nicht die einzige Spur des Geldes.
+CREATE TABLE idea_investments (
+    id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    idea_id     uuid        NOT NULL REFERENCES ideas (id) ON DELETE RESTRICT,
+    investor_id uuid        NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+    amount_sat  bigint      NOT NULL,
+    txid        text        NOT NULL,
+    created_at  timestamptz NOT NULL DEFAULT now(),
+
+    -- Ein Geldeingang ist eine ganze Zahl Satoshi und positiv. 0 waere kein
+    -- Geldeingang, negativ eine Auszahlung - und die gehoert nicht in dieses
+    -- Ledger (ADR-006: die Plattform rechnet mit Betraegen, sie haelt sie
+    -- nicht).
+    CONSTRAINT idea_investments_amount_sat_check
+        CHECK (amount_sat > 0),
+
+    -- Eine Transaktionskennung ist 64 Hexzeichen. Die UNIQUE-Regel darunter ist
+    -- die eigentliche Zusage: dieselbe Bitcoin-Transaktion kann nicht zweimal
+    -- als Investition zaehlen, auch nicht bei einem Retry der API.
+    CONSTRAINT idea_investments_txid_check
+        CHECK (txid ~ '^[0-9a-fA-F]{64}$'),
+    CONSTRAINT idea_investments_txid_key
+        UNIQUE (txid)
+);
+
+-- ON DELETE RESTRICT ist hier bewusst gewaehlt, nicht gesetzt:
+--   * idea_investments.idea_id -> ideas  RESTRICT: Geldbelege werden nicht
+--     mitgeloescht. Eine finanzierte Idee ist nicht loeschbar, solange
+--     Zahlungen auf sie zeigen - sonst verschwindet die Spur des Geldes.
+--   * idea_investments.investor_id -> users RESTRICT: das Loeschen eines
+--     Kontos darf keine Zahlungsgeschichte mitnehmen (wie ideas.author_id).
+-- FK-Abdeckung: jede Fremdschluesselspalte ist erste Spalte eines Index.
+-- Der Btree aus UNIQUE (txid) bedient die Belegsuche, keine FK-Pruefung.
+CREATE INDEX idea_investments_idea_id_idx     ON idea_investments (idea_id);
+CREATE INDEX idea_investments_investor_id_idx ON idea_investments (investor_id);
+
+-- Genau die Abfrage, aus der raised_sat, investor_count und die 20/80-
+-- Aufteilung entstehen: alle Investitionen einer Idee in zeitlicher Folge.
+CREATE INDEX idea_investments_idea_created_at_idx
+    ON idea_investments (idea_id, created_at DESC);
+
+
+-- =============================================================================
+-- 7. teams
 -- =============================================================================
 CREATE TABLE teams (
     id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -266,10 +360,10 @@ CREATE TABLE teams (
     -- proposal.timeline (Monate)
     timeline_months integer,
 
-    funding_goal    bigint      NOT NULL DEFAULT 0,
-    raised          bigint      NOT NULL DEFAULT 0,
-    skin_in_game    bigint      NOT NULL DEFAULT 0,
-    status          text        NOT NULL DEFAULT 'applying',
+    funding_goal_sat bigint     NOT NULL DEFAULT 0,
+    raised_sat       bigint     NOT NULL DEFAULT 0,
+    skin_in_game_sat bigint     NOT NULL DEFAULT 0,
+    status           text       NOT NULL DEFAULT 'applying',
 
     created_at      timestamptz NOT NULL DEFAULT now(),
     updated_at      timestamptz NOT NULL DEFAULT now(),
@@ -280,10 +374,18 @@ CREATE TABLE teams (
         CHECK (length(btrim(name)) BETWEEN 1 AND 120),
     CONSTRAINT teams_timeline_months_check
         CHECK (timeline_months IS NULL OR timeline_months > 0),
-    CONSTRAINT teams_funding_goal_check CHECK (funding_goal >= 0),
-    CONSTRAINT teams_raised_check       CHECK (raised >= 0),
-    CONSTRAINT teams_skin_in_game_check CHECK (skin_in_game >= 0)
+    CONSTRAINT teams_funding_goal_sat_check CHECK (funding_goal_sat >= 0),
+    CONSTRAINT teams_raised_sat_check       CHECK (raised_sat       >= 0),
+    CONSTRAINT teams_skin_in_game_sat_check CHECK (skin_in_game_sat >= 0)
 );
+
+-- OFFENER PUNKT, ausdruecklich vermerkt statt stillschweigend hingenommen:
+-- fuer teams.raised_sat gibt es in CONTRACT.md noch keine Quelltabelle. Die
+-- Team-Seite der 20/80-Aufteilung (Investitionen in ein konkretes Team) ist
+-- nicht Teil der Pflichtentitaeten; eine Tabelle dafuer waere ein erfundener
+-- kanonischer Name. Bis das festgelegt ist, bleibt die Spalte ein von der
+-- Anwendung geschriebener Wert - dieselbe Defektklasse wie ideas.raised ohne
+-- Ledger, hier aber bewusst dokumentiert.
 
 CREATE INDEX teams_idea_id_idx   ON teams (idea_id);
 CREATE INDEX teams_leader_id_idx ON teams (leader_id);
@@ -291,26 +393,27 @@ CREATE INDEX teams_status_idx    ON teams (status);
 
 
 -- =============================================================================
--- 7. milestones
+-- 8. milestones
 -- =============================================================================
 CREATE TABLE milestones (
-    id             uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-    team_id        uuid        NOT NULL REFERENCES teams (id) ON DELETE CASCADE,
-    title          text        NOT NULL,
-    description    text        NOT NULL DEFAULT '',
-    deliverables   text[]      NOT NULL DEFAULT '{}',
-    funding_release bigint      NOT NULL DEFAULT 0,
-    status         text        NOT NULL DEFAULT 'pending',
-    position       integer     NOT NULL DEFAULT 0,
-    due_date       timestamptz,
-    completed_at   timestamptz,
-    created_at     timestamptz NOT NULL DEFAULT now(),
+    id                  uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    team_id             uuid        NOT NULL REFERENCES teams (id) ON DELETE CASCADE,
+    title               text        NOT NULL,
+    description         text        NOT NULL DEFAULT '',
+    deliverables        text[]      NOT NULL DEFAULT '{}',
+    funding_release_sat bigint      NOT NULL DEFAULT 0,
+    status              text        NOT NULL DEFAULT 'pending',
+    position            integer     NOT NULL DEFAULT 0,
+    due_date            timestamptz,
+    completed_at        timestamptz,
+    created_at          timestamptz NOT NULL DEFAULT now(),
 
     CONSTRAINT milestones_status_check
         CHECK (status IN ('pending', 'in_progress', 'completed', 'failed')),
     CONSTRAINT milestones_title_check
         CHECK (length(btrim(title)) BETWEEN 1 AND 200),
-    CONSTRAINT milestones_funding_release_check CHECK (funding_release >= 0),
+    CONSTRAINT milestones_funding_release_sat_check
+        CHECK (funding_release_sat >= 0),
 
     -- 'completed' und completed_at gehoeren zusammen. Ohne diese Regel gibt es
     -- frueher oder spaeter einen fertigen Meilenstein ohne Datum.
@@ -323,7 +426,7 @@ CREATE INDEX milestones_team_position_idx ON milestones (team_id, position);
 
 
 -- =============================================================================
--- 8. Trigger-Funktionen
+-- 9. Trigger-Funktionen
 -- =============================================================================
 
 -- Ein Schreiber fuer updated_at, statt die Spalte in jeder Query zu setzen.
@@ -388,43 +491,95 @@ CREATE TRIGGER idea_votes_require_subscription
     FOR EACH ROW EXECUTE FUNCTION idea_votes_assign_subscription();
 
 
--- Der einzige Schreiber der Zaehler votes_up/votes_down. Damit koennen die
+-- Der einzige Schreiber der Zaehler vote_up/vote_down. Damit koennen die
 -- Zaehler nicht von den Einzelstimmen abweichen - und die Einzelstimmen
 -- bleiben trotzdem die Wahrheit (Entscheidung 4).
+-- CONTRACT.md verlangt, dass "per Trigger vollstaendig neu gezaehlt" wird.
+-- Die Neuberechnung ist idempotent und kann nicht driften; die frueher
+-- inkrementelle Variante haette bei einer per UPDATE geaenderten idea_id die
+-- verlassene Idee mit einem zu hohen Zaehler zurueckgelassen.
 CREATE FUNCTION idea_votes_sync_counters() RETURNS trigger
 LANGUAGE plpgsql AS $$
+DECLARE
+    v_idea_id uuid;
 BEGIN
-    IF TG_OP = 'INSERT' THEN
-        UPDATE ideas SET
-            votes_up   = votes_up   + CASE WHEN NEW.direction = 'up'   THEN 1 ELSE 0 END,
-            votes_down = votes_down + CASE WHEN NEW.direction = 'down' THEN 1 ELSE 0 END
-         WHERE id = NEW.idea_id;
-        RETURN NULL;
-
-    ELSIF TG_OP = 'DELETE' THEN
-        UPDATE ideas SET
-            votes_up   = votes_up   - CASE WHEN OLD.direction = 'up'   THEN 1 ELSE 0 END,
-            votes_down = votes_down - CASE WHEN OLD.direction = 'down' THEN 1 ELSE 0 END
-         WHERE id = OLD.idea_id;
-        RETURN NULL;
-
-    ELSE  -- UPDATE: Richtung geaendert, beide Zaehler nachziehen.
-        UPDATE ideas SET
-            votes_up   = votes_up
-                       + CASE WHEN NEW.direction = 'up'   THEN 1 ELSE 0 END
-                       - CASE WHEN OLD.direction = 'up'   THEN 1 ELSE 0 END,
-            votes_down = votes_down
-                       + CASE WHEN NEW.direction = 'down' THEN 1 ELSE 0 END
-                       - CASE WHEN OLD.direction = 'down' THEN 1 ELSE 0 END
-         WHERE id = NEW.idea_id;
-        RETURN NULL;
+    IF TG_OP = 'DELETE' THEN
+        v_idea_id := OLD.idea_id;
+    ELSE
+        v_idea_id := NEW.idea_id;
     END IF;
+
+    UPDATE ideas i SET
+        vote_up   = (SELECT count(*) FROM idea_votes v
+                      WHERE v.idea_id = v_idea_id AND v.direction = 'up')::integer,
+        vote_down = (SELECT count(*) FROM idea_votes v
+                      WHERE v.idea_id = v_idea_id AND v.direction = 'down')::integer
+     WHERE i.id = v_idea_id;
+
+    -- Wandert eine Stimme per UPDATE zu einer anderen Idee, muss auch die
+    -- verlassene Idee neu gezaehlt werden - sonst bliebe dort eine Geisterstimme.
+    IF TG_OP = 'UPDATE' AND OLD.idea_id IS DISTINCT FROM NEW.idea_id THEN
+        UPDATE ideas i SET
+            vote_up   = (SELECT count(*) FROM idea_votes v
+                          WHERE v.idea_id = OLD.idea_id AND v.direction = 'up')::integer,
+            vote_down = (SELECT count(*) FROM idea_votes v
+                          WHERE v.idea_id = OLD.idea_id AND v.direction = 'down')::integer
+         WHERE i.id = OLD.idea_id;
+    END IF;
+
+    RETURN NULL;
 END;
 $$;
 
 CREATE TRIGGER idea_votes_sync_counters_trg
     AFTER INSERT OR UPDATE OR DELETE ON idea_votes
     FOR EACH ROW EXECUTE FUNCTION idea_votes_sync_counters();
+
+
+-- Der einzige Schreiber von ideas.raised_sat und ideas.investor_count.
+-- Vollstaendige Neuberechnung aus dem Ledger - dieselbe Begruendung wie bei
+-- den Stimmen: der Zaehler ist eine Abkuerzung, keine zweite Wahrheit. Der
+-- Nachweis "Zaehler = Ledger" muss jederzeit 0 Abweichungen liefern.
+-- investor_count zaehlt INVESTOREN, nicht Zahlungen: wer zweimal einzahlt,
+-- ist ein Investor mit zwei Belegen.
+CREATE FUNCTION idea_investments_sync_counters() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_idea_id uuid;
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        v_idea_id := OLD.idea_id;
+    ELSE
+        v_idea_id := NEW.idea_id;
+    END IF;
+
+    -- sum(bigint) liefert numeric; der ausdrueckliche Cast haelt die Spalte
+    -- BIGINT (Vertrag: Geld ist bigint, niemals numeric/float).
+    UPDATE ideas i SET
+        raised_sat     = COALESCE((SELECT sum(x.amount_sat) FROM idea_investments x
+                                    WHERE x.idea_id = v_idea_id), 0)::bigint,
+        investor_count = (SELECT count(DISTINCT x.investor_id) FROM idea_investments x
+                           WHERE x.idea_id = v_idea_id)::integer
+     WHERE i.id = v_idea_id;
+
+    -- Wandert eine Buchung per UPDATE zu einer anderen Idee, muss auch die
+    -- verlassene Idee neu berechnet werden.
+    IF TG_OP = 'UPDATE' AND OLD.idea_id IS DISTINCT FROM NEW.idea_id THEN
+        UPDATE ideas i SET
+            raised_sat     = COALESCE((SELECT sum(x.amount_sat) FROM idea_investments x
+                                        WHERE x.idea_id = OLD.idea_id), 0)::bigint,
+            investor_count = (SELECT count(DISTINCT x.investor_id) FROM idea_investments x
+                               WHERE x.idea_id = OLD.idea_id)::integer
+         WHERE i.id = OLD.idea_id;
+    END IF;
+
+    RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER idea_investments_sync_counters_trg
+    AFTER INSERT OR UPDATE OR DELETE ON idea_investments
+    FOR EACH ROW EXECUTE FUNCTION idea_investments_sync_counters();
 
 
 -- users.role ist die Abkuerzung von "hat ein aktives Abonnement". Zwei
@@ -469,50 +624,88 @@ CREATE TRIGGER subscriptions_sync_user_role_trg
 
 
 -- =============================================================================
--- 9. Views: die in ARCHITECTURE.md 5.2 dokumentierten Namen
+-- 10. Views
 -- =============================================================================
--- Die API liest discussion und marketplace ueber diese Views und bekommt
--- genau die Felder, die der Vertrag nennt.
+-- Die API liest discussion, marketplace und die Anteile ueber diese Views und
+-- bekommt genau die Felder, die der Vertrag nennt - unter den kanonischen
+-- Namen, nicht unter den frueheren Arbeitsnamen.
 
 CREATE VIEW idea_discussion AS
 SELECT i.id                    AS idea_id,
        i.discussion_opened_at  AS opened_at,
-       i.comments              AS comments,
-       i.votes_up              AS votes_up,
-       i.votes_down            AS votes_down
+       i.comment_count         AS comment_count,
+       i.vote_up               AS vote_up,
+       i.vote_down             AS vote_down
   FROM ideas i;
 
 CREATE VIEW idea_marketplace AS
 SELECT i.id                    AS idea_id,
        i.marketplace_opened_at AS opened_at,
        i.marketplace_closes_at AS closes_at,
-       i.funding_goal          AS funding_goal,
-       i.raised                AS raised,
-       i.investors             AS investors
+       i.funding_goal_sat      AS funding_goal_sat,
+       i.raised_sat            AS raised_sat,
+       i.investor_count        AS investor_count,
+       i.creator_share_bp      AS creator_share_bp
   FROM ideas i
  WHERE i.marketplace_opened_at IS NOT NULL;
 
+-- Der Vertrag: "Anteile werden nicht gespeichert, sondern berechnet. View
+-- idea_investor_shares rechnet investierte_sat / gesamte_sat ganzzahlig."
+-- share_bp ist der Anteil des Investors am Idea-Pool in Basispunkten
+-- (10000 = 100 Prozent). Ganzzahlige Division schneidet ab; die Summe der
+-- Anteile kann deshalb bis unter 10000 bp liegen. Wer auszahlen will, rechnet
+-- mit invested_sat (exakt) und nutzt share_bp nur zur Anzeige - so entsteht
+-- aus Rundung kein verlorenes Satoshi.
+CREATE VIEW idea_investor_shares AS
+WITH per_investor AS (
+    SELECT x.idea_id,
+           x.investor_id,
+           sum(x.amount_sat)::bigint AS invested_sat
+      FROM idea_investments x
+     GROUP BY x.idea_id, x.investor_id
+),
+totals AS (
+    SELECT p.idea_id,
+           sum(p.invested_sat)::bigint AS total_sat
+      FROM per_investor p
+     GROUP BY p.idea_id
+)
+SELECT p.idea_id                          AS idea_id,
+       p.investor_id                      AS investor_id,
+       p.invested_sat                     AS invested_sat,
+       t.total_sat                        AS total_sat,
+       CASE WHEN t.total_sat > 0
+            THEN ((p.invested_sat * 10000) / t.total_sat)::integer
+            ELSE 0
+       END                                AS share_bp
+  FROM per_investor p
+  JOIN totals t ON t.idea_id = p.idea_id;
+
 
 -- =============================================================================
--- 10. Einheiten dokumentieren (ADR-006: Satoshi, ganzzahlig)
+-- 11. Einheiten dokumentieren (ADR-006: Satoshi, ganzzahlig)
 -- =============================================================================
 COMMENT ON TABLE  users            IS 'Konten. role ist die Abkuerzung von "hat aktives Abonnement" (ADR-003).';
 COMMENT ON TABLE  subscriptions    IS 'Abonnement-Historie. Das aktive Abonnement ist das Stimmrecht (ADR-003).';
 COMMENT ON TABLE  user_wallets     IS 'Oeffentliche Schluessel. Die Plattform sieht nie einen privaten Schluessel (ADR-006).';
 COMMENT ON TABLE  ideas            IS 'Ideen mit discussion- und marketplace-Phase (ARCHITECTURE 5.2).';
-COMMENT ON TABLE  idea_votes       IS 'Einzelstimmen - die Wahrheit hinter votes_up/votes_down.';
+COMMENT ON TABLE  idea_votes       IS 'Einzelstimmen - die Wahrheit hinter vote_up/vote_down.';
+COMMENT ON TABLE  idea_investments IS 'Ledger der Direktzahlungen - die Quelle von raised_sat und investor_count und die Grundlage der 20/80-Aufteilung.';
 COMMENT ON TABLE  teams            IS 'Teams je Idea (ARCHITECTURE 5.4).';
 COMMENT ON TABLE  milestones       IS 'Meilensteine je Team (ARCHITECTURE 5.5).';
 
-COMMENT ON COLUMN ideas.funding_goal        IS 'Satoshi (BIGINT, ganzzahlig)';
-COMMENT ON COLUMN ideas.raised              IS 'Satoshi (BIGINT, ganzzahlig)';
-COMMENT ON COLUMN teams.funding_goal        IS 'Satoshi (BIGINT, ganzzahlig)';
-COMMENT ON COLUMN teams.raised              IS 'Satoshi (BIGINT, ganzzahlig)';
-COMMENT ON COLUMN teams.skin_in_game        IS 'Satoshi (BIGINT, ganzzahlig)';
-COMMENT ON COLUMN milestones.funding_release IS 'Satoshi (BIGINT, ganzzahlig)';
+COMMENT ON COLUMN ideas.funding_goal_sat      IS 'Satoshi (BIGINT, ganzzahlig)';
+COMMENT ON COLUMN ideas.raised_sat            IS 'Satoshi (BIGINT, ganzzahlig). Zaehler aus idea_investments, per Trigger gepflegt.';
+COMMENT ON COLUMN ideas.creator_share_bp      IS 'Basispunkte, 10000 = 100 Prozent. 2000 bp = die 20 Prozent der Idee-Seite.';
+COMMENT ON COLUMN teams.funding_goal_sat      IS 'Satoshi (BIGINT, ganzzahlig)';
+COMMENT ON COLUMN teams.raised_sat            IS 'Satoshi (BIGINT, ganzzahlig). Noch ohne Quelltabelle - offener Punkt, siehe Kommentar bei der Tabelle.';
+COMMENT ON COLUMN teams.skin_in_game_sat      IS 'Satoshi (BIGINT, ganzzahlig)';
+COMMENT ON COLUMN milestones.funding_release_sat IS 'Satoshi (BIGINT, ganzzahlig)';
 COMMENT ON COLUMN subscriptions.payment_amount IS 'Satoshi (BIGINT, ganzzahlig)';
 
-COMMENT ON COLUMN idea_votes.subscription_id IS 'Das Abonnement, das dieses Stimmrecht verliehen hat (ADR-003).';
-COMMENT ON COLUMN ideas.comments            IS 'Zaehler. Wird von der comments-Tabelle (Migration 002) gepflegt.';
+COMMENT ON COLUMN idea_votes.subscription_id  IS 'Das Abonnement, das dieses Stimmrecht verliehen hat (ADR-003).';
+COMMENT ON COLUMN ideas.comment_count         IS 'Zaehler. Wird von der idea_comments-Tabelle (Migration 002) gepflegt.';
+COMMENT ON COLUMN idea_investments.amount_sat IS 'Satoshi (BIGINT, ganzzahlig), immer > 0.';
+COMMENT ON COLUMN idea_investments.txid       IS 'Transaktionskennung (64 Hexzeichen), UNIQUE - derselbe Beleg zaehlt nur einmal.';
 
 COMMIT;

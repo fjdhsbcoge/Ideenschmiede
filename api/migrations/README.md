@@ -8,7 +8,7 @@ die die Aufgabe bewusst offen gelassen hat.
 
 | Datei | Zweck |
 |---|---|
-| `001_init.sql` | Migration 001. Die vier Kernentitaeten `users`, `ideas`, `teams`, `milestones` — plus die drei Tabellen, die aus den Entscheidungen unten folgen: `subscriptions`, `user_wallets`, `idea_votes`. |
+| `001_init.sql` | Migration 001. Die vier Kernentitaeten `users`, `ideas`, `teams`, `milestones` — plus die drei Tabellen, die aus den Entscheidungen unten folgen: `subscriptions`, `user_wallets`, `idea_votes` — plus das Ledger `idea_investments`, ohne das die 20/80-Aufteilung nicht berechenbar waere. |
 
 Quelle: `ARCHITECTURE.md` Anhang 5 (Datenmodell), `ROADMAP.md` Phase 3.1.
 
@@ -33,10 +33,17 @@ neueren wirkungslos.
 Ohne laufende Datenbank, im Postgres-Dialekt geparst:
 
     python .../maschine/pruefe_sql.py api/migrations/001_init.sql
+    python .../maschine/pruefe_vertrag.py api/migrations/001_init.sql
 
-Ergebnis fuer diese Datei: 59 Statements, 7 Tabellen, alle vier Kerntabellen
-vorhanden, keine Gleitkomma-Spalten, 9 Fremdschluessel (alle mit `ON DELETE`),
-20 Indizes, `ERGEBNIS: PARSE OK`.
+Ergebnis fuer diese Datei: 70 Statements, 8 Tabellen, alle vier Kerntabellen
+vorhanden, keine Gleitkomma-Spalten, 11 Fremdschluessel (alle mit `ON DELETE`),
+23 Indizes, `ERGEBNIS: PARSE OK`. Der Vertragspruefer meldet
+`ERGEBNIS: KONFORM zu api/CONTRACT.md` — ohne Warnungen.
+
+Statische Pruefung genuegt nicht. Die Datei wurde zusaetzlich gegen
+`postgres:16-alpine` (16.15) mit `ON_ERROR_STOP=1` eingespielt und danach mit
+Funktionstests je Geschaeftsregel geprueft: Ledger -> Zaehler, ADR-003,
+strukturelle Wiederholung, Nachweisregel.
 
 ---
 
@@ -81,7 +88,7 @@ Zeitbezug*: „durfte diese Person am 3. Maerz stimmen?“ ist eine andere Frage
    Vergangenheit bei jeder Verlaengerung.
 2. **Der Geldfluss braucht einen Ort.** Jede Verlaengerung ist ein eigener
    Zahlungsvorgang mit eigener Transaktion (ADR-006, non-custodial).
-   `payment_tx_hash` und `payment_amount` sind die Belegkette. In einer einzelnen
+   `payment_txid` und `payment_amount` sind die Belegkette. In einer einzelnen
    Spalte gaebe es keinen Platz dafuer.
 3. **Die Invariante steht in der Datenbank.**
    `subscriptions_one_active_per_user` ist ein partieller Unique-Index auf
@@ -121,7 +128,7 @@ in eine Tabelle, ohne Aenderung an der API.
 
 ### 4. Votes: Einzelstimmen als Wahrheit, Zaehler als Cache
 
-**Wahl: beides — Einzelstimmen sind die Wahrheit, `votes_up`/`votes_down` sind ein
+**Wahl: beides — Einzelstimmen sind die Wahrheit, `vote_up`/`vote_down` sind ein
 Cache, den ausschliesslich ein Trigger schreibt.**
 
 Die Frage war, ob Abstimmungen nachpruefbar sind. Mit einem Zaehler allein lautet
@@ -138,21 +145,23 @@ ist ein Beweis.
 4. **Ein Cache mit genau einem Schreiber driftet nicht.** Nur
    `idea_votes_sync_counters` fasst die beiden Spalten an — bei INSERT, UPDATE und
    DELETE. Kein Anwendungspfad schreibt sie direkt. `CHECK (>= 0)` faengt ab, was
-   trotzdem durchkaeme.
+   trotzdem durchkaeme. Gezaehlt wird vollstaendig neu, nicht inkrementell — nur so
+   kann auch eine per `UPDATE` auf eine andere Idee verschobene Stimme keinen
+   Geisterzaehler hinterlassen.
 5. **Der Cache ist beweisbar korrekt**, weil er sich jederzeit aus den
    Einzelstimmen rekonstruieren laesst. Diese Abfrage muss immer leer sein:
 
 ```sql
 SELECT i.id,
-       i.votes_up   AS zaehler_up,
+       i.vote_up   AS zaehler_up,
        count(*) FILTER (WHERE v.direction = 'up')   AS echt_up,
-       i.votes_down AS zaehler_down,
+       i.vote_down AS zaehler_down,
        count(*) FILTER (WHERE v.direction = 'down') AS echt_down
   FROM ideas i
   LEFT JOIN idea_votes v ON v.idea_id = i.id
- GROUP BY i.id, i.votes_up, i.votes_down
-HAVING i.votes_up   <> count(*) FILTER (WHERE v.direction = 'up')
-    OR i.votes_down <> count(*) FILTER (WHERE v.direction = 'down');
+ GROUP BY i.id, i.vote_up, i.vote_down
+HAVING i.vote_up   <> count(*) FILTER (WHERE v.direction = 'up')
+    OR i.vote_down <> count(*) FILTER (WHERE v.direction = 'down');
 ```
 
 **Preis:** eine Zeile pro Stimme statt eines Zaehlers, und ein etwas teureres
@@ -201,13 +210,15 @@ SQL ist `snake_case`, die API aus `ARCHITECTURE.md` Anhang 5 ist `camelCase`.
 | `avatar` | `users.avatar_url` |
 | `createdAt` | `created_at` (ueberall) |
 | `discussion.openedAt` | `ideas.discussion_opened_at` |
-| `discussion.comments` / `.votes.up` / `.votes.down` | `ideas.comments` / `ideas.votes_up` / `ideas.votes_down` |
+| `discussion.comments` / `.votes.up` / `.votes.down` | `ideas.comment_count` / `ideas.vote_up` / `ideas.vote_down` |
 | `marketplace.openedAt` / `.closesAt` | `ideas.marketplace_opened_at` / `ideas.marketplace_closes_at` |
-| `marketplace.fundingGoal` / `.raised` / `.investors` | `ideas.funding_goal` / `ideas.raised` / `ideas.investors` |
+| `marketplace.fundingGoal` / `.raised` / `.investors` | `ideas.funding_goal_sat` / `ideas.raised_sat` / `ideas.investor_count` |
+| `marketplace.creatorShare` (Basispunkte) | `ideas.creator_share_bp` |
 | `team.focusArea` | `teams.focus_area` |
 | `team.proposal.timeline` | `teams.timeline_months` |
-| `team.skinInGame` | `teams.skin_in_game` |
-| `milestone.fundingRelease` | `milestones.funding_release` |
+| `team.skinInGame` | `teams.skin_in_game_sat` |
+| `milestone.fundingRelease` | `milestones.funding_release_sat` |
+| Investitionsbeleg | `idea_investments` (`amount_sat`, `txid`) |
 | `milestone.dueDate` | `milestones.due_date` |
 
 ### Warum `discussion` und `marketplace` Spalten sind und keine Tabellen
@@ -223,8 +234,9 @@ den Vertrag aus 5.2 woertlich bedienen kann:
 
 | View | liefert |
 |---|---|
-| `idea_discussion` | `idea_id`, `opened_at`, `comments`, `votes_up`, `votes_down` |
-| `idea_marketplace` | `idea_id`, `opened_at`, `closes_at`, `funding_goal`, `raised`, `investors` |
+| `idea_discussion` | `idea_id`, `opened_at`, `comment_count`, `vote_up`, `vote_down` |
+| `idea_marketplace` | `idea_id`, `opened_at`, `closes_at`, `funding_goal_sat`, `raised_sat`, `investor_count`, `creator_share_bp` |
+| `idea_investor_shares` | `idea_id`, `investor_id`, `invested_sat`, `total_sat`, `share_bp` |
 
 `idea_marketplace` enthaelt nur Ideen mit eroeffneter Marktphase — das entspricht
 dem optionalen `marketplace?` aus dem Interface. Die phase-uebergreifende Struktur
@@ -270,15 +282,69 @@ Fremdschluessel haben einen eigenen Index.
 
 ---
 
+## Kanonischer Datenvertrag (`api/CONTRACT.md`)
+
+Die Bezeichner dieser Migration sind die kanonischen. Fruehere Arbeitsnamen sind
+ersetzt — beide Migrationen des Divergenztests liefen fehlerfrei, waren aber
+wegen genau solcher Namen nicht zusammenfuehrbar:
+
+| frueher | kanonisch |
+|---|---|
+| `ideas.votes_up` / `ideas.votes_down` | `ideas.vote_up` / `ideas.vote_down` |
+| `ideas.comments` | `ideas.comment_count` |
+| `ideas.investors` | `ideas.investor_count` |
+| `ideas.raised` / `teams.raised` | `ideas.raised_sat` / `teams.raised_sat` |
+| `ideas.funding_goal` / `teams.funding_goal` | `ideas.funding_goal_sat` / `teams.funding_goal_sat` |
+| `teams.skin_in_game` | `teams.skin_in_game_sat` |
+| `milestones.funding_release` | `milestones.funding_release_sat` |
+| `subscriptions.payment_tx_hash` | `subscriptions.payment_txid` |
+
+### `idea_investments` — das Ledger, ohne das die 20/80-Aufteilung nicht geht
+
+Ein Zaehler ist eine Behauptung, ein Ledger ist der Beweis. `ideas.raised_sat`
+und `ideas.investor_count` sind deshalb nur noch die gepflegte Abkuerzung von
+`idea_investments`; geschrieben werden sie ausschliesslich von
+`idea_investments_sync_counters` (INSERT, UPDATE, DELETE) und vollstaendig neu
+berechnet. `investor_count` zaehlt Investoren, nicht Zahlungen: wer zweimal
+einzahlt, ist ein Investor mit zwei Belegen.
+
+| Spalte | Typ | Regel |
+|---|---|---|
+| `idea_id` | `uuid` | `REFERENCES ideas (id) ON DELETE RESTRICT`, Index |
+| `investor_id` | `uuid` | `REFERENCES users (id) ON DELETE RESTRICT`, Index |
+| `amount_sat` | `bigint` | `> 0` |
+| `txid` | `text` | 64 Hexzeichen, `UNIQUE` |
+| `created_at` | `timestamptz` | `DEFAULT now()` |
+
+`RESTRICT` statt `CASCADE` ist gewaehlt, nicht gesetzt: Geldbelege werden nicht
+mitgeloescht. Eine finanzierte Idee ist damit nicht loeschbar, solange Zahlungen
+auf sie zeigen — sonst verschwindet die Spur des Geldes mit der Idee.
+
+### Anteile sind Basispunkte
+
+`ideas.creator_share_bp` ist `smallint`, `DEFAULT 2000` — die 20 Prozent der
+Idee-Seite, 10000 bp = 100 Prozent, nie ein Bruch. Investorenanteile werden
+**nicht** gespeichert, sondern in `idea_investor_shares` ganzzahlig berechnet
+(`invested_sat * 10000 / total_sat`). Die ganzzahlige Division schneidet ab;
+ausgezahlt wird deshalb nach `invested_sat`, `share_bp` ist die Anzeige.
+
+**Offener Punkt, ausdruecklich vermerkt:** fuer `teams.raised_sat` gibt es im
+Vertrag noch keine Quelltabelle — die Team-Seite der 80 Prozent ist nicht Teil
+der Pflichtentitaeten. Bis das festgelegt ist, bleibt die Spalte ein von der
+Anwendung geschriebener Wert. Dieselbe Defektklasse wie `ideas.raised` vor dem
+Ledger, hier aber sichtbar und nicht stillschweigend.
+
+---
+
 ## Was diese Migration bewusst nicht enthaelt
 
 | Fehlt | Grund |
 |---|---|
 | `translations` (5.3) | In der Doku ausdruecklich als *Future* markiert. |
-| `comments` (Tabelle) | Nicht Teil der vier Kernentitaeten. Der Zaehler `ideas.comments` existiert bereits, weil der Vertrag ihn verlangt; die Tabelle und ihr Trigger folgen in Migration 002. Bis dahin bleibt der Zaehler bei 0. |
+| `idea_comments` (Tabelle) | Nicht Teil der vier Kernentitaeten. Der Zaehler `ideas.comment_count` existiert bereits, weil der Vertrag ihn verlangt; die Tabelle und ihr Trigger folgen in Migration 002. Bis dahin bleibt der Zaehler bei 0. |
 | `team_members` | 5.4 kennt nur `leaderId`. Mitgliedschaft ist ein eigenes Thema (Rollen, Austritt, Reputation) und wird nicht mitgeraten. |
 | `budget_items` (`proposal.budget`) | 5.4 nennt `BudgetItem[]`, definiert die Struktur aber nicht. Eine Tabelle auf Verdacht waere geraten. |
-| Zahlungen, Auszahlungen, Treuhand | Widerspraeche ADR-006. Die Plattform rechnet mit Betraegen, sie haelt sie nicht. |
+| Zahlungsabwicklung, Auszahlungen, Treuhand | Widerspricht ADR-006. Die Plattform rechnet mit Betraegen, sie haelt sie nicht. Belegt wird eine Zahlung im Ledger `idea_investments`; ausgefuehrt wird sie nie von der Plattform. |
 
 ## Geldbetraege
 
@@ -287,6 +353,10 @@ Es kommt kein Gleitkomma- und kein Festkommatyp im Schema vor. `COMMENT ON COLUM
 dokumentiert die Einheit direkt in der Datenbank, damit sie beim Schreiben einer
 Abfrage nicht geraten werden muss.
 
-Betroffene Spalten: `subscriptions.payment_amount`, `ideas.funding_goal`,
-`ideas.raised`, `teams.funding_goal`, `teams.raised`, `teams.skin_in_game`,
-`milestones.funding_release`.
+Betroffene Spalten: `ideas.funding_goal_sat`, `ideas.raised_sat`,
+`teams.funding_goal_sat`, `teams.raised_sat`, `teams.skin_in_game_sat`,
+`milestones.funding_release_sat`, `idea_investments.amount_sat`.
+
+`subscriptions.payment_amount` ist der einzige Betrag ohne `_sat`-Suffix; der
+Vertragspruefer fuehrt ihn in seiner Ausnahmeliste. Die Einheit steht als
+`COMMENT ON COLUMN` in der Datenbank.
