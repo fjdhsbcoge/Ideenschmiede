@@ -80,8 +80,21 @@ Der Format-`CHECK` bleibt bewusst weiter gefasst als die Normalform: `CHECK`
 läuft **nach** dem `BEFORE`-Trigger, sonst wäre die Normalisierung
 unerreichbar.
 
-**Folge für Abfragen:** die Belegindizes sind Ausdrucksindizes. Eine Suche
-muss `lower(txid) = lower($1)` lauten, sonst greift der Index nicht.
+**Folge für Abfragen — verbindlich:** die Belegindizes sind Ausdrucksindizes.
+Eine Belegsuche lautet `lower(txid) = lower($1)`, **nicht** `txid = $1`.
+
+Beides ist inhaltlich richtig, weil die Spalte kanonisch klein gespeichert
+wird. Der Unterschied liegt im Zugriffspfad, am Planer gemessen:
+
+| Abfrage | Plan | Kosten |
+|---|---|---|
+| `lower(payment_txid) = lower($1)` | Index Scan | 0.12 – 8.14 |
+| `payment_txid = $1` | Bitmap Heap Scan | 4.13 – 20.59 |
+
+Der direkte Vergleich nutzt den Index nur als Filter, nicht als Suche.
+Ein zusätzlicher Index auf der Spalte wäre möglich, kostet aber Schreiblast
+auf jedem Beleg — die Normalisierung macht ihn entbehrlich. Der Webhook-
+Lookup und jede Belegsuche verwenden deshalb die `lower`-Form.
 
 ### Stimmen
 
