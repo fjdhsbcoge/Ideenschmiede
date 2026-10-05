@@ -1,14 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { useStore, fmtSat } from '@/lib/store'
 import { useT } from '@/lib/i18n'
-import { ideas, type Team } from '@/lib/data'
+import type { Team } from '@/lib/data'
 import { Page, PageHeader, BtcAmount, EmptyState, TeamStatusBadge } from '@/components/bits'
 import { JoinTeamModal } from '@/pages/TeamDetail'
-
-const ALL_TEAMS: (Team & { ideaTitle: string })[] = ideas.flatMap((i) =>
-  (i.teams || []).map((tm) => ({ ...tm, ideaTitle: i.title }))
-)
 
 // Die Farbtabelle liegt in lib/data.ts (TEAM_STATUS_CLASS) - dort ist sie an
 // TeamStatus gebunden, also vollstaendig. Eine zweite Tabelle hier waere eine
@@ -17,7 +13,15 @@ const ALL_TEAMS: (Team & { ideaTitle: string })[] = ideas.flatMap((i) =>
 export default function Teams() {
   const t = useT()
   const T = t.pages.teams
-  const { can, role, applications, withdrawApplication, toast } = useStore()
+  const { can, role, applications, withdrawApplication, toast, ideas } = useStore()
+  // Die Teams haengen an ihrer Idee, deshalb wird die Liste hier abgeleitet
+  // statt ein zweites Mal gefuehrt. Nebeneffekt, der beabsichtigt ist: kommen
+  // die Ideen aus der API (der Vertrag kennt keine Teams), ist die Liste leer -
+  // die Seite zeigt dann "keine Teams" statt erfundene.
+  const allTeams = useMemo(
+    () => ideas.flatMap((i) => (i.teams || []).map((tm) => ({ ...tm, ideaTitle: i.title }))),
+    [ideas],
+  )
   const [tab, setTab] = useState<'all' | 'leading' | 'member' | 'applications'>('all')
   const [joinTeam, setJoinTeam] = useState<(Team & { ideaTitle: string }) | null>(null)
   const isSub = can('teams')
@@ -106,7 +110,7 @@ export default function Teams() {
         />
       ) : (
         <div style={{ display: 'grid', gap: 18 }}>
-          {ALL_TEAMS.map((team) => <TeamCard key={team.id} team={team} onJoin={() => setJoinTeam(team)} />)}
+          {allTeams.map((team) => <TeamCard key={team.id} team={team} onJoin={() => setJoinTeam(team)} />)}
         </div>
       )}
 

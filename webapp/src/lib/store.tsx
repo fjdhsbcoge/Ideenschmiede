@@ -1,4 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { IDEAS_PLAN, initialIdeas, loadIdeas, type IdeasLoadResult, type IdeasSource } from '@/lib/dataSource';
+import type { Idea } from '@/lib/data';
 
 export type Role = 'visitor' | 'user' | 'subscriber';
 
@@ -48,6 +50,19 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 interface StoreState {
+  /**
+   * Die Ideen - aus lib/dataSource.ts, NICHT mehr direkt aus lib/data.ts.
+   *
+   * Ohne gesetzte VITE_API_BASE_URL sind das sofort und dauerhaft die
+   * Beispieldaten (kein Netzaufruf, kein Hinweis). Ist die API eingeschaltet,
+   * kommen sie von dort; scheitert der Aufruf, bleiben es die Beispieldaten und
+   * `ideasSource.kind` steht auf 'fallback'.
+   */
+  ideas: Idea[];
+  ideasSource: IdeasSource;
+  /** Nochmal versuchen - nur sinnvoll, wenn 'fallback' angezeigt wird. */
+  reloadIdeas: () => void;
+  getIdea: (id: string) => Idea | undefined;
   role: Role;
   setRole: (r: Role) => void;
   can: (action: 'read' | 'post' | 'comment' | 'vote' | 'invest' | 'teams' | 'marketplace') => boolean;
@@ -80,6 +95,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [votes, setVotes] = useState<Record<string, 'up' | 'down' | 'yes' | 'no'>>(() => load('ideenschmiede_votes', {}));
   const [allocations, setAllocations] = useState<Record<string, TeamAllocation[]>>(() => load('ideenschmiede_allocations', {}));
   const [settings, setSettings] = useState<Settings>(() => ({ ...DEFAULT_SETTINGS, ...load('ideenschmiede_settings', DEFAULT_SETTINGS) }));
+
+  // Der Ideen-Stand. initialIdeas() ist synchron: ohne API sind die
+  // Beispieldaten schon im ersten Rendering da (die Seite sieht dann genauso
+  // aus wie vorher), mit API beginnt es leer und wird ersetzt.
+  const [ideaState, setIdeaState] = useState<IdeasLoadResult>(initialIdeas);
+  const [ideaReloads, setIdeaReloads] = useState(0);
+
+  useEffect(() => {
+    // Ohne API gibt es nichts zu holen - und der Zustand bleibt der Startwert.
+    // Das ist der Grund, warum die oeffentliche Seite ohne Backend unveraendert
+    // bleibt: es wird nicht einmal ein Netzaufruf versucht.
+    if (IDEAS_PLAN.mode !== 'api') return;
+    let current = true;
+    const controller = new AbortController();
+    // loadIdeas() wirft nie: ein Fehler kommt als 'fallback' zurueck. Deshalb
+    // gibt es hier kein catch - aber sehr wohl ein current, damit das Ergebnis
+    // eines abgebrochenen Laufs (StrictMode, erneuter Versuch) nichts ueberschreibt.
+    loadIdeas({ signal: controller.signal }).then((result) => {
+      if (current) setIdeaState(result);
+    });
+    return () => { current = false; controller.abort(); };
+  }, [ideaReloads]);
+
+  const reloadIdeas = useCallback(() => { setIdeaReloads((n) => n + 1); }, []);
+
+  const getIdea = useCallback((id: string) => ideaState.ideas.find((i) => i.id === id), [ideaState.ideas]);
 
   const addApplication = useCallback((a: Omit<MyApplication, 'id' | 'date' | 'status'>) => {
     setApplications(prev => {
@@ -160,7 +201,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [role]);
 
   return (
-    <StoreContext.Provider value={{ role, setRole, can, toast, applications, addApplication, withdrawApplication, votes, castVote, allocations, saveAllocation, settings, saveSettings, resetDemo }}>
+    <StoreContext.Provider value={{ ideas: ideaState.ideas, ideasSource: ideaState.source, reloadIdeas, getIdea, role, setRole, can, toast, applications, addApplication, withdrawApplication, votes, castVote, allocations, saveAllocation, settings, saveSettings, resetDemo }}>
       {children}
       <div key={toastKey} className={`toast ${toastMsg ? 'show' : ''}`}>{toastMsg}</div>
     </StoreContext.Provider>

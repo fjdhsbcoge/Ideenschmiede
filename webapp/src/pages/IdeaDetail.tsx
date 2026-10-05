@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useStore } from '@/lib/store'
 import { useT } from '@/lib/i18n'
-import { STAGE_META, getIdea, votePercent, type Comment } from '@/lib/data'
+import { STAGE_META, ideaCommentCount, votePercent, type Comment } from '@/lib/data'
 import { Page, StageBadge, SplitBar, EmptyState, Modal, BtcAmount } from '@/components/bits'
 import { ShareButton } from '@/components/ShareMenu'
 
@@ -26,8 +26,8 @@ export default function IdeaDetail() {
   const T = t.pages.ideaDetail
   const C = t.pages.common
   const { id } = useParams()
+  const { role, can, toast, settings, getIdea } = useStore()
   const idea = getIdea(id || '')
-  const { role, can, toast, settings } = useStore()
   const [comment, setComment] = useState('')
   const [posted, setPosted] = useState<UiComment[]>([])
   const [postedReplies, setPostedReplies] = useState<Record<string, UiComment[]>>({})
@@ -64,7 +64,13 @@ export default function IdeaDetail() {
     }),
     ...posted.map((p) => ({ ...p, replies: [...p.replies, ...(postedReplies[p.id] || [])] })),
   ]
-  const totalComments = threads.reduce((n, c) => n + 1 + c.replies.length, 0)
+  // Die geladenen Kommentare - oder die Anzahl, die die Quelle nennt, wenn sie
+  // nur eine Zahl hat (API, siehe lib/dataSource.ts). Math.max, weil die API
+  // mehr Kommentare kennen kann, als das Frontend geladen hat.
+  const totalComments = Math.max(
+    threads.reduce((n, c) => n + 1 + c.replies.length, 0),
+    ideaCommentCount(idea),
+  )
 
   const submitComment = () => {
     if (!comment.trim()) return

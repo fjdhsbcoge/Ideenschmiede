@@ -133,6 +133,17 @@ export interface Idea {
   solution: string;
   market: string;
   comments: Comment[];
+  /**
+   * Die Anzahl der Kommentare, wenn die Quelle nur eine ZAHL kennt.
+   *
+   * Die Beispieldaten hier fuellen das nicht - bei ihnen ist `comments` die
+   * vollstaendige Liste. Die API dagegen liefert nur `discussion.comments`
+   * (eine Anzahl, keine Liste, siehe lib/dataSource.ts). Anzeige und Sortierung
+   * nehmen deshalb `ideaCommentCount()` und nicht `comments.length`: sonst
+   * stuende bei jeder Idee aus der API "0 Kommentare", obwohl das Backend eine
+   * andere Zahl nennt.
+   */
+  commentCount?: number;
   votes: { up: number; down: number };
   // marketplace
   fundingGoal?: number;
@@ -510,6 +521,16 @@ export const wallet = {
 
 export function getIdea(id: string): Idea | undefined {
   return ideas.find(i => i.id === id);
+}
+
+/**
+ * Die Anzahl der Kommentare einer Idee - aus der Liste oder aus der Zahl.
+ *
+ * Eine Stelle fuer beide Quellen: die Beispieldaten zaehlen ihre Liste, die API
+ * liefert die Zahl mit (siehe `Idea.commentCount`).
+ */
+export function ideaCommentCount(idea: Idea): number {
+  return idea.commentCount ?? idea.comments.length;
 }
 
 export function votePercent(idea: Idea): number {

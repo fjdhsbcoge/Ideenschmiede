@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useStore } from '@/lib/store';
 import { useT } from '@/lib/i18n';
-import { ideas, votePercent } from '@/lib/data';
+import { ideaCommentCount, votePercent, type Idea } from '@/lib/data';
 import { Page, PageHeader, LoginNotice, EmptyState } from '@/components/bits';
 import { ShareButton } from '@/components/ShareMenu';
 
 export default function Discussion() {
-  const { role, can, toast } = useStore();
+  const { role, can, toast, ideas } = useStore();
   const t = useT();
   const T = t.pages.discussion;
   const [filter, setFilter] = useState(0);
@@ -23,9 +23,11 @@ export default function Discussion() {
     if (filter === 1) list = [...list].sort((a, b) => b.votes.up - a.votes.up); // Trending
     if (filter === 3) list = [...list].sort((a, b) => (b.votes.up + b.votes.down) * (100 - votePercent(b)) - (a.votes.up + a.votes.down) * (100 - votePercent(a))); // Kontrovers
     if (sort === 1) list = [...list].sort((a, b) => b.votes.up - a.votes.up);
-    if (sort === 0) list = [...list].sort((a, b) => b.comments.length - a.comments.length);
+    // Gezaehlt wird ueber ideaCommentCount(): die API liefert nur eine Anzahl,
+    // keine Liste (siehe lib/dataSource.ts).
+    if (sort === 0) list = [...list].sort((a, b) => ideaCommentCount(b) - ideaCommentCount(a));
     return list;
-  }, [filter, sort, search]);
+  }, [filter, sort, search, ideas]);
 
   const guard = (fn: () => void) => () => {
     if (!can('post')) { toast(T.guardToast); return; }
@@ -67,7 +69,7 @@ export default function Discussion() {
         <EmptyState icon="🔍" title={T.emptyTitle} text={T.emptyText} />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 18 }}>
-          {discussionIdeas.map(idea => <DiscussionCard key={idea.id} ideaId={idea.id} />)}
+          {discussionIdeas.map(idea => <DiscussionCard key={idea.id} idea={idea} />)}
         </div>
       )}
 
@@ -93,8 +95,7 @@ export default function Discussion() {
   );
 }
 
-function DiscussionCard({ ideaId }: { ideaId: string }) {
-  const idea = ideas.find(i => i.id === ideaId)!;
+function DiscussionCard({ idea }: { idea: Idea }) {
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
   const [votes, setVotes] = useState(idea.votes);
   const { can, toast } = useStore();
@@ -138,7 +139,7 @@ function DiscussionCard({ ideaId }: { ideaId: string }) {
 
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 7 }}>
-          <span style={{ color: 'var(--text-secondary)' }}>💬 {idea.comments.length} {T.commentsSuffix}</span>
+          <span style={{ color: 'var(--text-secondary)' }}>💬 {ideaCommentCount(idea)} {T.commentsSuffix}</span>
           <span style={{ fontWeight: 700, color: pct >= 50 ? 'var(--accent-green)' : 'var(--accent-primary)' }}>{pct}{T.approvalSuffix}</span>
         </div>
         <div className="progress-track"><div className="progress-fill green" style={{ width: `${pct}%` }} /></div>

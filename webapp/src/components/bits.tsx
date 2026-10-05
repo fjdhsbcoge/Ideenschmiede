@@ -259,6 +259,49 @@ export function EmptyState({ icon, title, text, action }: { icon: string; title:
   );
 }
 
+/**
+ * Der sichtbare Hinweis, wenn die API eingeschaltet ist, aber nicht antwortet.
+ *
+ * Warum ein Banner und nicht die Konsole oder ein Badge:
+ *   - Die Konsole sieht niemand, der die Seite benutzt. Ein Fehler, der nur dort
+ *     steht, ist ein verschwiegener Fehler - und dass die API nicht antwortet,
+ *     aendert die DATEN, nicht nur die Darstellung.
+ *   - Ein Badge ist zu klein fuer den Grund. Die Meldung der API ist der Teil,
+ *     mit dem man den Fehler sucht; sie muss lesbar daneben stehen.
+ *   - Ein Banner traegt beides: die Aussage ("Beispieldaten") und den Grund,
+ *     ohne die Seite zu blockieren. Die Seite bleibt vollstaendig benutzbar -
+ *     das ist der Zweck des Rueckfalls.
+ *
+ * Gezeigt wird NUR 'fallback'. Ohne gesetzte API-Variable sind die Beispieldaten
+ * der Normalzustand (kind 'sample') und brauchen keine Warnung; mit
+ * funktionierender API gibt es nichts zu melden. Genau deshalb erscheint der
+ * Hinweis auf der oeffentlichen Seite (GitHub Pages, ohne API) nicht.
+ */
+export function DataSourceNotice() {
+  const t = useT();
+  const { ideasSource, reloadIdeas } = useStore();
+  if (ideasSource.kind !== 'fallback') return null;
+  const D = t.dataSource;
+  return (
+    <div
+      role="status"
+      className="is-card"
+      style={{ padding: '15px 20px', marginBottom: 22, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', borderColor: 'rgba(243,156,18,.45)' }}
+    >
+      <span style={{ fontSize: 20 }}>⚠️</span>
+      <div style={{ flex: 1, minWidth: 240, fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+        <div>
+          <strong style={{ color: 'var(--text-primary)' }}>{D.fallbackTitle}</strong> {D.fallbackLead}
+        </div>
+        <div style={{ fontSize: 12.5, color: 'var(--text-tertiary)', marginTop: 4 }}>
+          {D.reasonLabel}: {D.reasons[ideasSource.reason]} · {D.detailLabel}: <span className="font-mono">{ideasSource.detail}</span>
+        </div>
+      </div>
+      <button className="btn-secondary" style={{ fontSize: 13 }} onClick={reloadIdeas}>{D.retry}</button>
+    </div>
+  );
+}
+
 export function LoginNotice() {
   const { role } = useStore();
   if (role !== 'visitor') return null;

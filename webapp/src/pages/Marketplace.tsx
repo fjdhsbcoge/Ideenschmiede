@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { useStore, fmtSat, type TeamAllocation } from '@/lib/store'
 import { useT } from '@/lib/i18n'
-import { IDEA_STAGES, STAGE_META, ideas, type Idea, type IdeaStage } from '@/lib/data'
+import { IDEA_STAGES, STAGE_META, type Idea, type IdeaStage } from '@/lib/data'
 import { Page, PageHeader, Paywall, Modal, SplitBar, BtcAmount, StageBadge } from '@/components/bits'
 import { ShareButton } from '@/components/ShareMenu'
 
@@ -17,7 +17,7 @@ const MARKET_STAGES = IDEA_STAGES.filter(
 export default function Marketplace() {
   const t = useT()
   const T = t.pages.marketplace
-  const { can, role } = useStore()
+  const { can, role, ideas } = useStore()
   const [tab, setTab] = useState(0)
   const [investIdea, setInvestIdea] = useState<Idea | null>(null)
   const [voteIdea, setVoteIdea] = useState<Idea | null>(null)
@@ -42,7 +42,7 @@ export default function Marketplace() {
     const base = ideas.filter((i) => STAGE_META[i.stage].onMarketplace)
     const stage = tabs[tab]?.stage ?? null
     return stage === null ? base : base.filter((i) => i.stage === stage)
-  }, [tab, tabs])
+  }, [tab, tabs, ideas])
 
   if (!can('marketplace')) {
     return (

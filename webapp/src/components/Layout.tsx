@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useStore, ROLE_CONFIG, type Role } from '@/lib/store';
 import { useT } from '@/lib/i18n';
+import { DataSourceNotice } from '@/components/bits';
 
 export function RoleSwitcher({ compact = false }: { compact?: boolean }) {
   const { role, setRole, toast } = useStore();
@@ -161,6 +162,12 @@ export default function Layout() {
       </nav>
 
       <main style={{ flex: 1, paddingTop: 62 }}>
+        {/* Der Hinweis auf Beispieldaten steht im Rahmen, nicht in einzelnen
+            Seiten: er gilt fuer die ganze Seite, und keine Seite soll ihn
+            vergessen koennen. */}
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '18px 22px 0' }}>
+          <DataSourceNotice />
+        </div>
         <Outlet />
       </main>
 

@@ -2,14 +2,17 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useStore, fmtSat } from '@/lib/store'
 import { useT } from '@/lib/i18n'
-import { ideas, type Team, type TeamApplication } from '@/lib/data'
+import type { Idea, Team, TeamApplication } from '@/lib/data'
 import { Page, Modal, BtcAmount, EmptyState, TeamStatusBadge } from '@/components/bits'
 
 // Die Farbtabelle liegt in lib/data.ts (TEAM_STATUS_CLASS) und ist dort an
 // TeamStatus gebunden, also vollstaendig. Eine zweite Tabelle hier waere eine
 // zweite Wahrheit.
 
-export function findTeam(teamId: string): { team: Team; ideaTitle: string } | null {
+// Die Ideen werden hereingereicht statt importiert: sie kommen aus dem Store
+// (lib/dataSource.ts) und sind damit in der Vorschau mit Beispieldaten
+// dieselben wie im Betrieb mit der API.
+export function findTeam(ideas: Idea[], teamId: string): { team: Team; ideaTitle: string } | null {
   for (const i of ideas) {
     const tm = (i.teams || []).find((x) => x.id === teamId)
     if (tm) return { team: tm, ideaTitle: i.title }
@@ -73,8 +76,8 @@ export default function TeamDetail() {
   const T = t.pages.teamDetail
   const TS = t.pages.teams
   const { id } = useParams()
-  const found = findTeam(id || '')
-  const { can, toast, votes, castVote, applications } = useStore()
+  const { can, toast, votes, castVote, applications, ideas } = useStore()
+  const found = findTeam(ideas, id || '')
   const [tab, setTab] = useState<'overview' | 'reports' | 'shares' | 'applications'>('overview')
   const [joinOpen, setJoinOpen] = useState(false)
   const [investOpen, setInvestOpen] = useState(false)

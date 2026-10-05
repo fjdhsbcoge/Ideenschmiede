@@ -39,20 +39,44 @@ import { IDEA_STAGES, isIdeaStage, type IdeaStage } from '@/lib/data';
  * dort zu Ursprungsfehlern fuehren, die wie Netzwerkfehler aussehen.
  *
  * VITE_API_BASE_URL bleibt als Ueberschreibung fuer den Fall, dass Frontend
- * und API bewusst auf verschiedenen Hosts liegen.
+ * und API bewusst auf verschiedenen Hosts liegen. Sie ist dann der URSPRUNG
+ * (z.B. https://api.example.org), NICHT der Pfadpraefix.
+ *
+ * Der Standard ist die LEERE Zeichenkette - und das ist der Kern:
+ * die Pfade in dieser Datei beginnen selbst mit '/api' (z.B. '/api/ideas').
+ * Mit einem Standard von '/api' entstuende daraus '/api/api/ideas' und damit
+ * ein 404. Die leere Zeichenkette laesst den Pfad unveraendert, sodass die
+ * Anfrage relativ zum eigenen Ursprung geht - genau das, was der Vite-Proxy
+ * in der Entwicklung und der Reverse Proxy im Betrieb erwarten.
  */
-export const DEFAULT_API_BASE_URL = '/api';
+export const DEFAULT_API_BASE_URL = '';
 
 /**
- * Liest die Basis-URL aus der Vite-Umgebungsvariable VITE_API_BASE_URL.
+ * Die Vite-Umgebungsvariablen - defensiv gelesen.
  *
  * Der Zugriff auf `import.meta.env` ist absichtlich defensiv: in einem reinen
  * Node-Lauf (Test, Skript) gibt es das Objekt nicht. Ein fehlender Wert fuehrt
  * dann zum Entwicklungs-Standard, nicht zu einem Absturz.
+ *
+ * Diese Funktion ist die EINZIGE Stelle, die `import.meta.env` anfasst: seit
+ * lib/dataSource.ts ebenfalls eine Variable liest (VITE_IDEAS_SOURCE), waere
+ * ein zweiter direkter Zugriff ein zweiter Ort, der die Vite-Eigenheit kennt.
+ */
+export function viteEnv(): Record<string, unknown> {
+  const env = (import.meta as ImportMeta & { env?: Record<string, unknown> }).env;
+  return env ?? {};
+}
+
+/**
+ * Liest die Basis-URL aus der Vite-Umgebungsvariable VITE_API_BASE_URL.
+ *
+ * Ein fehlender Wert fuehrt zum Entwicklungs-Standard '/api' (siehe oben).
+ * Ob die Variable WIRKLICH gesetzt ist, entscheidet nicht diese Funktion,
+ * sondern lib/dataSource.ts - dort haengt daran, ob die API ueberhaupt
+ * versucht wird.
  */
 export function apiBaseUrl(): string {
-  const env = (import.meta as ImportMeta & { env?: Record<string, unknown> }).env;
-  const raw = env?.VITE_API_BASE_URL;
+  const raw = viteEnv().VITE_API_BASE_URL;
   const base = typeof raw === 'string' && raw.trim() !== '' ? raw.trim() : DEFAULT_API_BASE_URL;
   return base.replace(/\/+$/, '');
 }

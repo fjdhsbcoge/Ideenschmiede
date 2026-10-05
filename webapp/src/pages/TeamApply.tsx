@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useStore, fmtSat } from '@/lib/store'
 import { useT } from '@/lib/i18n'
-import { STAGE_META, getIdea, ideas } from '@/lib/data'
+import { STAGE_META } from '@/lib/data'
 import { Page, PageHeader, Paywall, BtcAmount } from '@/components/bits'
 
 interface Milestone { title: string; date: string; budget: string }
@@ -11,15 +11,18 @@ export function TeamForm({ mode }: { mode: 'apply' | 'create' }) {
   const t = useT()
   const T = t.pages.teamForm
   const M = t.pages.marketplace
-  const { toast } = useStore()
+  const { toast, ideas } = useStore()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const preselect = params.get('idea') || ''
+  const [picked, setPicked] = useState(preselect)
   // Vorauswahl: die erste Idee, deren Marktplatzphase laeuft (nicht mehr in der
   // Diskussion, noch nicht abgeschlossen - das sind 'marketplace' und 'active').
-  const [ideaId, setIdeaId] = useState(
-    preselect || ideas.find((i) => i.stage === 'marketplace' || i.stage === 'active')?.id || '',
-  )
+  //
+  // Sie wird bei jedem Rendering neu bestimmt und nicht in den useState-Anfang
+  // gelegt: kommen die Ideen aus der API, ist die Liste im ersten Rendering noch
+  // leer - eine einmal eingefrorene Vorauswahl bliebe dann fuer immer ''.
+  const ideaId = picked || ideas.find((i) => i.stage === 'marketplace' || i.stage === 'active')?.id || ''
   const [name, setName] = useState('')
   const [focus, setFocus] = useState('')
   const [goal, setGoal] = useState('5000000')
@@ -30,7 +33,7 @@ export function TeamForm({ mode }: { mode: 'apply' | 'create' }) {
     { title: '', date: '', budget: '1500000' },
   ])
 
-  const idea = getIdea(ideaId)
+  const idea = ideas.find((i) => i.id === ideaId)
   const totalBudget = useMemo(() => milestones.reduce((s, m) => s + (Number(m.budget) || 0), 0), [milestones])
   const skinPct = Number(goal) > 0 ? (Number(skin) / Number(goal)) * 100 : 0
   const skinOk = skinPct >= 5
@@ -48,7 +51,7 @@ export function TeamForm({ mode }: { mode: 'apply' | 'create' }) {
       {/* Idea selection */}
       <div className="is-card" style={{ padding: '26px 28px' }}>
         <h3 className="font-display" style={{ fontSize: 16.5, fontWeight: 700, marginBottom: 16 }}>{T.step1}</h3>
-        <select className="is-select" value={ideaId} onChange={(e) => setIdeaId(e.target.value)}>
+        <select className="is-select" value={ideaId} onChange={(e) => setPicked(e.target.value)}>
           {ideas.filter((i) => STAGE_META[i.stage].openForTeams).map((i) => (
             <option key={i.id} value={i.id}>{i.title}</option>
           ))}

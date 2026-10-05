@@ -1,11 +1,13 @@
 import { Link } from 'react-router';
 import { useStore, ROLE_CONFIG, fmtSat } from '@/lib/store';
 import { useT } from '@/lib/i18n';
-import { myInvestments, earningsByMonth, wallet, ideas } from '@/lib/data';
+import { myInvestments, earningsByMonth, wallet } from '@/lib/data';
 import { Page, PageHeader, StatCard, BtcAmount, StageBadge } from '@/components/bits';
 
 export default function Dashboard() {
-  const { role } = useStore();
+  // Die Ideen kommen aus dem Store (und damit aus lib/dataSource.ts), nicht
+  // mehr direkt aus lib/data.ts: woher sie stammen, entscheidet eine Stelle.
+  const { role, ideas } = useStore();
   const t = useT();
   const T = t.pages.dashboard;
   const cfg = ROLE_CONFIG[role];

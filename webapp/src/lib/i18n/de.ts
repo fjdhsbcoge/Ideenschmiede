@@ -1,4 +1,5 @@
 import type { IdeaStage } from '@/lib/data';
+import type { FallbackReason } from '@/lib/dataSource';
 
 /**
  * Deutsche Sprachdatei (Referenz-Struktur für alle künftigen Sprachen).
@@ -29,6 +30,27 @@ export const de = {
     login: 'Anmelden',
     badges: { free: 'Frei', member: 'Mitglied', login: 'Login' },
     menuAria: 'Menü',
+  },
+
+  /**
+   * Der Hinweis, wenn die API eingeschaltet ist, aber nicht antwortet
+   * (lib/dataSource.ts, 'fallback'). Die Gruende sind als Record<FallbackReason>
+   * getippt: kommt in dataSource.ts ein Grund dazu, bricht der Build hier ab,
+   * solange seine Uebersetzung fehlt - genau wie bei den Idea-Stufen.
+   */
+  dataSource: {
+    fallbackTitle: 'Beispieldaten',
+    fallbackLead: 'Die API ist eingeschaltet, antwortet aber nicht. Gezeigt werden deshalb die Beispieldaten aus dem Repository – die Seite bleibt vollständig benutzbar.',
+    reasonLabel: 'Grund',
+    detailLabel: 'Meldung',
+    retry: 'Erneut versuchen',
+    reasons: {
+      unreachable: 'Die API war nicht erreichbar (Netzfehler oder Server aus).',
+      server: 'Die API hat mit einem Serverfehler geantwortet (HTTP 5xx).',
+      rejected: 'Die API hat die Anfrage abgelehnt (HTTP 4xx).',
+      invalid: 'Die Antwort der API passt nicht zum vereinbarten Vertrag.',
+      unknown: 'Unbekannter Fehler beim Laden der Ideen.',
+    } satisfies Record<FallbackReason, string>,
   },
 
   footer: {
