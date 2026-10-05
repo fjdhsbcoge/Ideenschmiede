@@ -35,11 +35,25 @@ Ohne laufende Datenbank, im Postgres-Dialekt geparst:
     python .../maschine/pruefe_sql.py api/migrations/001_init.sql
     python .../maschine/pruefe_vertrag.py api/migrations/001_init.sql
 
-Ergebnis fuer diese Datei: 82 Statements, 9 Tabellen (alle neun
+Ergebnis fuer diese Datei: 90 Statements, 9 Tabellen (alle neun
 Pflichtentitaeten des Vertrags), keine Gleitkomma-Spalten, 13 Fremdschluessel
-(alle mit `ON DELETE`), 24 Indizes per `CREATE INDEX` (dazu 24 implizite aus
-`PRIMARY KEY`/`UNIQUE`), `ERGEBNIS: PARSE OK`. Der Vertragspruefer
-meldet `ERGEBNIS: KONFORM zu api/CONTRACT.md` — ohne Warnungen.
+(alle mit `ON DELETE`), 27 Indizes per `CREATE INDEX`, `ERGEBNIS: PARSE OK`.
+Der Vertragspruefer meldet `ERGEBNIS: KONFORM zu api/CONTRACT.md` — ohne
+Warnungen.
+
+Zwei der 27 sind die Belegindizes der beiden Ledger: sie sind seit der
+Normalisierung der Belegspalten `CREATE UNIQUE INDEX ... (lower(txid))` und
+damit **Ausdrucksindizes** statt Tabellen-Constraints — ein `CONSTRAINT` kann
+keine Ausdruecke listen. Dadurch steigt die Zahl der `CREATE INDEX`-Anweisungen
+von 25 auf 27, und die Zahl der impliziten Indizes aus `PRIMARY KEY`/`UNIQUE`
+faellt von 12 auf 10 (9 `PRIMARY KEY` + `idea_votes_one_per_user_key`). Die
+Regel selbst ist unveraendert, nur ihr Traeger.
+
+(`pruefe_sql.py` meldet zusaetzlich „27 (inline)“. Das ist dieselbe Zahl: der
+Pruefer zaehlt jeden `CREATE INDEX` ein zweites Mal ueber die
+`exp.Index`-Knoten. Indizes aus `PRIMARY KEY`/`UNIQUE`-Constraints sind
+darin nicht enthalten — die frueher hier genannte Zahl 25 war eine Fehllesung
+dieser Zeile und ist korrigiert.)
 
 Statische Pruefung genuegt nicht — ein Parser bestaetigt nichts ueber das
 Laufzeitverhalten von Triggern und Constraints. Die Datei wurde zusaetzlich
@@ -115,6 +129,256 @@ muessen die eigenen Regeln erfuellen):
   hat sein Abo in g) verloren — das war der Zweck von g). Ohne ein neues Abo
   scheitert die Stimme aus i) an ADR-003 statt an der Nachweisregel — der Test
   faellt dann an der Datenqualitaet, nicht an der Nachweisregel.
+
+---
+
+## Der Defekt (behoben): der Webhook konnte dieselbe Zahlung zweimal verbuchen
+
+`subscriptions.payment_txid` trug nur einen Format-`CHECK`
+(`^[0-9a-fA-F]{64}$`) und **keinen** `UNIQUE`. Die Eindeutigkeit des Belegs war
+damit nirgends zugesagt — sie stand nur in den beiden Ledgern
+(`idea_investments.txid`, `team_investments.txid`, dort als `UNIQUE (txid)`,
+heute als `UNIQUE (lower(txid))`),
+nicht aber in der Tabelle, in der das Stimmrecht aus ADR-003 bezahlt wird.
+
+**Was das praktisch hiess.** BTCPay Server stellt Webhooks planmaessig erneut
+zu, wenn die Antwort ausbleibt oder zu spaet kommt; Phase 3.3 der Roadmap baut
+genau diese Anbindung. Am laufenden PostgreSQL 16.15 nachgestellt
+(`maschine/t_webhook.sql` gegen die Fassung **vor** diesem Fix):
+
+```sql
+-- Webhook 1: Abo anlegen
+INSERT INTO subscriptions (user_id, type, active, started_at, expires_at, payment_txid)
+  VALUES (<nutzer>, 'annual', true, now(), now() + interval '1 year', repeat('a',64));
+-- -> nach dem ERSTEN Webhook:  Zeilen=1
+
+-- derselbe Webhook kommt erneut (BTCPay-Wiederholung)
+UPDATE subscriptions SET active = false WHERE user_id = <nutzer>;
+INSERT INTO subscriptions (user_id, type, active, started_at, expires_at, payment_txid)
+  VALUES (<nutzer>, 'annual', true, now(), now() + interval '1 year', repeat('a',64));
+-- -> akzeptiert: Zeilen=2
+--    ERGEBNIS: DOPPELTE GUTSCHRIFT - dieselbe txid zweimal verbucht
+```
+
+Dieselbe `txid` stand danach in **zwei** Zeilen: zwei Abos, zwei Stimmrechte,
+eine Zahlung. Weil das Abonnement nach ADR-003 das Stimmrecht *ist*, verleiht
+der Fehler doppeltes Stimmrecht — er trifft damit die Kernregel des Projekts,
+nicht nur die Buchhaltung.
+
+**Warum der vorhandene Index das nicht auffing.**
+`subscriptions_one_active_per_user` ist ein **partieller** Index auf
+`(user_id) WHERE active`. Er verhindert zwei *gleichzeitig aktive* Abos eines
+Nutzers — und greift genau dann nicht mehr, wenn die vorige Zeile inzwischen
+`active = false` ist (abgelaufen oder gekuendigt). Beim Webhook-Eingang ist
+das der Normalfall: eine Verlaengerung folgt auf ein abgelaufenes Abo. Der
+Index beantwortet die Frage „hat dieser Nutzer zwei aktive Abos?“, nicht die
+Frage „wurde diese Zahlung schon verbucht?“.
+
+**Behoben** durch einen zweiten partiellen Unique-Index auf derselben Spalte
+— seit der Korrektur des Umwegs unten ueber `lower(...)`:
+
+```sql
+CREATE UNIQUE INDEX subscriptions_payment_txid_key
+    ON subscriptions (lower(payment_txid)) WHERE payment_txid IS NOT NULL;
+```
+
+**Warum partiell und nicht `UNIQUE (payment_txid)`.** Es gibt Abonnements ohne
+on-chain-Beleg: `payment_txid` ist nullable, und mehrere solche Zeilen muessen
+moeglich bleiben. Ein voller Unique-Index verbietet sie in PostgreSQL zwar
+nicht (`NULL` gilt als verschieden von `NULL`), indiziert sie aber mit und
+verschleiert die Absicht: Der partielle Index sagt, was gilt — *wenn* ein Beleg
+da ist, dann genau einmal. Dasselbe Muster tragen bereits
+`subscriptions_one_active_per_user` und `user_wallets_one_primary_per_user`.
+
+**Warum es die Regel in beiden Ledgern schon gab.** Dieselbe Ueberlegung
+(„ein Beleg ist ein Beleg“) steht bei `idea_investments` und
+`team_investments` seit dieser Migration im Schema — beide trugen
+`UNIQUE (txid)`. Dass `payment_txid` sie nicht trug, war keine
+Entwurfsentscheidung, sondern eine Luecke in der Spalte, an der das Stimmrecht
+haengt.
+
+**Der Reproduktionsweg** (so ist es nachgestellt und so ist es nachpruefbar):
+
+```bash
+docker run -d --name ism_pg16 -e POSTGRES_PASSWORD=pg -e POSTGRES_DB=ism -e POSTGRES_HOST_AUTH_METHOD=trust postgres:16-alpine
+docker cp 001_init.sql ism_pg16:/tmp/001_init.sql
+docker exec ism_pg16 psql -U postgres -d ism -v ON_ERROR_STOP=1 -q -f /tmp/001_init.sql
+docker cp t_webhook.sql ism_pg16:/tmp/t_webhook.sql
+docker exec ism_pg16 psql -U postgres -d ism -f /tmp/t_webhook.sql
+```
+
+Vor dem Fix meldet der letzte Befehl
+`ERGEBNIS: DOPPELTE GUTSCHRIFT - dieselbe txid zweimal verbucht`
+(`Zeilen=2`). Nach dem Fix wird die Wiederholung abgewiesen; der Fall steht als
+d) im Funktionstest unten.
+
+**Funktionstest a) bis f) des ersten Fixes** — `maschine/t_payment_txid.sql`,
+`DO`-Block mit inneren `EXCEPTION`-Zweigen gegen `postgres:16-alpine`
+(PostgreSQL 16.15), eingespielt mit `ON_ERROR_STOP=1`. Geprueft wird der
+**konkrete SQLSTATE**, nicht „ob ein Fehler kommt“. Der Test laeuft nach der
+Korrektur der Schreibweise **unveraendert weiter** (Regression) — bis auf eine
+Zeile: sein Schlussblock gibt die damals benannte Grenze aus (`BEKANNTE GRENZE:
+Gross-/Kleinschreibung wird bereits unterschieden (unexpected)`), weil sie
+inzwischen geschlossen ist:
+
+| Fall | erwartet | Ergebnis |
+|---|---|---|
+| a) zwei Abos mit **derselben** `payment_txid` | zweites abgewiesen (`23505`) | bestanden |
+| b) zwei Abos mit **verschiedenen** `txid` | beide gelingen | bestanden |
+| c) mehrere Abos mit `payment_txid IS NULL` | alle gelingen (3 Zeilen) | bestanden |
+| d) Webhook-Wiederholung aus dem Nachweis oben | abgewiesen (`23505`), Zeilen mit dieser txid bleibt 1 | bestanden |
+| e) `expires_at` in die Vergangenheit | `role` faellt auf `user` (Ablauf unveraendert) | bestanden |
+| f1) `idea_investments`: dieselbe `txid` zweimal | abgewiesen (`23505`) | bestanden |
+| f2) `team_investments`: dieselbe `txid` zweimal | abgewiesen (`23505`) | bestanden |
+| Gegenprobe: `ideas.raised_sat` / `teams.raised_sat` | 500 / 700 — die abgewiesenen Wiederholungen haben **nichts** gebucht | bestanden |
+
+Der Fall e) braucht `started_at` mit in die Vergangenheit:
+`subscriptions_period_check` verlangt `expires_at > started_at`, sonst
+scheitert der Test an der Datenqualitaet statt an der Rollenlogik.
+
+### Der Umweg, den der erste Fix offen liess (behoben)
+
+Der Index oben machte `payment_txid` eindeutig — aber nur in **einer**
+Schreibweise. Ein `UNIQUE`-Index vergleicht in der Kollation der Spalte, und in
+der C-Kollation sind `'F'` und `'f'` zwei verschiedene Zeichen, also zwei
+verschiedene Werte. Am laufenden PostgreSQL 16 nachgestellt
+(`maschine/t_txid_bypass.sql` gegen die Fassung **vor** dieser Korrektur):
+
+```sql
+-- Schritt 1: dieselbe Transaktion GROSS geschrieben, danach inaktiv
+INSERT INTO subscriptions (user_id, ..., payment_txid)
+  VALUES (<nutzer>, ..., upper(repeat('f',64)));
+UPDATE subscriptions SET active = false WHERE user_id = <nutzer>;
+
+-- Schritt 2: dieselbe Transaktion KLEIN geschrieben
+INSERT INTO subscriptions (user_id, ..., payment_txid)
+  VALUES (<nutzer>, ..., repeat('f',64));
+-- -> akzeptiert: Abo-Zeilen = 2
+--    ERGEBNIS: zwei Abos, zwei Stimmrechte, eine Zahlung
+```
+
+Der Format-`CHECK` laesst `a-fA-F` zu — die Schreibweise unterscheidet er
+bewusst nicht —, und `subscriptions_one_active_per_user` greift nicht, weil die
+erste Zeile inzwischen inaktiv ist. Die Idempotenz war damit **umgehbar, wenn der
+Aufrufer die Schreibweise wechselt**. Ob BTCPay die txid immer klein liefert, ist
+nicht zugesichert; genau deshalb darf die Identitaet einer Zahlung nicht von der
+Schreibweise abhaengen.
+
+**Korrektur: normalisieren statt abweisen, und die Eindeutigkeit ueber
+`lower()`.** Belegspalten werden in Kleinschreibung gespeichert, und die
+Eindeutigkeit laeuft ueber `lower(spalte)` — in **allen drei** Belegspalten:
+
+| Gegenstand | vorher | jetzt |
+|---|---|---|
+| `subscriptions.payment_txid` | `UNIQUE (payment_txid) WHERE ... IS NOT NULL` | `UNIQUE (lower(payment_txid)) WHERE ... IS NOT NULL` |
+| `idea_investments.txid` | `CONSTRAINT ... UNIQUE (txid)` | `CREATE UNIQUE INDEX ... (lower(txid))` |
+| `team_investments.txid` | `CONSTRAINT ... UNIQUE (txid)` | `CREATE UNIQUE INDEX ... (lower(txid))` |
+
+Dazu ein `BEFORE INSERT OR UPDATE`-Trigger **je Tabelle** auf eine gemeinsame
+Funktion:
+
+```sql
+CREATE FUNCTION normalize_txid_case() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF TG_TABLE_NAME = 'subscriptions' THEN
+        NEW.payment_txid := lower(NEW.payment_txid);
+    ELSE
+        NEW.txid := lower(NEW.txid);
+    END IF;
+    RETURN NEW;
+END;
+$$;
+```
+
+**Warum eine Funktion und nicht drei.** Die Regel ist *eine* Regel („ein Beleg
+wird klein gespeichert“); sie unterscheidet sich zwischen den drei Tabellen nur
+im Spaltennamen — `subscriptions` fuehrt `payment_txid`, beide Ledger fuehren
+`txid`. Drei Kopien desselben Rumpfes koennten auseinanderdriften, und genau die
+Divergenz zwischen gleichartigen Belegspalten will `CONTRACT.md` ausschliessen;
+die beiden Ledger sind aus demselben Grund „deckungsgleich aufgebaut“. Eine
+gemeinsame Funktion mit drei Triggern ist hier ausserdem das Hausmuster:
+`set_updated_at()` bedient vier Tabellen. Unterschieden wird ueber
+`TG_TABLE_NAME` — die Zuordnung Tabelle → Spalte steht damit an genau einer
+Stelle, und ein Trigger auf einer Tabelle ohne passende Spalte scheitert laut,
+nicht still.
+
+**Warum `BEFORE` und warum ueberhaupt normalisierend.** `BEFORE`, weil der Wert
+feststehen muss, bevor der Unique-Index gepflegt wird — und weil der
+Format-`CHECK` danach laeuft (`CHECK`-Constraints werden **nach** den
+`BEFORE`-Triggern geprueft). Genau deshalb darf der `CHECK` weiterhin
+`a-fA-F` zulassen: verlangte er nur `a-f`, waere die Normalisierung
+unerreichbar und jeder Aufruf mit Grossbuchstaben muesste scheitern.
+Normalisierend statt abweisend, weil ein abweisender Trigger jeden Aufrufer
+braeche, dessen Quelle die Schreibweise nicht zusichert — und BTCPay sichert sie
+nicht zu. Derselbe Aufruf soll gelingen, nur eben kanonisch gespeichert werden;
+die Wirkung ist trotzdem dieselbe: der zweite Aufruf trifft danach denselben
+Indexeintrag und scheitert mit `23505`. Dieselbe Haltung wie
+`users_derive_role_trg` (ableiten statt abweisen).
+
+**Preis, offen benannt.** Die drei Belegindizes sind jetzt
+**Ausdrucksindizes** auf `lower(spalte)`. Eine Suche nutzt sie deshalb nur in
+der Form `lower(txid) = lower($1)`; ein Vergleich `txid = $1` ist zwar richtig
+(die Spalte ist kanonisch klein), braucht aber einen eigenen Index auf der
+Spalte. Die Belegsuche sollte ueber `lower(...)` laufen. Ein zusaetzlicher Index
+auf der Spalte waere eine eigene Entscheidung (Schreiblaster gegen Lesepfad) und
+ist hier nicht getroffen.
+
+**Funktionstest a) bis h) der Normalisierung** — `maschine/t_txid_case.sql`,
+`DO`-Block gegen `postgres:16-alpine` (PostgreSQL 16.15), eingespielt mit
+`ON_ERROR_STOP=1`:
+
+| Fall | erwartet | Ergebnis |
+|---|---|---|
+| a) Abo mit `upper(repeat('f',64))` | gelingt, **gespeichert** wird `repeat('f',64)` | bestanden |
+| b) danach dieselbe txid kleingeschrieben | abgewiesen (`23505`), Zeilen mit dieser Transaktion bleibt 1 | bestanden |
+| c) zwei **verschiedene** txid | beide gelingen | bestanden |
+| d) mehrere `payment_txid IS NULL` (auch per `UPDATE` auf `NULL`) | alle gelingen (3 Zeilen) | bestanden |
+| e1) `idea_investments`: `upper(repeat('1',64))` | gelingt, gespeichert klein | bestanden |
+| e2) `idea_investments`: dieselbe txid noch einmal | abgewiesen (`23505`) | bestanden |
+| f1) `team_investments`: `upper(repeat('2',64))` | gelingt, gespeichert klein | bestanden |
+| f2) `team_investments`: dieselbe txid noch einmal | abgewiesen (`23505`) | bestanden |
+| g1) `UPDATE` setzt `payment_txid` auf Grossschreibung | gelingt, gespeichert klein | bestanden |
+| g2) `UPDATE` auf die Grossschreibung einer **fremden** verbuchten txid | abgewiesen (`23505`) | bestanden |
+| g3) gemischte Schreibweise `AbCdEf00...` (INSERT und `UPDATE`) | gespeichert `abcdef00...` | bestanden |
+| g4) `idea_investments`: `UPDATE` auf eine verbuchte txid | abgewiesen (`23505`) | bestanden |
+| h) `expires_at` in die Vergangenheit | `role` faellt auf `user`; der Beleg ueberlebt das `UPDATE` unveraendert | bestanden |
+| Katalog: `pg_constraint` auf `*_txid_key` | 0 Zeilen — die beiden `UNIQUE`-Constraints sind weg | bestanden |
+
+Der Umweg selbst, Schritt fuer Schritt
+(`maschine/t_txid_bypass.sql`, eigene Datenbank, weil es dieselben Testnutzer
+anlegt):
+
+```bash
+docker run -d --name ism_pg16 -e POSTGRES_PASSWORD=pg -e POSTGRES_DB=ism -e POSTGRES_HOST_AUTH_METHOD=trust postgres:16-alpine
+docker cp 001_init.sql ism_pg16:/tmp/001_init.sql
+docker exec ism_pg16 psql -U postgres -d ism -v ON_ERROR_STOP=1 -q -f /tmp/001_init.sql
+docker cp t_txid_case.sql ism_pg16:/tmp/t_txid_case.sql
+docker exec ism_pg16 psql -U postgres -d ism -v ON_ERROR_STOP=1 -f /tmp/t_txid_case.sql
+docker exec ism_pg16 psql -U postgres -q -c "CREATE DATABASE ism_bypass"
+docker exec ism_pg16 psql -U postgres -d ism_bypass -v ON_ERROR_STOP=1 -q -f /tmp/001_init.sql
+docker cp t_txid_bypass.sql ism_pg16:/tmp/t_txid_bypass.sql
+docker exec ism_pg16 psql -U postgres -d ism_bypass -v ON_ERROR_STOP=1 -f /tmp/t_txid_bypass.sql
+```
+
+Vorher endet der letzte Befehl mit `Abo-Zeilen = 2` (zwei Abos, eine Zahlung).
+Nach der Korrektur meldet er
+`UMWEG GESCHLOSSEN: Schritt 2 (klein) -> 23505 (unique_violation), Abo-Zeilen
+bleibt 1` und zeigt als gespeicherten Wert
+`repeat('f',64)` — obwohl Schritt 1 gross geschrieben hineinging.
+
+**`pg_indexes` bestaetigt die Deklaration zur Laufzeit** (alle drei
+Belegindizes laufen ueber `lower()`):
+
+```
+subscriptions_payment_txid_key | CREATE UNIQUE INDEX subscriptions_payment_txid_key
+                                 ON public.subscriptions USING btree (lower(payment_txid))
+                                 WHERE (payment_txid IS NOT NULL)
+idea_investments_txid_key      | CREATE UNIQUE INDEX idea_investments_txid_key
+                                 ON public.idea_investments USING btree (lower(txid))
+team_investments_txid_key      | CREATE UNIQUE INDEX team_investments_txid_key
+                                 ON public.team_investments USING btree (lower(txid))
+```
 
 ---
 
@@ -560,7 +824,7 @@ Unterschiedlich benannte Felder in zwei Ledgern waeren genau die Divergenz, die
 | Bezug | `idea_id` → `ideas` | `team_id` → `teams` | `ON DELETE RESTRICT`, Index |
 | Investor | `investor_id` → `users` | `investor_id` → `users` | `ON DELETE RESTRICT`, Index |
 | Betrag | `amount_sat bigint` | `amount_sat bigint` | `CHECK (amount_sat > 0)` |
-| Beleg | `txid text` | `txid text` | 64 Hexzeichen, `UNIQUE` |
+| Beleg | `txid text` | `txid text` | 64 Hexzeichen, kanonisch **klein**, `UNIQUE` ueber `lower(txid)` — dieselbe Regel wie `subscriptions.payment_txid` (dort partiell, siehe „Belegspalten mit Zahlungsbezug“) |
 | Zeit | `created_at timestamptz` | `created_at timestamptz` | `DEFAULT now()` |
 
 `RESTRICT` statt `CASCADE` ist gewaehlt, nicht gesetzt: Geldbelege werden nicht
@@ -633,3 +897,33 @@ Betroffene Spalten: `ideas.funding_goal_sat`, `ideas.raised_sat`,
 `subscriptions.payment_amount` ist der einzige Betrag ohne `_sat`-Suffix; der
 Vertragspruefer fuehrt ihn in seiner Ausnahmeliste. Die Einheit steht als
 `COMMENT ON COLUMN` in der Datenbank.
+
+---
+
+## Belegspalten mit Zahlungsbezug sind eindeutig
+
+Eine Spalte, die eine Bitcoin-Transaktion belegt, ist ein **Beleg** und kein
+Zaehler: derselbe Vorgang darf nicht zweimal als Zahlung zaehlen. Das gilt
+nicht nur in den beiden Ledgern, sondern in jeder Tabelle, die Geld verbucht.
+
+| Tabelle | Belegspalte | Regel | Warum genau so |
+|---|---|---|---|
+| `idea_investments` | `txid` | `UNIQUE (lower(txid))`, gespeichert klein | Pflichtspalte, jede Zeile hat einen Beleg |
+| `team_investments` | `txid` | `UNIQUE (lower(txid))`, gespeichert klein | wie oben, eine Ebene tiefer |
+| `subscriptions` | `payment_txid` | `UNIQUE (lower(payment_txid)) WHERE payment_txid IS NOT NULL`, gespeichert klein | es gibt Abos **ohne** on-chain-Beleg; mehrere `NULL` muessen moeglich bleiben |
+
+**Die Schreibweise ist Teil der Regel, nicht ein Detail der Eingabe.** Alle drei
+Spalten werden von `normalize_txid_case` (ein `BEFORE INSERT OR UPDATE`-Trigger
+je Tabelle) auf `lower()` gesetzt, und alle drei Indizes vergleichen
+`lower(...)`. Ohne das waere die Eindeutigkeit in der C-Kollation umgehbar:
+`'F'` und `'f'` sind dort zwei verschiedene Werte, also zaehlte dieselbe
+Transaktion zweimal — beim Abo mit zwei Stimmrechten (ADR-003). Der Umweg ist
+oben Schritt fuer Schritt nachgestellt.
+
+Die beiden Ledger tragen die Regel seit dieser Migration (seit der Korrektur
+ueber `lower(txid)`), `subscriptions` traegt sie seit dem Fix, der den doppelt
+verbuchten Webhook geschlossen hat (siehe „Der Defekt (behoben)“). Zusammen mit
+`subscriptions_one_active_per_user` (`(user_id) WHERE active`) und
+`user_wallets_one_primary_per_user` sind das **drei** partielle Unique-Indizes
+im Schema — partielle Indizes sind hier die Regel, nicht die Ausnahme: sie
+sagen, *welche* Zeilen der Regel unterliegen, statt sie ueber alle zu spannen.

@@ -42,6 +42,15 @@
 --     wird ausschliesslich ABGELEITET: der BEFORE-Trigger users_derive_role_trg
 --     rechnet sie bei jedem INSERT/UPDATE aus subscriptions neu aus. Ein
 --     direktes UPDATE auf role kann sie damit nicht faelschen (ADR-003).
+--   * Eine Transaktionskennung wird KANONISCH KLEIN gespeichert, und die
+--     Eindeutigkeit eines Belegs wird ueber lower(spalte) erzwungen. Grund: in
+--     der C-Kollation sind 'F' und 'f' verschiedene Zeichen - ein UNIQUE ueber
+--     die blosse Spalte liesse dieselbe Zahlung in zwei Schreibweisen zweimal
+--     zu, die Idempotenz waere umgehbar. Normalisiert wird im BEFORE-Trigger
+--     normalize_txid_case(): derselbe Aufruf gelingt, nur kanonisch gespeichert
+--     (ableiten statt abweisen, wie users_derive_role_trg). Betroffen sind alle
+--     drei Belegspalten: subscriptions.payment_txid, idea_investments.txid,
+--     team_investments.txid.
 --   * Alle Zeitstempel sind TIMESTAMPTZ (immer absolut, nie lokal).
 --   * Jeder Fremdschluessel hat eine ON DELETE-Regel und Indexabdeckung.
 --
@@ -146,6 +155,54 @@ CREATE TABLE subscriptions (
 -- erhalten und sind von dieser Regel nicht betroffen.
 CREATE UNIQUE INDEX subscriptions_one_active_per_user
     ON subscriptions (user_id) WHERE active;
+
+-- Ein Zahlungsbeleg ist ein Beleg, kein Zaehler: dieselbe Bitcoin-Transaktion
+-- darf nicht zweimal als Abonnement verbucht werden. Der CHECK oben prueft nur
+-- das FORMAT (64 Hexzeichen) - er sagt nichts darueber, ob dieselbe txid schon
+-- einmal vorkommt.
+--
+-- Warum das noetig ist: BTCPay Server wiederholt Webhooks planmaessig, wenn die
+-- Antwort ausbleibt oder zu spaet kommt. Phase 3.3 der Roadmap baut genau diese
+-- Anbindung. Ohne die Regel unten entstand bei der Wiederholung eine ZWEITE
+-- Gutschrift: das Abonnement war danach doppelt gutgeschrieben (und mit ihm
+-- das Stimmrecht aus ADR-003 - wer doppelt zahlt, stimmte doppelt). Der
+-- bestehende Index subscriptions_one_active_per_user faengt das NICHT: er ist
+-- PARTIELL auf active und greift nur, solange die erste Zeile noch aktiv ist.
+-- Genau das ist beim Webhook-Eingang nicht garantiert - eine vorige Zeile kann
+-- inzwischen abgelaufen oder gekuendigt (active = false) sein, und dann ist der
+-- Weg fuer die zweite Zeile frei.
+--
+-- PARTIELL, weil es Abonnements ohne on-chain-Beleg gibt: payment_txid ist
+-- nullable, und mehrere Zeilen mit NULL muessen weiterhin moeglich bleiben.
+-- (Ein voller UNIQUE-Index verbietet sie in PostgreSQL zwar nicht - NULL gilt
+-- als verschieden -, aber er indiziert sie mit und macht die Absicht
+-- unlesbar. Der partielle Index sagt, was gilt.)
+--
+-- Das ist dieselbe Zusage wie in den beiden Ledgern
+-- (idea_investments_txid_key / team_investments_txid_key, dort ueber
+-- lower(txid)) - nur partiell, weil es hier Zeilen ohne Beleg gibt. Nicht Teil
+-- der Regel ist eine Wiederholung, die dasselbe Abonnement verlaengert (Neue
+-- Zahlung = neue txid = neue Zeile): die Historie aus Entscheidung 2 bleibt
+-- unberuehrt.
+--
+-- WARUM lower(payment_txid) UND NICHT payment_txid. Ein UNIQUE-Index vergleicht
+-- in der Kollation der Spalte, und in C sind 'F' und 'f' zwei verschiedene
+-- Zeichen. Ein Index ueber die blosse Spalte liess deshalb genau den Umweg
+-- offen, den diese Fassung schliesst:
+--
+--   Schritt 1: upper(repeat('f',64)) als inaktives Abo   -> akzeptiert
+--   Schritt 2: repeat('f',64) als aktives Abo            -> ebenfalls akzeptiert
+--   ERGEBNIS: zwei Abo-Zeilen fuer denselben Nutzer, dieselbe Transaktion
+--
+-- Die Identitaet einer Zahlung darf nicht von der Schreibweise abhaengen; ob
+-- BTCPay die txid immer klein liefert, ist nicht zugesichert. Ab hier gilt
+-- deshalb: die Eindeutigkeit wird ueber lower(payment_txid) erzwungen, und der
+-- BEFORE-Trigger normalize_txid_case() legt die Spalte kanonisch klein ab - der
+-- zweite Aufruf oben trifft damit denselben Indexeintrag und wird mit 23505
+-- abgewiesen. Normalisiert wird, nicht abgewiesen: derselbe Aufruf gelingt,
+-- nur eben kanonisch gespeichert (dieselbe Haltung wie users_derive_role_trg).
+CREATE UNIQUE INDEX subscriptions_payment_txid_key
+    ON subscriptions (lower(payment_txid)) WHERE payment_txid IS NOT NULL;
 
 CREATE INDEX subscriptions_user_id_idx    ON subscriptions (user_id);
 CREATE INDEX subscriptions_expires_at_idx ON subscriptions (expires_at);
@@ -359,14 +416,27 @@ CREATE TABLE idea_investments (
     CONSTRAINT idea_investments_amount_sat_check
         CHECK (amount_sat > 0),
 
-    -- Eine Transaktionskennung ist 64 Hexzeichen. Die UNIQUE-Regel darunter ist
-    -- die eigentliche Zusage: dieselbe Bitcoin-Transaktion kann nicht zweimal
-    -- als Investition zaehlen, auch nicht bei einem Retry der API.
+    -- Eine Transaktionskennung ist 64 Hexzeichen. Die Schreibweise prueft diese
+    -- Regel BEWUSST NICHT: der CHECK laesst a-fA-F zu, weil der Beleg vor der
+    -- Pruefung kanonisch klein geschrieben wird (BEFORE-Trigger
+    -- normalize_txid_case). Verlangte er nur a-f, waere die Normalisierung
+    -- unerreichbar und ein Aufruf mit Grossbuchstaben muesste scheitern - die
+    -- Belegspalte normalisiert aber, statt abzuweisen.
     CONSTRAINT idea_investments_txid_check
-        CHECK (txid ~ '^[0-9a-fA-F]{64}$'),
-    CONSTRAINT idea_investments_txid_key
-        UNIQUE (txid)
+        CHECK (txid ~ '^[0-9a-fA-F]{64}$')
 );
+
+-- Die eigentliche Zusage: dieselbe Bitcoin-Transaktion kann nicht zweimal als
+-- Investition zaehlen, auch nicht bei einem Retry der API.
+--
+-- UNIQUE-INDEX statt Tabellen-Constraint UNIQUE (txid): ein Constraint kann nur
+-- Spalten listen, keine Ausdruecke, und die Eindeutigkeit muss ueber lower(txid)
+-- laufen. Sonst bliebe hier derselbe Umweg offen wie bei
+-- subscriptions.payment_txid: einmal gross eintragen, einmal klein eintragen,
+-- und dieselbe Zahlung zaehlt zweimal. Der Name bleibt
+-- idea_investments_txid_key, damit die Regel in Schema, Kommentar und
+-- Dokumentation denselben Namen traegt.
+CREATE UNIQUE INDEX idea_investments_txid_key ON idea_investments (lower(txid));
 
 -- ON DELETE RESTRICT ist hier bewusst gewaehlt, nicht gesetzt:
 --   * idea_investments.idea_id -> ideas  RESTRICT: Geldbelege werden nicht
@@ -375,7 +445,11 @@ CREATE TABLE idea_investments (
 --   * idea_investments.investor_id -> users RESTRICT: das Loeschen eines
 --     Kontos darf keine Zahlungsgeschichte mitnehmen (wie ideas.author_id).
 -- FK-Abdeckung: jede Fremdschluesselspalte ist erste Spalte eines Index.
--- Der Btree aus UNIQUE (txid) bedient die Belegsuche, keine FK-Pruefung.
+-- Der Btree aus UNIQUE (lower(txid)) bedient die Belegsuche, keine
+-- FK-Pruefung. Er ist ein AUSDRUCKSINDEX: er wird nur von Abfragen genutzt, die
+-- ebenfalls lower(txid) vergleichen (lower(txid) = lower($1)). Ein Vergleich
+-- txid = $1 ist zwar richtig - die Spalte ist kanonisch klein -, braucht aber
+-- einen eigenen Index; die Belegsuche sollte deshalb ueber lower(txid) laufen.
 --
 -- idea_id braucht KEINEN eigenen Einzelindex: der Index unten beginnt mit
 -- idea_id und bedient damit die FK-Pruefung vollstaendig (CONTRACT.md,
@@ -477,15 +551,25 @@ CREATE TABLE team_investments (
     CONSTRAINT team_investments_amount_sat_check
         CHECK (amount_sat > 0),
 
-    -- Eine Transaktionskennung ist 64 Hexzeichen. Die UNIQUE-Regel darunter
-    -- ist die eigentliche Zusage: dieselbe Bitcoin-Transaktion kann nicht
-    -- zweimal als Team-Investition zaehlen, auch nicht bei einem Retry der
-    -- API. Sie gilt ueber das ganze Ledger - ein Beleg ist ein Beleg.
+    -- Eine Transaktionskennung ist 64 Hexzeichen. Die Schreibweise prueft diese
+    -- Regel BEWUSST NICHT: der CHECK laesst a-fA-F zu, weil der Beleg vor der
+    -- Pruefung kanonisch klein geschrieben wird (BEFORE-Trigger
+    -- normalize_txid_case). Verlangte er nur a-f, waere die Normalisierung
+    -- unerreichbar und ein Aufruf mit Grossbuchstaben muesste scheitern - die
+    -- Belegspalte normalisiert aber, statt abzuweisen.
     CONSTRAINT team_investments_txid_check
-        CHECK (txid ~ '^[0-9a-fA-F]{64}$'),
-    CONSTRAINT team_investments_txid_key
-        UNIQUE (txid)
+        CHECK (txid ~ '^[0-9a-fA-F]{64}$')
 );
+
+-- Die eigentliche Zusage: dieselbe Bitcoin-Transaktion kann nicht zweimal als
+-- Team-Investition zaehlen, auch nicht bei einem Retry der API. Sie gilt ueber
+-- das ganze Ledger - ein Beleg ist ein Beleg.
+--
+-- UNIQUE-INDEX statt Tabellen-Constraint UNIQUE (txid), aus demselben Grund wie
+-- bei idea_investments: die Eindeutigkeit laeuft ueber lower(txid), und ein
+-- Constraint kann keine Ausdruecke listen. Beide Ledger tragen die Regel damit
+-- deckungsgleich - die Symmetrie der beiden Tabellen bleibt erhalten.
+CREATE UNIQUE INDEX team_investments_txid_key ON team_investments (lower(txid));
 
 -- ON DELETE RESTRICT ist hier gewaehlt, nicht gesetzt - dieselbe Begruendung
 -- wie bei idea_investments, nur eine Ebene tiefer:
@@ -498,7 +582,11 @@ CREATE TABLE team_investments (
 --   * team_investments.investor_id -> users RESTRICT: das Loeschen eines
 --     Kontos darf keine Zahlungsgeschichte mitnehmen (wie ideas.author_id).
 -- FK-Abdeckung: jede Fremdschluesselspalte ist erste Spalte eines Index.
--- Der Btree aus UNIQUE (txid) bedient die Belegsuche, keine FK-Pruefung.
+-- Der Btree aus UNIQUE (lower(txid)) bedient die Belegsuche, keine
+-- FK-Pruefung. Er ist ein AUSDRUCKSINDEX: er wird nur von Abfragen genutzt, die
+-- ebenfalls lower(txid) vergleichen (lower(txid) = lower($1)). Ein Vergleich
+-- txid = $1 ist zwar richtig - die Spalte ist kanonisch klein -, braucht aber
+-- einen eigenen Index; die Belegsuche sollte deshalb ueber lower(txid) laufen.
 --
 -- team_id braucht KEINEN eigenen Einzelindex: der Index unten beginnt mit
 -- team_id und bedient damit die FK-Pruefung vollstaendig (CONTRACT.md,
@@ -574,6 +662,64 @@ CREATE TRIGGER teams_set_updated_at
 CREATE TRIGGER idea_votes_set_updated_at
     BEFORE UPDATE ON idea_votes
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- Eine Transaktionskennung wird KANONISCH KLEIN gespeichert. Der Grund ist die
+-- Kollation: in C sind 'F' und 'f' verschiedene Zeichen, ein UNIQUE-Index ueber
+-- die blosse Spalte unterscheidet sie also. Genau daran war die Idempotenz der
+-- Belegspalten umgehbar - dieselbe Zahlung, einmal gross und einmal klein
+-- geschrieben, ergab zwei Zeilen (und beim Abo damit zwei Stimmrechte, ADR-003).
+--
+-- Die Regel wird hier NORMALISIEREND durchgesetzt, nicht abweisend: derselbe
+-- Aufruf soll gelingen, nur eben kanonisch gespeichert werden. Wer
+-- upper(repeat('f',64)) schickt, bekommt eine Zeile mit repeat('f',64); der
+-- zweite Aufruf trifft danach denselben Indexeintrag und scheitert mit 23505.
+-- Dieselbe Haltung wie users_derive_role_trg (ableiten statt abweisen) - ein
+-- abweisender Trigger braeche jeden Aufrufer, dessen Quelle die Schreibweise
+-- nicht zusichert, und BTCPay sichert sie nicht zu.
+--
+-- EINE Funktion fuer alle drei Belegspalten, drei Trigger (einer je Tabelle).
+-- Die Regel ist EINE Regel ("ein Beleg wird klein gespeichert") und
+-- unterscheidet sich zwischen den Tabellen nur im Spaltennamen: subscriptions
+-- fuehrt payment_txid, beide Ledger fuehren txid. Drei Kopien desselben Rumpfes
+-- koennten auseinanderdriften, und genau die Divergenz zwischen gleichartigen
+-- Belegspalten will CONTRACT.md ausschliessen. Dass eine gemeinsame Funktion mit
+-- mehreren Triggern hier das Hausmuster ist, zeigt set_updated_at() (eine
+-- Funktion, vier Trigger).
+--
+-- Unterschieden wird ueber TG_TABLE_NAME, nicht ueber eine Spaltenliste: die
+-- Zuordnung Tabelle -> Spalte steht damit an genau einer Stelle.
+CREATE FUNCTION normalize_txid_case() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF TG_TABLE_NAME = 'subscriptions' THEN
+        -- Kanonisch ist payment_txid - nicht payment_tx_hash (CONTRACT.md).
+        NEW.payment_txid := lower(NEW.payment_txid);
+    ELSE
+        -- Die beiden Ledger: dieselbe Sache unter dem Namen txid.
+        NEW.txid := lower(NEW.txid);
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+-- BEFORE, nicht AFTER: der Wert muss feststehen, bevor der Unique-Index
+-- gepflegt und bevor der CHECK geprueft wird (CHECK-Constraints laufen NACH den
+-- BEFORE-Triggern, deshalb darf der CHECK a-fA-F zulassen).
+-- lower(NULL) ist NULL: ein Abo ohne Beleg bleibt ohne Beleg und faellt damit
+-- weiterhin nicht unter den partiellen Index.
+CREATE TRIGGER subscriptions_normalize_txid_trg
+    BEFORE INSERT OR UPDATE ON subscriptions
+    FOR EACH ROW EXECUTE FUNCTION normalize_txid_case();
+
+CREATE TRIGGER idea_investments_normalize_txid_trg
+    BEFORE INSERT OR UPDATE ON idea_investments
+    FOR EACH ROW EXECUTE FUNCTION normalize_txid_case();
+
+CREATE TRIGGER team_investments_normalize_txid_trg
+    BEFORE INSERT OR UPDATE ON team_investments
+    FOR EACH ROW EXECUTE FUNCTION normalize_txid_case();
 
 
 -- ADR-003 in der Datenbank: stimmen darf nur, wer ein aktives Abonnement hat.
@@ -1013,12 +1159,13 @@ COMMENT ON COLUMN teams.investor_count        IS 'Zaehler. Anzahl verschiedener 
 COMMENT ON COLUMN teams.skin_in_game_sat      IS 'Satoshi (BIGINT, ganzzahlig)';
 COMMENT ON COLUMN milestones.funding_release_sat IS 'Satoshi (BIGINT, ganzzahlig)';
 COMMENT ON COLUMN subscriptions.payment_amount IS 'Satoshi (BIGINT, ganzzahlig)';
+COMMENT ON COLUMN subscriptions.payment_txid   IS 'Transaktionskennung (64 Hexzeichen) oder NULL, wenn das Abo ohne on-chain-Beleg angelegt wurde. KANONISCH KLEIN: normalize_txid_case (BEFORE INSERT OR UPDATE) schreibt den Wert auf lower(), unabhaengig von der Schreibweise des Aufrufers. PARTIELL UNIQUE ueber lower(payment_txid) (subscriptions_payment_txid_key, WHERE payment_txid IS NOT NULL): derselbe Beleg zaehlt nur einmal, auch wenn er in wechselnder Schreibweise zugestellt wird - der Webhook darf mehrfach zugestellt werden, ohne das Abo doppelt zu verbuchen. Zeilen mit NULL bleiben beliebig viele moeglich.';
 
 COMMENT ON COLUMN idea_votes.subscription_id  IS 'Das Abonnement, das dieses Stimmrecht verliehen hat (ADR-003). Unveraenderlicher Beleg: wird beim INSERT gestempelt und kann per UPDATE nicht geaendert werden (auch nicht auf NULL). ON DELETE RESTRICT - ein Abonnement mit Stimmen ist nicht loeschbar.';
 COMMENT ON COLUMN ideas.comment_count         IS 'Zaehler. Wird von der idea_comments-Tabelle (Migration 002) gepflegt.';
 COMMENT ON COLUMN idea_investments.amount_sat IS 'Satoshi (BIGINT, ganzzahlig), immer > 0.';
-COMMENT ON COLUMN idea_investments.txid       IS 'Transaktionskennung (64 Hexzeichen), UNIQUE - derselbe Beleg zaehlt nur einmal.';
+COMMENT ON COLUMN idea_investments.txid       IS 'Transaktionskennung (64 Hexzeichen), KANONISCH KLEIN (normalize_txid_case, BEFORE INSERT OR UPDATE), UNIQUE ueber lower(txid) - derselbe Beleg zaehlt nur einmal, unabhaengig von der Schreibweise des Aufrufers.';
 COMMENT ON COLUMN team_investments.amount_sat IS 'Satoshi (BIGINT, ganzzahlig), immer > 0.';
-COMMENT ON COLUMN team_investments.txid       IS 'Transaktionskennung (64 Hexzeichen), UNIQUE - derselbe Beleg zaehlt nur einmal.';
+COMMENT ON COLUMN team_investments.txid       IS 'Transaktionskennung (64 Hexzeichen), KANONISCH KLEIN (normalize_txid_case, BEFORE INSERT OR UPDATE), UNIQUE ueber lower(txid) - derselbe Beleg zaehlt nur einmal, unabhaengig von der Schreibweise des Aufrufers.';
 
 COMMIT;
