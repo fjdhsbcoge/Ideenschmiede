@@ -1,6 +1,13 @@
+import type { IdeaStage } from '@/lib/data';
+
 /**
  * Deutsche Sprachdatei (Referenz-Struktur für alle künftigen Sprachen).
  * Neue Sprache = Kopie dieser Datei, Werte übersetzen, in index.tsx registrieren.
+ *
+ * Der Typ-Import aus lib/data ist Absicht und nur ein Typ: die Stufen eines
+ * Ideas sind ein Vertrag (api/migrations/001_init.sql), und die Beschriftungen
+ * hier sind `Record`s darueber. Damit kann eine neue Stufe nicht ohne
+ * Uebersetzung bleiben - der Compiler meldet sie.
  */
 export const de = {
   roles: {
@@ -267,6 +274,10 @@ export const de = {
       loginCta: 'Anmelden',
       back: '← Zurück',
       sat: 'sat',
+      // Zustand des Stufen-Badges für einen Wert, den das Frontend nicht kennt
+      // (siehe StageBadge in components/bits.tsx).
+      stageUnknown: 'Unbekannte Stufe',
+      stageUnknownHint: 'Diese Stufe kennt das Frontend nicht – Wert aus der API:',
     },
 
     notFound: {
@@ -319,7 +330,7 @@ export const de = {
       statEarnings: 'Erträge gesamt',
       statEarningsSub: 'Revenue + Milestone-Boni',
       statIdeas: 'Meine Ideen',
-      statIdeasSub: '1 im Funding',
+      statIdeasSub: '1 auf dem Marktplatz',
       statStatus: 'Status',
       loginNeeded: 'Anmeldung erforderlich',
       walletTitle: '⚡ Bitcoin-Wallet',
@@ -334,7 +345,6 @@ export const de = {
       lastInvestments: '💰 Letzte Investments',
       all: 'Alle →',
       lockedHint: '🔒 Melde dich an, um deine Daten zu sehen.',
-      fundingBadge: 'Funding',
       investorsSuffix: 'Investoren',
     },
 
@@ -505,7 +515,18 @@ export const de = {
       subtitle: 'Community-validierte Ideen mit Idea- & Team-Shares. Milestone-gesichert, transparent, Bitcoin-nativ.',
       subtitleLocked: 'Investiere in von der Community validierte Ideen.',
       myInvestments: '📈 Meine Investments',
-      tabs: ['Alle', 'Voting', 'Funding', 'Building', 'Abgeschlossen'] as string[],
+      // Tab-Beschriftungen des Marktplatzes. Objekt statt Liste: der Schlüssel
+      // ist die Stufe, damit eine neue Stufe nicht ohne Beschriftung bleibt.
+      // Die Reihenfolge der Tabs ergibt sich in pages/Marketplace.tsx aus
+      // IDEA_STAGES; 'discussion' fehlt hier bewusst, diese Ideen stehen auf
+      // der Diskussions-Seite.
+      tabs: {
+        all: 'Alle',
+        voting: 'Voting',
+        marketplace: 'Marktplatz',
+        active: 'Aktiv',
+        completed: 'Abgeschlossen',
+      } satisfies Record<'all' | Exclude<IdeaStage, 'discussion'>, string>,
       paywallFeature: 'Der Ideen-Marktplatz',
       paywallFeatureSuffix: ' (Investieren, Voting & Teams)',
       votingEndsIn: (t: string) => `⏳ Voting endet in ${t}`,

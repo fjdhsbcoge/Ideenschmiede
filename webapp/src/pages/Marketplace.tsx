@@ -2,9 +2,17 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { useStore, fmtSat, type TeamAllocation } from '@/lib/store'
 import { useT } from '@/lib/i18n'
-import { ideas, type Idea } from '@/lib/data'
+import { IDEA_STAGES, STAGE_META, ideas, type Idea, type IdeaStage } from '@/lib/data'
 import { Page, PageHeader, Paywall, Modal, SplitBar, BtcAmount, StageBadge } from '@/components/bits'
 import { ShareButton } from '@/components/ShareMenu'
+
+/**
+ * Die Marktplatz-Stufen in Vertragsreihenfolge - ohne 'discussion'.
+ * Diskussions-Ideen stehen auf der Diskussions-Seite, nicht hier.
+ */
+const MARKET_STAGES = IDEA_STAGES.filter(
+  (stage): stage is Exclude<IdeaStage, 'discussion'> => stage !== 'discussion',
+)
 
 export default function Marketplace() {
   const t = useT()
@@ -14,22 +22,34 @@ export default function Marketplace() {
   const [investIdea, setInvestIdea] = useState<Idea | null>(null)
   const [voteIdea, setVoteIdea] = useState<Idea | null>(null)
 
+  // Tab 0 ist "Alle" (keine eigene Stufe), danach je eine Stufe aus
+  // IDEA_STAGES. Die Beschriftungen stehen in der Sprachdatei; kommt eine
+  // Stufe dazu, erscheint der Tab hier automatisch - und de.ts bricht ab,
+  // solange ihre Uebersetzung fehlt.
+  //
+  // Gefiltert wird auf den STUFENWERT, nicht mehr auf die uebersetzte
+  // Beschriftung: vorher hiess es `if (tabName === 'Funding')` - eine
+  // Umbenennung des Tabs haette den Filter still abgeschaltet.
+  const tabs: { label: string; stage: IdeaStage | null }[] = useMemo(
+    () => [
+      { label: T.tabs.all, stage: null },
+      ...MARKET_STAGES.map((stage) => ({ label: T.tabs[stage], stage })),
+    ],
+    [T.tabs],
+  )
+
   const list = useMemo(() => {
-    let l = ideas.filter((i) => i.stage !== 'discussion')
-    const tabName = T.tabs[tab]
-    if (tabName === 'Voting') l = l.filter((i) => i.stage === 'voting')
-    if (tabName === 'Funding') l = l.filter((i) => i.stage === 'funding')
-    if (tabName === 'Building') l = l.filter((i) => i.stage === 'building')
-    if (tabName === 'Abgeschlossen') l = l.filter((i) => i.stage === 'completed')
-    return l
-  }, [tab, T.tabs])
+    const base = ideas.filter((i) => STAGE_META[i.stage].onMarketplace)
+    const stage = tabs[tab]?.stage ?? null
+    return stage === null ? base : base.filter((i) => i.stage === stage)
+  }, [tab, tabs])
 
   if (!can('marketplace')) {
     return (
       <Page>
         <PageHeader title={T.title} subtitle={T.subtitleLocked} />
         <div style={{ filter: 'blur(6px)', opacity: .5, pointerEvents: 'none', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 18 }}>
-          {ideas.filter((i) => i.stage !== 'discussion').slice(0, 3).map((i) => (
+          {ideas.filter((i) => STAGE_META[i.stage].onMarketplace).slice(0, 3).map((i) => (
             <div key={i.id} className="is-card" style={{ padding: 26, height: 220 }} />
           ))}
         </div>
@@ -47,8 +67,8 @@ export default function Marketplace() {
       />
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 26, flexWrap: 'wrap' }}>
-        {T.tabs.map((tabName, i) => (
-          <button key={tabName} className={`is-tab ${tab === i ? 'active' : ''}`} onClick={() => setTab(i)}>{tabName}</button>
+        {tabs.map((entry, i) => (
+          <button key={entry.label} className={`is-tab ${tab === i ? 'active' : ''}`} onClick={() => setTab(i)}>{entry.label}</button>
         ))}
       </div>
 

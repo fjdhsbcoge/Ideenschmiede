@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useStore } from '@/lib/store'
 import { useT } from '@/lib/i18n'
-import { getIdea, votePercent, type Comment } from '@/lib/data'
+import { STAGE_META, getIdea, votePercent, type Comment } from '@/lib/data'
 import { Page, StageBadge, SplitBar, EmptyState, Modal, BtcAmount } from '@/components/bits'
 import { ShareButton } from '@/components/ShareMenu'
 
@@ -51,7 +51,9 @@ export default function IdeaDetail() {
   }
 
   const pct = votePercent(idea)
-  const inMarketplace = ['voting', 'funding', 'building', 'completed'].includes(idea.stage) || moved
+  // Alles, was die Diskussion verlassen hat - die Tabelle in lib/data.ts
+  // beantwortet das fuer jede Stufe, statt hier vier Werte aufzuzaehlen.
+  const inMarketplace = STAGE_META[idea.stage].onMarketplace || moved
   const canMove = role === 'subscriber' && idea.stage === 'discussion' && !moved
 
   const threads: UiComment[] = [

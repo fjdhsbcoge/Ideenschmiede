@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useStore, fmtSat } from '@/lib/store'
 import { useT } from '@/lib/i18n'
-import { getIdea, ideas } from '@/lib/data'
+import { STAGE_META, getIdea, ideas } from '@/lib/data'
 import { Page, PageHeader, Paywall, BtcAmount } from '@/components/bits'
 
 interface Milestone { title: string; date: string; budget: string }
@@ -15,7 +15,11 @@ export function TeamForm({ mode }: { mode: 'apply' | 'create' }) {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const preselect = params.get('idea') || ''
-  const [ideaId, setIdeaId] = useState(preselect || ideas.find((i) => i.stage === 'funding' || i.stage === 'building')?.id || '')
+  // Vorauswahl: die erste Idee, deren Marktplatzphase laeuft (nicht mehr in der
+  // Diskussion, noch nicht abgeschlossen - das sind 'marketplace' und 'active').
+  const [ideaId, setIdeaId] = useState(
+    preselect || ideas.find((i) => i.stage === 'marketplace' || i.stage === 'active')?.id || '',
+  )
   const [name, setName] = useState('')
   const [focus, setFocus] = useState('')
   const [goal, setGoal] = useState('5000000')
@@ -45,7 +49,7 @@ export function TeamForm({ mode }: { mode: 'apply' | 'create' }) {
       <div className="is-card" style={{ padding: '26px 28px' }}>
         <h3 className="font-display" style={{ fontSize: 16.5, fontWeight: 700, marginBottom: 16 }}>{T.step1}</h3>
         <select className="is-select" value={ideaId} onChange={(e) => setIdeaId(e.target.value)}>
-          {ideas.filter((i) => ['funding', 'building', 'voting'].includes(i.stage)).map((i) => (
+          {ideas.filter((i) => STAGE_META[i.stage].openForTeams).map((i) => (
             <option key={i.id} value={i.id}>{i.title}</option>
           ))}
         </select>

@@ -2,17 +2,52 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useStore, fmtSat, fmtBtc, useReveal } from '@/lib/store';
 import { useT } from '@/lib/i18n';
-import { STAGE_LABELS, votePercent, type Idea, type IdeaStage } from '@/lib/data';
+import { STAGE_LABELS, STAGE_META, isIdeaStage, votePercent, type Idea, type IdeaStage } from '@/lib/data';
 
+/**
+ * Farbe je Stufe. `Record<IdeaStage, string>`: fehlt eine Stufe, bricht
+ * `tsc` hier ab - genau das war bei der Umstellung auf den Vertrag die
+ * Absicherung, dass keine Stufe ohne Farbe bleibt.
+ */
+const STAGE_BADGE_CLASS: Record<IdeaStage, string> = {
+  discussion: 'badge-blue',
+  voting: 'badge-purple',
+  marketplace: 'badge-orange',
+  active: 'badge-green',
+  completed: 'badge-neutral',
+};
+
+/**
+ * Zeigt die Stufe einer Idee an.
+ *
+ * Eine unbekannte Stufe bekommt einen SICHTBAREN Zustand statt eines leeren
+ * Badges: rotes Badge, Warnzeichen, der unbekannte Wert im Klartext und ein
+ * Tooltip, der sagt, was los ist. Begruendung: vorher liefen map[stage] und
+ * STAGE_LABELS[stage] ins Leere - das Ergebnis war class="badge undefined"
+ * mit leerem Text, also ein Fehler, der wie "keine Angabe" aussieht und
+ * deshalb niemandem auffaellt. Den Rohwert zu zeigen statt nur "unbekannt"
+ * hat einen zweiten Grund: in der Anzeige steht dann der Wert, den das
+ * Backend wirklich geschickt hat - das ist die Information, die man zum
+ * Suchen braucht (z. B. ein altes 'building' aus einem Cache).
+ *
+ * Die Pruefung ist bewusst zur Laufzeit, obwohl der Parameter typisiert ist:
+ * api.ts validiert die Stufe schon an der Grenze, aber dieser Badge ist das
+ * letzte Netz fuer alles, was nicht durch diese Tuer kommt (gespeicherter
+ * Zustand, ein `as`-Cast, ein spaeter ergaenztes Feld).
+ */
 export function StageBadge({ stage }: { stage: IdeaStage }) {
-  const map: Record<IdeaStage, string> = {
-    discussion: 'badge-blue',
-    voting: 'badge-purple',
-    funding: 'badge-orange',
-    building: 'badge-green',
-    completed: 'badge-neutral',
-  };
-  return <span className={`badge ${map[stage]}`}>{STAGE_LABELS[stage]}</span>;
+  const t = useT();
+
+  if (!isIdeaStage(stage)) {
+    const raw = String(stage);
+    return (
+      <span className="badge badge-red" title={t.pages.common.stageUnknownHint}>
+        ⚠️ {t.pages.common.stageUnknown} <span className="font-mono">„{raw}"</span>
+      </span>
+    );
+  }
+
+  return <span className={`badge ${STAGE_BADGE_CLASS[stage]}`}>{STAGE_LABELS[stage]}</span>;
 }
 
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
@@ -80,7 +115,7 @@ export function IdeaCard({ idea, marketplace = false }: { idea: Idea; marketplac
         </div>
       )}
 
-      {(idea.stage === 'funding' || idea.stage === 'building' || idea.stage === 'completed') && (
+      {STAGE_META[idea.stage].showsFunding && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--text-secondary)', marginBottom: 7 }}>
             <span>{fmtSat(idea.raised || 0)} / {fmtSat(idea.fundingGoal || 0)} sat</span>

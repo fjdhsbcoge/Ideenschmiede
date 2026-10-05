@@ -1,4 +1,29 @@
-export type IdeaStage = 'discussion' | 'voting' | 'funding' | 'building' | 'completed';
+/**
+ * Die Stufen einer Idee - genau die fuenf Werte des Vertrags.
+ *
+ * Quelle ist das Schema: api/migrations/001_init.sql,
+ * CONSTRAINT ideas_stage_check CHECK (stage IN (...)), und ARCHITECTURE.md
+ * Anhang 5.2 (interface Idea). Reihenfolge = Reihenfolge der Phasen.
+ *
+ * Diese Liste ist die EINZIGE Quelle: `IdeaStage` wird daraus abgeleitet.
+ * Jede Tabelle vom Typ `Record<IdeaStage, ...>` bricht damit bei einer neuen
+ * Stufe die Uebersetzung ab, statt still unvollstaendig zu bleiben.
+ */
+export const IDEA_STAGES = ['discussion', 'voting', 'marketplace', 'active', 'completed'] as const;
+
+export type IdeaStage = (typeof IDEA_STAGES)[number];
+
+/**
+ * Prueft einen beliebigen Wert gegen die Liste.
+ *
+ * An der Grenze zum Backend hilft der Typ nicht: eine API-Antwort ist zur
+ * Laufzeit `unknown`, und `stage` kann dort jeder Text sein. Genau dort -
+ * in lib/api.ts - wird diese Pruefung gebraucht; fuer die Beispieldaten hier
+ * erledigt das schon der Compiler.
+ */
+export function isIdeaStage(value: unknown): value is IdeaStage {
+  return typeof value === 'string' && (IDEA_STAGES as readonly string[]).includes(value);
+}
 
 export interface Comment {
   id: string;
@@ -88,12 +113,43 @@ export interface Idea {
   teams?: Team[];
 }
 
+/** Deutsche Beschriftung je Stufe. Fehlt eine Stufe, bricht `tsc` hier ab. */
 export const STAGE_LABELS: Record<IdeaStage, string> = {
   discussion: 'Diskussion',
   voting: 'Voting',
-  funding: 'Funding',
-  building: 'Building',
+  marketplace: 'Marktplatz',
+  active: 'Aktiv',
   completed: 'Abgeschlossen',
+};
+
+/**
+ * Was die Oberflaeche je Stufe zeigt - als Tabelle statt als verstreute
+ * if-Ketten in den Seiten.
+ *
+ * Warum eine Tabelle: die Fragen "steht die Idee auf dem Marktplatz?", "zeigt
+ * sie einen Finanzierungs-Fortschritt?", "kann ein Team antreten?" wurden
+ * vorher an jeder Stelle neu als Werteliste getippt ('voting' | 'funding' |
+ * 'building' | 'completed'). Eine vergessene Stufe fiel dabei nicht auf.
+ * `Record<IdeaStage, StageMeta>` erzwingt jetzt Vollstaendigkeit.
+ *
+ * Die Werte bilden das Verhalten ab, das vor der Angleichung an den Vertrag
+ * galt (funding -> marketplace, building -> active).
+ */
+export interface StageMeta {
+  /** Die Idee hat die Diskussion verlassen. */
+  onMarketplace: boolean;
+  /** Ziel, erreicht, Investoren - der Finanzierungs-Fortschritt. */
+  showsFunding: boolean;
+  /** Teams koennen sich bewerben, Idea-Shares gekauft werden. */
+  openForTeams: boolean;
+}
+
+export const STAGE_META: Record<IdeaStage, StageMeta> = {
+  discussion: { onMarketplace: false, showsFunding: false, openForTeams: false },
+  voting: { onMarketplace: true, showsFunding: false, openForTeams: true },
+  marketplace: { onMarketplace: true, showsFunding: true, openForTeams: true },
+  active: { onMarketplace: true, showsFunding: true, openForTeams: true },
+  completed: { onMarketplace: true, showsFunding: true, openForTeams: false },
 };
 
 export const ideas: Idea[] = [
@@ -103,7 +159,7 @@ export const ideas: Idea[] = [
     author: '@senator-thunfisch',
     time: 'vor 2 Tagen',
     tags: ['Hardware', 'Open Source', 'Antriebstechnik'],
-    stage: 'funding',
+    stage: 'marketplace',
     description:
       'Ein vollständig offener Röhren-Linearmotor (Tubular Linear Motor) mit 3D-druckbaren Komponenten, SimpleFOC-kompatibler Ansteuerung und dokumentierter Wicklungsanleitung. Ziel: Präzise Linearantriebe für <150 € statt >800 € Industriepreisen.',
     problem:
@@ -276,7 +332,7 @@ export const ideas: Idea[] = [
     author: '@reparatur_rita',
     time: 'vor 6 Tagen',
     tags: ['Community', 'Nachhaltigkeit', 'Plattform'],
-    stage: 'funding',
+    stage: 'marketplace',
     description:
       'Plattform, die kaputte Geräte mit Reparatur-Expertise in der Nähe matcht und einen geteilten Ersatzteil-Pool organisiert. Spendenfinanziert, Gewinne aus Vermittlung spezieller Teile fließen zu 20/80 an Idee und Team.',
     problem:

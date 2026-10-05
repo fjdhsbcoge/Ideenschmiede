@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { useStore, ROLE_CONFIG, fmtSat } from '@/lib/store';
 import { useT } from '@/lib/i18n';
 import { myInvestments, earningsByMonth, wallet, ideas } from '@/lib/data';
-import { Page, PageHeader, StatCard, BtcAmount } from '@/components/bits';
+import { Page, PageHeader, StatCard, BtcAmount, StageBadge } from '@/components/bits';
 
 export default function Dashboard() {
   const { role } = useStore();
@@ -84,7 +84,9 @@ export default function Dashboard() {
                       <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{i.title}</div>
                       <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{fmtSat(i.raised || 0)} / {fmtSat(i.fundingGoal || 0)} sat · {i.investors} {T.investorsSuffix}</div>
                     </div>
-                    <span className="badge badge-orange">{T.fundingBadge}</span>
+                    {/* Die Stufe der Idee, nicht ein fest verdrahtetes "Funding" -
+                        der Badge faerbt und beschriftet sich aus dem Vertrag. */}
+                    <StageBadge stage={i.stage} />
                   </div>
                 </Link>
               ))}
