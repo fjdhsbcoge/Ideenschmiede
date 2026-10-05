@@ -555,7 +555,7 @@ SQL ist `snake_case`, die API aus `ARCHITECTURE.md` Anhang 5 ist `camelCase`.
 | `discussion.comments` / `.votes.up` / `.votes.down` | `ideas.comment_count` / `ideas.vote_up` / `ideas.vote_down` |
 | `marketplace.openedAt` / `.closesAt` | `ideas.marketplace_opened_at` / `ideas.marketplace_closes_at` |
 | `marketplace.fundingGoal` / `.raised` / `.investors` | `ideas.funding_goal_sat` / `ideas.raised_sat` / `ideas.investor_count` |
-| `marketplace.creatorShare` (Basispunkte) | `ideas.creator_share_bp` |
+| `marketplace.creatorShareBp` (Basispunkte) | `ideas.creator_share_bp` |
 | `team.focusArea` | `teams.focus_area` |
 | `team.proposal.timeline` | `teams.timeline_months` |
 | `team.skinInGame` | `teams.skin_in_game_sat` |
@@ -927,3 +927,91 @@ verbuchten Webhook geschlossen hat (siehe „Der Defekt (behoben)“). Zusammen 
 `user_wallets_one_primary_per_user` sind das **drei** partielle Unique-Indizes
 im Schema — partielle Indizes sind hier die Regel, nicht die Ausnahme: sie
 sagen, *welche* Zeilen der Regel unterliegen, statt sie ueber alle zu spannen.
+
+---
+
+## Wie die API die Views liest (Antwortform von `GET /api/ideas`)
+
+Die Views sind gebaut, um gelesen zu werden — hier steht, was die API
+tatsaechlich aus ihnen macht. Die Abschnitte oben beschreiben das Schema, dieser
+beschreibt die Grenzflaeche. Quelle der Zuordnung ist die Tabelle
+„Namens-Mapping zur API“; sie ist unten vollstaendig, auch fuer die Felder, die
+erst durch die Views entstehen.
+
+### Was die beiden Views liefern — und wo die Zuordnung endet
+
+| View-Spalte | API-Feld | Anmerkung |
+|---|---|---|
+| `idea_discussion.idea_id` | — | Verbindungsschluessel des JOIN, kein Feld der Antwort |
+| `idea_discussion.opened_at` | `discussion.openedAt` | |
+| `idea_discussion.comment_count` | `discussion.comments` | |
+| `idea_discussion.vote_up` | `discussion.votes.up` | |
+| `idea_discussion.vote_down` | `discussion.votes.down` | |
+| `idea_marketplace.idea_id` | — | Verbindungsschluessel des JOIN |
+| `idea_marketplace.opened_at` | `marketplace.openedAt` | |
+| `idea_marketplace.closes_at` | `marketplace.closesAt` | |
+| `idea_marketplace.funding_goal_sat` | `marketplace.fundingGoal` | Satoshi; Zahl, ab 2^53-1 Text |
+| `idea_marketplace.raised_sat` | `marketplace.raised` | Satoshi; Zahl, ab 2^53-1 Text |
+| `idea_marketplace.investor_count` | `marketplace.investors` | |
+| `idea_marketplace.creator_share_bp` | `marketplace.creatorShareBp` | Basispunkte; siehe unten |
+
+Zwei Dinge, die die Views **nicht** liefern und die die API deshalb aus `ideas`
+nimmt: `id` (die View nennt den Schluessel `idea_id`) und die Identitaet der
+Idee selbst — `idea_id` ist in beiden Views der Verbindungsschluessel, nicht
+ein Feld der Antwort. `authorId`, `title`, `description`, `tags`,
+`language`, `stage` und `createdAt` kommen aus `ideas`, alle unter
+camelCase-Namen.
+
+### `creator_share_bp` liegt in `marketplace` — und heisst dort `creatorShareBp`
+
+Die Zuordnungstabelle oben nannte den Pfad `marketplace.creatorShare`. Die API
+liefert das Feld an genau dieser Stelle, aber unter dem Namen
+`creatorShareBp` — die Tabelle ist an dieser einen Zeile nachgezogen:
+
+* **Der Ort ist `marketplace`.** Die Spalte steht in `ideas`, aber der einzige
+  Weg, auf dem sie die dokumentierte Form erreicht, ist `idea_marketplace` —
+  diese View fuehrt sie, `idea_discussion` nicht. Inhaltlich ist der Wert eine
+  Aussage ueber die Series-A-Runde (die 20 Prozent der Idea-Seite) und nicht
+  ueber die Diskussionsphase. Die Marktplatzphase ist damit der Namespace, in
+  den er gehoert; `marketplace?` ist optional, also fehlt das Feld zusammen mit
+  dem Objekt.
+* **Der Name traegt die Einheit.** `CONTRACT.md` fuehrt „Anteile sind
+  Basispunkte“ als eigene Regel, und `_sat` traegt die Einheit bei Geld. Ein
+  Feld `creatorShare` ohne Suffix liesse offen, ob 20, 0.2 oder 2000 gemeint
+  ist — genau die Verwechslung, die der Vertrag mit dem Suffix ausschliesst.
+  Die fruehere Schreibweise `marketplace.creatorShare` liess genau das offen.
+
+**Gemeldete Abweichung, nicht stillschweigend entschieden.** Der Auftrag zu
+diesem Schritt sagt „`creatorShareBp` gehoert zur Idee“ und nennt in derselben
+Zeile Anhang 5.2 als Entscheidungsgrundlage. Anhang 5.2 fuehrt das Feld
+**gar nicht**, und die Zuordnungstabelle oben fuehrt es unter `marketplace`.
+Ein Feld ausserhalb von `marketplace` haette es ausserdem fuer jede Idee ohne
+Marktphase mitgeliefert — fuer eine Diskussionsidee ist die 20/80-Aufteilung
+aber noch gar nicht entschieden. Die Wahl steht hier, damit der Koordinator sie
+in einer Zeile umdrehen kann: das Feld wird an einer Stelle gesetzt
+(`src/app.ts`, `toIdea()`).
+
+### Die API baut die Verschachtelung in SQL — mit zwei Ausnahmen
+
+Der Vertrag verlangt, dass `discussion` und `marketplace` aus den Views
+kommen und nicht in der Anwendung zusammengesetzt werden. Das gilt fuer **die
+Feldauswahl**: die API liest genau die Spalten der beiden Views (kein
+`SELECT *`), und welche Werte es gibt, entscheidet die View — ob `marketplace`
+existiert, entscheidet der `LEFT JOIN` auf `idea_marketplace`, nicht ein
+zweites `IS NOT NULL` in der Anwendung.
+
+Zwei Schritte bleiben in TypeScript, beide **nachgemessen** und nicht aus
+Bequemlichkeit:
+
+| Was | Warum nicht in SQL |
+|---|---|
+| Gruppieren von `discussion`/`marketplace` | ein relationales Ergebnis kennt keine verschachtelten Objekte; die Gruppierung ist Namensform ohne neue Information |
+| `bigint`-Betraege | `json_build_object` schreibt ein `bigint` als JSON-**Zahl**, und die liest der Treiber als `double`: aus `9007199254740993` wurde dabei `9007199254740992` — eine Stelle zu klein, ohne Fehlermeldung |
+| `timestamptz` | `json_build_object` gibt `2026-05-01T10:00:00+00:00` aus, die API sonst ueberall ISO-8601 mit `Z` |
+
+Waeren die Betraege und Zeitstempel in SQL in JSON gepackt worden, saehe die
+Antwort also richtig aus und waere an zwei Stellen falsch. Deshalb liest die
+Abfrage `m.funding_goal_sat` und `m.raised_sat` als Spalten — der Treiber
+liefert `int8` dann als `bigint`, exakt — und ueberlaesst die Umformung einer
+einzigen, einzeln geprueften Funktion (`toJsonSafe`), die Zahl und Text nach
+derselben Regel waehlt, die `CONTRACT.md` fuer Geld nennt.

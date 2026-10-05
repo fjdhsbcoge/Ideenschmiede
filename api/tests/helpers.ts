@@ -66,24 +66,60 @@ export interface TestIdea {
   title: string;
 }
 
+/** Zusatzspalten der Marktplatzphase. Entweder alle drei oder keine. */
+export interface MarketplaceSeed {
+  /** Marktplatzeroeffnung - steuert, ob `marketplace` ueberhaupt erscheint. */
+  openedAt?: string;
+  closesAt?: string;
+  fundingGoalSat?: number;
+}
+
 /**
  * Legt eine Idee per SQL an - mit Beschreibung deutlich ueber 20 Zeichen,
  * damit die Testdaten nicht an einer Laengenpruefung scheitern.
+ *
+ * `marketplace` ist optional: `ideas_marketplace_all_or_nothing_check` laesst
+ * entweder alle drei Marktspalten leer oder alle gefuellt. Deshalb wird hier
+ * auch nur `marketplace_opened_at` uebergeben - die beiden anderen Spalten
+ * setzt die Funktion selbst, damit kein Test an einer halb eroeffneten
+ * Marktplatzphase scheitert (Testdaten muessen die eigenen Regeln erfuellen).
  */
-export async function createTestIdea(authorId: string): Promise<TestIdea> {
+export async function createTestIdea(
+  authorId: string,
+  marketplace?: MarketplaceSeed,
+): Promise<TestIdea> {
   const title = `Testidee ${uniqueSuffix()}`;
+  const openedAt = marketplace?.openedAt ?? null;
+  const closesAt = marketplace === undefined ? null : (marketplace.closesAt ?? null);
+  const fundingGoalSat = marketplace === undefined ? null : (marketplace.fundingGoalSat ?? null);
+
   const rows = await sql<{ id: string }[]>`
-    INSERT INTO ideas (author_id, title, description, tags, language, stage)
+    INSERT INTO ideas (author_id, title, description, tags, language, stage,
+                       marketplace_opened_at, marketplace_closes_at, funding_goal_sat)
     VALUES (
       ${authorId},
       ${title},
       ${'Beschreibung fuer den Integrationstest der Ideenliste (weit mehr als zwanzig Zeichen).'},
       ${['test']},
       'de',
-      'discussion'
+      ${marketplace === undefined ? 'discussion' : 'marketplace'},
+      ${openedAt},
+      ${closesAt},
+      ${fundingGoalSat}
     )
     RETURNING id`;
   return { id: first(rows, 'angelegte Idee').id, title };
+}
+
+/**
+ * Setzt den Zaehler `ideas.raised_sat` direkt. In den Tests ist das Ledger
+ * `idea_investments` leer, es gibt also keinen Trigger, der den Wert
+ * ueberschreibt - und die Tests brauchen einen Betrag, der ueber 2^53-1 liegt.
+ */
+export async function setRaisedSat(ideaId: string, satoshi: bigint): Promise<void> {
+  // Der Treiber nimmt kein bigint als Parameter; als Dezimalzahl-Text geht der
+  // Wert unveraendert hinueber und wird dort als int8 gelesen.
+  await sql`UPDATE ideas SET raised_sat = ${satoshi.toString()}::bigint WHERE id = ${ideaId}`;
 }
 
 /** Aufraeumen in der Reihenfolge, die der Fremdschluessel verlangt: Idee vor Nutzer (ON DELETE RESTRICT). */

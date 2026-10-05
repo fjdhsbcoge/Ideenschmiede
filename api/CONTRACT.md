@@ -169,6 +169,35 @@ Migrationsfall, für den die Aufzählung gebraucht wird.
 | `stage` | `discussion`, `voting`, `marketplace`, `active`, `completed` |
 | `language` | `de`, `en` |
 
+## Namensform je Schicht
+
+Drei Schichten, drei Schreibweisen — das ist Absicht, nicht Nachlässigkeit:
+
+| Schicht | Form | Beispiel |
+|---|---|---|
+| Datenbank (SQL) | `snake_case`, flach | `vote_up`, `comment_count`, `raised_sat` |
+| API (JSON) | `camelCase`, **verschachtelt** | `votes.up`, `discussion.comments`, `marketplace.raised` |
+| Frontend (`webapp/src/lib/data.ts`) | `camelCase`, verschachtelt | wie die API |
+
+**Die API ist die Übersetzungsschicht.** Sie liest die flachen
+`snake_case`-Spalten und liefert die verschachtelte `camelCase`-Form aus
+`ARCHITECTURE.md` Anhang 5 — das ist der dokumentierte Vertrag gegenüber
+dem Frontend.
+
+Für die verschachtelten Teile gibt es **eigene Views**, gebaut genau für
+diesen Zweck: `idea_discussion` und `idea_marketplace`. Wer eine neue
+Ressource hinzufügt, liefert die dokumentierte Form und reicht nicht die
+Spaltennamen durch.
+
+Die vollständige Zuordnungstabelle liegt in `api/migrations/README.md`.
+Sie ist die Quelle für die Abbildung — nicht der Spaltenname.
+
+**Warum das hier steht:** eine API, die rohe Spaltennamen durchreicht,
+verlagert die Übersetzung in jeden Client. Bei mehreren Clients —
+Web-App, später mobile App, Föderationspartner (ADR-004) — driftet die
+Abbildung dann auseinander, und jeder Client interpretiert anders. Genau
+die Divergenz, die dieser Vertrag verhindern soll.
+
 ## Pflichtentitäten
 
 Diese Tabellen müssen existieren. Fehlt eine, ist die Produktlogik nicht
