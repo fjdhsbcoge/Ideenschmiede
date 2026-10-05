@@ -16,6 +16,7 @@ import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
 import Investments from '@/pages/Investments';
 import Earnings from '@/pages/Earnings';
+import Datenschutz from '@/pages/Datenschutz';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/investments" element={<Investments />} />
             <Route path="/earnings" element={<Earnings />} />
+            <Route path="/datenschutz" element={<Datenschutz />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
