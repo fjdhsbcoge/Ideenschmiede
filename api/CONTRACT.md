@@ -34,11 +34,54 @@ festgelegt, bevor parallel gearbeitet wird — nicht danach zusammengeführt.
 |---|---|---|
 | `payment_txid` | `text` | Transaktionskennung. **Nicht** `payment_tx_hash` |
 | `payment_address` | `text` | Empfangsadresse |
-| `txid` | `text` | in Ledgertabellen, mit `UNIQUE` |
+| `txid` | `text` | in Ledgertabellen |
 
 Gespeichert werden **nur** Public Keys (xpub/ypub/zpub/tpub) und Adressen.
 Private Schlüssel (WIF-, xprv-Präfixe) werden per `CHECK` abgewiesen —
 ADR-006 wird damit in der Datenbank durchgesetzt, nicht nur dokumentiert.
+
+#### Jede Belegspalte mit Zahlungsbezug ist eindeutig
+
+Eine Spalte, die eine Bitcoin-Transaktion belegt, trägt eine
+**Eindeutigkeitsregel in der Datenbank** — nicht nur einen Format-`CHECK`:
+
+| Spalte | Regel |
+|---|---|
+| Pflichtspalte (`NOT NULL`) | `UNIQUE` |
+| optionale Spalte (`nullable`) | partieller Index `UNIQUE ... WHERE spalte IS NOT NULL`, damit beliebig viele Zeilen ohne Beleg möglich bleiben |
+
+Grund: externe Systeme **wiederholen Zustellungen** — BTCPay Server tut das
+planmäßig bei Timeouts. Ohne diese Regel verbucht die Wiederholung dieselbe
+Zahlung doppelt, und beim Abonnement verdoppelt das nach ADR-003 das
+Stimmrecht. **Idempotenz des Webhooks ist damit eine Eigenschaft des
+Schemas, nicht des Anwendungscodes.**
+
+#### Belegspalten werden in Kleinschreibung normalisiert
+
+Der Format-`CHECK` erlaubt `a-fA-F`, `UNIQUE` ist aber **case-sensitiv**:
+in der C-Kollation sind `F` und `f` verschiedene Zeichen, also für `UNIQUE`
+zwei verschiedene Werte. Dieselbe Transaktion einmal groß und einmal klein
+geschrieben käme damit zweimal durch — die Eindeutigkeitsregel wäre
+umgehbar, ohne dass ein Fehler sichtbar wird.
+
+Ob der Zahlungsdienstleister die Kennung immer klein liefert, ist **nicht
+zugesichert**. Deshalb darf die Identität einer Zahlung nicht von der
+Schreibweise abhängen. Zwei Regeln zusammen:
+
+1. **Normalisieren beim Schreiben.** Ein `BEFORE INSERT OR UPDATE`-Trigger
+   setzt die Spalte auf `lower(...)`. Normalisieren statt abweisen:
+   derselbe Aufruf gelingt, wird aber kanonisch gespeichert.
+2. **Eindeutigkeit über den Ausdruck.** `UNIQUE` über `lower(spalte)`, nicht
+   über die Spalte. Eine Tabellen-Constraint kann keine Ausdrücke listen,
+   deshalb ist es ein `CREATE UNIQUE INDEX` — Name und Fehlercode `23505`
+   bleiben gleich.
+
+Der Format-`CHECK` bleibt bewusst weiter gefasst als die Normalform: `CHECK`
+läuft **nach** dem `BEFORE`-Trigger, sonst wäre die Normalisierung
+unerreichbar.
+
+**Folge für Abfragen:** die Belegindizes sind Ausdrucksindizes. Eine Suche
+muss `lower(txid) = lower($1)` lauten, sonst greift der Index nicht.
 
 ### Stimmen
 
