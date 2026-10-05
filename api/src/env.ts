@@ -29,6 +29,18 @@ export interface Env {
    * binden und die es spaeter nicht mehr gibt.
    */
   readonly AUTH_BASE_URL: string;
+  /**
+   * Geheimnis des BTCPay-Webhooks - Pflichtwert fuer den BETRIEB, kein
+   * Standardwert. Ohne ihn koennte jede beliebige Stelle Zahlungen gutschreiben;
+   * ein Standardwert stuende ausserdem in der Versionsverwaltung.
+   *
+   * Warum die Pruefung hier trotzdem NICHT hart ist: dieses Feld wird erst
+   * gebraucht, wenn der Webhook-Endpunkt existiert. Ein Test, der nur
+   * GET /api/ideas prueft, soll nicht an einer Variable scheitern, die er nicht
+   * benutzt. Verbindlich ist der Wert in src/server.ts: der START bricht ohne ihn
+   * ab (Phase 3.3, ADR-003) - siehe missingWebhookSecretMessage().
+   */
+  readonly BTCPAY_WEBHOOK_SECRET: string;
   /** Port der HTTP-Schnittstelle. Standard: 3000. */
   readonly PORT: number;
   /** Adresse, auf der gelauscht wird. Standard: 127.0.0.1 (nicht oeffentlich). */
@@ -120,6 +132,11 @@ export function loadEnv(source: EnvSource = process.env): Env {
     }
   }
 
+  // BTCPAY_WEBHOOK_SECRET: siehe die Anmerkung am Feld. Hier wird nur gelesen und
+  // getrimmt - die Pflichtpruefung steht in src/server.ts, damit ein Testlauf,
+  // der den Webhook gar nicht anfasst, nicht an diesem Wert scheitert.
+  const btcpayWebhookSecret = (source.BTCPAY_WEBHOOK_SECRET ?? '').trim();
+
   const rawPort = (source.PORT ?? '').trim();
   let port = DEFAULT_PORT;
   if (rawPort !== '') {
@@ -155,6 +172,7 @@ export function loadEnv(source: EnvSource = process.env): Env {
     DATABASE_URL: databaseUrl,
     SESSION_SECRET: sessionSecret,
     AUTH_BASE_URL: normalizeAuthBaseUrl(authBaseUrl),
+    BTCPAY_WEBHOOK_SECRET: btcpayWebhookSecret,
     PORT: port,
     HOST: host,
     NODE_ENV: nodeEnv,

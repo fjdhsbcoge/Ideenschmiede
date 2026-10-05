@@ -1,0 +1,6 @@
+{
+  "name": "ideenschmiede-api-verifikation",
+  "private": true,
+  "type": "module",
+  "description": "Verifikationsskripte (nicht Teil der Testsuite). Eigene package.json nur wegen type=module - ohne sie waere eine .mjs-Datei unterhalb von api/ nicht als ES-Modul ladbar."
+}

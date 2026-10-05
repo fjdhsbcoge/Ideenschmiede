@@ -23,6 +23,10 @@ export default defineConfig({
     env: {
       SESSION_SECRET: 'test-secret-nur-fuer-den-testlauf-32-zeichen-lang',
       AUTH_BASE_URL: 'https://auth.test.invalid',
+      // Geheimnis des BTCPay-Webhooks. Wie oben ein ausdruecklicher TESTWERT, kein
+      // Geheimnis. Die Tests signieren ihre Koerper selbst mit genau diesem Wert;
+      // die Signaturpruefung laeuft also wirklich und nicht abgeschaltet.
+      BTCPAY_WEBHOOK_SECRET: 'test-btcpay-webhook-secret-nur-fuer-den-testlauf',
     },
   },
 });

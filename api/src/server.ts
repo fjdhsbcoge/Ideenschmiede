@@ -6,6 +6,7 @@ import { serve } from '@hono/node-server';
 import { createApp } from './app.js';
 import { closeDb, dbVersion, getDb, pingDb } from './db.js';
 import { type Env, loadEnv, redactDatabaseUrl } from './env.js';
+import { missingWebhookSecretMessage, WEBHOOK_SECRET_ENV } from './subscriptions.js';
 import { API_VERSION } from './version.js';
 
 function loadEnvOrExit(): Env {
@@ -17,7 +18,28 @@ function loadEnvOrExit(): Env {
   }
 }
 
+/**
+ * Ohne BTCPAY_WEBHOOK_SECRET wird der Webhook nicht geprueft - jede beliebige
+ * Stelle koennte dann Zahlungen gutschreiben und damit Stimmrecht verleihen
+ * (ADR-003). Deshalb ist der Wert beim START Pflicht, genau wie SESSION_SECRET:
+ * es gibt keinen stillen Rueckfall auf einen Standardwert, sondern eine Meldung
+ * und Exit-Code 1.
+ *
+ * Warum das nicht in loadEnv() steht: die uebrigen Pruefungen dort gelten fuer
+ * jede Art von Start, diese gilt fuer den Betrieb. Ein Testlauf, der den Webhook
+ * nicht anfasst, soll nicht an einem Geheimnis scheitern, das er nicht benutzt.
+ */
+function requireWebhookSecret(value: string): string {
+  if (value === '') {
+    const nachricht = missingWebhookSecretMessage();
+    console.error(nachricht);
+    process.exit(1);
+  }
+  return value;
+}
+
 const env = loadEnvOrExit();
+requireWebhookSecret(env.BTCPAY_WEBHOOK_SECRET);
 const db = getDb();
 const app = createApp(db);
 
@@ -35,7 +57,11 @@ try {
 }
 
 const server = serve({ fetch: app.fetch, port: env.PORT, hostname: env.HOST }, (info) => {
-  console.log(`[api] Ideenschmiede-API ${API_VERSION} hoert auf http://${env.HOST}:${info.port} (NODE_ENV=${env.NODE_ENV})`);
+  // Nur der NAME der Variable, nie der Wert: ein Geheimnis gehoert nicht ins
+  // Protokoll.
+  console.log(
+    `[api] Ideenschmiede-API ${API_VERSION} hoert auf http://${env.HOST}:${info.port} (NODE_ENV=${env.NODE_ENV}, ${WEBHOOK_SECRET_ENV} gesetzt)`,
+  );
 });
 
 server.on('error', (error: NodeJS.ErrnoException) => {

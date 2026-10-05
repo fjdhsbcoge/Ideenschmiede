@@ -50,6 +50,17 @@ import {
 } from './auth.js';
 import { findUserById, toPublicUser, type UserRecord } from './authStore.js';
 import { getDb, pingDb } from './db.js';
+import {
+  BTCPAY_SIGNATURE_HEADER,
+  INTENT_TTL_MS,
+  WebhookError,
+  WEBHOOK_ERRORS,
+  findOrCreateIntent,
+  processWebhook,
+  readRawBody,
+  webhookResponse,
+  webhookSecretFromEnv,
+} from './subscriptions.js';
 import { API_VERSION } from './version.js';
 
 /** Paginierung: Grenzen, nicht Wunschwerte. */
@@ -59,7 +70,7 @@ export const MAX_LIMIT = 100;
 export const MAX_OFFSET = 1_000_000;
 
 interface AppEnv {
-  Variables: { db: Sql; auth: AuthConfig };
+  Variables: { db: Sql; auth: AuthConfig; webhookSecret: string };
 }
 
 /**
@@ -267,6 +278,18 @@ export interface CreateAppOptions {
    * src/server.ts).
    */
   auth?: AuthConfig;
+  /**
+   * Geheimnis des BTCPay-Webhooks (BTCPAY_WEBHOOK_SECRET). Ohne Angabe aus der
+   * Umgebung.
+   *
+   * Anders als SESSION_SECRET und AUTH_BASE_URL bricht createApp hier NICHT ab,
+   * wenn der Wert fehlt: der Start der API (src/server.ts) prueft ihn und endet
+   * mit Klartextmeldung, aber eine Testdatei, die nur /api/ideas prueft, soll
+   * nicht an einem Geheimnis scheitern, das sie nicht benutzt. Der Webhook
+   * antwortet ohne Geheimnis mit 401 und verarbeitet nichts - es gibt keinen
+   * Zustand, in dem er ungeprueft durchlaesst.
+   */
+  webhookSecret?: string;
 }
 
 export function createApp(db: Sql = getDb(), options: CreateAppOptions = {}): Hono<AppEnv> {
@@ -275,11 +298,13 @@ export function createApp(db: Sql = getDb(), options: CreateAppOptions = {}): Ho
   // AUTH_BASE_URL wuerde alle Nutzer an eine fremde Domain binden. Fehlt einer
   // der Werte, bricht der Start mit Klartext ab - genau wie bei DATABASE_URL.
   const auth = options.auth ?? authConfigFromEnv();
+  const webhookSecret = options.webhookSecret ?? webhookSecretFromEnv();
   const app = new Hono<AppEnv>();
 
   app.use('*', async (c, next) => {
     c.set('db', db);
     c.set('auth', auth);
+    c.set('webhookSecret', webhookSecret);
     await next();
   });
 
@@ -465,6 +490,113 @@ export function createApp(db: Sql = getDb(), options: CreateAppOptions = {}): Ho
       return authFailure(c, 401, AUTH_ERROR_REASONS.unauthorized);
     }
     return c.json({ user: toPublicUser(nutzer) });
+  });
+
+  // ---------------------------------------------------------------------------
+  // POST /api/subscriptions/intent  (Roadmap Phase 3.3)
+  // ---------------------------------------------------------------------------
+  // Erfordert eine Sitzung (Cookie oder Bearer) - der EIGENTUEMER der Absicht
+  // steht damit fest. Legt die Absicht an und liefert die Nutzlast, die der
+  // Client beim Anlegen der Rechnung bei BTCPay mitgibt: userId und intentId.
+  //
+  // Das Anlegen der Rechnung selbst gehoert NICHT hierher: dafuer braucht es den
+  // BTCPay-API-Schluessel des Betreibers, und die Rechnung ist ein Vorgang bei
+  // einem fremden System. Diese API kennt nur die Absicht und ihre Kennung.
+  //
+  // Wer schon ein AKTIVES Abonnement hat, bekommt 409 statt einer zweiten
+  // Absicht: subscriptions_one_active_per_user laesst ohnehin nur eines zu, und
+  // eine Absicht, die bei der Gutschrift zwangslaeufig scheitern muss, waere eine
+  // Falle. Wer bereits bezahlt hat, soll verlaengern - das ist ein eigener
+  // Vorgang und nicht Teil dieses Auftrags.
+  app.post('/api/subscriptions/intent', async (c) => {
+    const nutzer = await currentUser(c);
+    if (nutzer === null) {
+      return authFailure(c, 401, AUTH_ERROR_REASONS.unauthorized);
+    }
+
+    const vorhanden = await c.get('db')<{ id: string }[]>`
+        SELECT id FROM subscriptions
+         WHERE user_id = ${nutzer.id} AND active AND expires_at > now()
+         LIMIT 1
+    `;
+    if (vorhanden.length > 0) {
+      return c.json(
+        {
+          error: {
+            code: 'subscription_active',
+            message: 'Es besteht bereits ein aktives Abonnement. Eine Verlaengerung ist ein eigener Vorgang.',
+          },
+        },
+        409,
+      );
+    }
+
+    const absicht = await findOrCreateIntent(c.get('db'), nutzer.id, new Date(), INTENT_TTL_MS);
+
+    // Zeitstempel als ISO-8601 mit Z - dieselbe Zeitform wie jeder andere
+    // Zeitstempel dieser API (toJsonSafe).
+    return c.json({
+      intentId: absicht.id,
+      invoiceId: absicht.invoiceId,
+      status: absicht.status,
+      expiresAt: absicht.expiresAt.toISOString(),
+      metadata: absicht.metadata,
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // POST /api/webhooks/btcpay  (Roadmap Phase 3.3)
+  // ---------------------------------------------------------------------------
+  // OEFFENTLICH - ohne Sitzung. Die einzige Berechtigung ist die Signatur.
+  //
+  // Der Ablauf steht vollstaendig in src/subscriptions.ts (processWebhook); hier
+  // steht nur die Verdrahtung. Zwei Dinge sind trotzdem wichtig genug, um sie
+  // hier zu wiederholen:
+  //
+  //   * Der Koerper wird EINMAL ROH gelesen und dieselben Bytes werden geprueft
+  //     UND ausgewertet. Ein zweites Lesen gibt es nicht - readRawBody ist der
+  //     einzige Zugriff auf c.req.raw, und processWebhook bekommt genau dieses
+  //     Buffer. Damit kann die Signatur nicht ueber andere Bytes laufen als die,
+  //     die ausgewertet werden.
+  //   * Jede Antwort ausser 2xx laesst BTCPay die Zustellung wiederholen. Deshalb
+  //     ist 'kenne ich nicht' ein 200 mit Vermerk und kein 404 - und deshalb
+  //     endet auch ein Fehler IN der Verarbeitung nicht in einem 500: die
+  //     Zustellung wurde verstanden, sie hat nur nichts gebucht.
+  app.post('/api/webhooks/btcpay', async (c) => {
+    const roh = await readRawBody(c.req.raw);
+    if (roh === null) {
+      return c.json(
+        { status: 'ERROR', error: { code: 'invalid_body', message: WEBHOOK_ERRORS.malformedBody } },
+        400,
+      );
+    }
+
+    // Gross-/Kleinschreibung des Kopfnamens ist Sache des HTTP-Stapels; Hono
+    // liest Kopfzeilen ohne Beachtung der Schreibweise. Ein fehlender Kopf kommt
+    // als undefined an und wird wie eine falsche Signatur behandelt.
+    const signatur = c.req.header(BTCPAY_SIGNATURE_HEADER);
+
+    try {
+      const ergebnis = await processWebhook(c.get('db'), c.get('webhookSecret'), roh, signatur);
+      return c.json(webhookResponse(ergebnis), 200);
+    } catch (error) {
+      if (error instanceof WebhookError) {
+        return c.json({ status: 'ERROR', error: { code: error.code, message: error.message } }, error.status);
+      }
+      // Ein unerwarteter Fehler darf NICHT als 5xx nach aussen: BTCPay wuerde
+      // wiederholen, und bei einem Fehler in der Verarbeitung aendert die
+      // Wiederholung nichts. Die Ursache bleibt im Serverprotokoll.
+      console.error('[webhook] Unerwarteter Fehler:', error);
+      return c.json(
+        {
+          status: 'OK',
+          processed: false,
+          result: 'processing_error',
+          error: { code: 'internal_error', message: 'Interner Fehler - die Zustellung wurde nicht verbucht.' },
+        },
+        200,
+      );
+    }
   });
 
   // ---------------------------------------------------------------------------

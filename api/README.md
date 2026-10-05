@@ -1,13 +1,15 @@
 # Ideenschmiede API
 
-Backend für **Roadmap Phase 3.1/3.2** (Hono + PostgreSQL, TypeScript). Die API
-liest Ideen und meldet Nutzer per **LNURL-auth** an — sonst nichts: keine
-Geschäftslogik, kein Schreiben über die API. Das Gerüst belegt die Kette
+Backend für **Roadmap Phase 3.1/3.2/3.3** (Hono + PostgreSQL, TypeScript). Die
+API liest Ideen, meldet Nutzer per **LNURL-auth** an und nimmt den
+**BTCPay-Webhook** entgegen, der bezahlte Abonnements gutschreibt. Das Gerüst
+belegt die Kette
 
     Repository (SQL)  ->  Hono  ->  PostgreSQL
 
 gegen eine echte Datenbank trägt. Verifiziert gegen **PostgreSQL 16.15** mit
-`api/migrations/001_init.sql` **und** `api/migrations/002_auth.sql`.
+`api/migrations/001_init.sql`, `api/migrations/002_auth.sql` **und**
+`api/migrations/003_subscriptions.sql`.
 
 Maßgeblich für die Feldnamen der Datenbank ist `api/CONTRACT.md`; das Schema
 stammt ausschließlich aus den Migrationen. Diese Datei erfindet keine Tabelle
@@ -46,12 +48,16 @@ Skripte.
 | `src/app.ts` | Die Hono-App: `GET /health`, `GET /api/ideas`, die vier LNURL-auth-Endpunkte, 404 und Fehler als JSON |
 | `src/auth.ts` | LNURL-auth: k1 erzeugen, LNURL bauen, DER-Signatur prüfen (secp256k1), Sitzungs-Token (HS256-JWT) |
 | `src/authStore.ts` | Die Datenbankzugriffe dazu — inklusive des bedingten `UPDATE`, das eine k1 verbraucht |
+| `src/subscriptions.ts` | BTCPay-Webhook: HMAC-Prüfung über die **rohen Bytes**, Auswertung des Ereignisses, Idempotenz beim Buchen |
+| `scripts/verify-webhook.mjs` | Verifikationsskript gegen den laufenden Server (nicht Teil der Testsuite) — signiert echte Bytes und stellt dreimal zu |
 | `src/bech32.ts` | bech32 nach BIP-173 (nur Kodieren) — die LNURL für den QR-Code |
 | `src/server.ts` | Startet die App auf `PORT`, prüft die Verbindung einmal und meldet sie |
 | `src/version.ts` | Version aus `package.json` (für `/health`) |
 | `tests/` | Vitest gegen die echte Datenbank |
 | `migrations/001_init.sql` | **Unverändert.** Eingespielt und verifiziert |
-| `migrations/002_auth.sql` | **Neu.** `auth_identities` und `auth_challenges` (Phase 3.2) |
+| `migrations/002_auth.sql` | `auth_identities` und `auth_challenges` (Phase 3.2) |
+| `migrations/003_subscriptions.sql` | **Neu.** `subscription_intents` — die Absicht, die Nutzer und BTCPay-Rechnung verbindet (Phase 3.3) |
+| `tests/subscriptions.test.ts` | **Neu.** 34 Tests zum Webhook (Phase 3.3) |
 | `CONTRACT.md` | **Unverändert.** Kanonischer Datenvertrag |
 
 ## Konfiguration
@@ -63,13 +69,15 @@ Alles über Umgebungsvariablen (oder `api/.env`, siehe `.env.example`):
 | `DATABASE_URL` | **ja** | — | `postgres://benutzer:passwort@host:port/datenbank` |
 | `SESSION_SECRET` | **ja** | — | Geheimnis der Sitzungs-Token (HS256), mindestens 32 Zeichen |
 | `AUTH_BASE_URL` | **ja** | — | Basis-URL dieser Instanz, z. B. `https://auth.ideenschmiede.example` — sie steckt im QR-Code |
+| `BTCPAY_WEBHOOK_SECRET` | **ja** (für den Start) | — | Geheimnis, mit dem BTCPay den Webhook signiert (Kopf `BTCPay-Sig`) |
 | `PORT` | nein | `3000` | Port der HTTP-Schnittstelle (1..65535) |
 | `HOST` | nein | `127.0.0.1` | Lauschadresse; im Container `0.0.0.0` |
 | `NODE_ENV` | nein | `development` | `development`, `test`, `production` |
 
-`DATABASE_URL`, `SESSION_SECRET` und `AUTH_BASE_URL` haben bewusst **keinen**
-Standardwert. Fehlt einer, endet der Start mit Exit-Code 1 und einer Meldung,
-die jeden Mangel einzeln benennt:
+`DATABASE_URL`, `SESSION_SECRET`, `AUTH_BASE_URL` und (für den Betrieb)
+`BTCPAY_WEBHOOK_SECRET` haben bewusst **keinen** Standardwert. Fehlt einer,
+endet der Start mit Exit-Code 1 und einer Meldung, die jeden Mangel einzeln
+benennt:
 
     Ungueltige Konfiguration - die API startet nicht:
       - DATABASE_URL fehlt (Pflichtwert ohne Standardwert), z.B. postgres://benutzer:passwort@localhost:5432/ideenschmiede
@@ -87,18 +95,21 @@ docker run -d --name ide-api-pg -e POSTGRES_PASSWORD=test \
 docker exec ide-api-pg pg_isready -U postgres
 
 # Migrationen einspielen (bricht beim ersten echten Fehler ab)
-# Reihenfolge: 001, dann 002. 002 setzt users voraus.
+# Reihenfolge: 001, dann 002, dann 003. Jede setzt die vorige voraus.
 docker cp api/migrations/001_init.sql ide-api-pg:/tmp/001.sql
 docker cp api/migrations/002_auth.sql ide-api-pg:/tmp/002.sql
+docker cp api/migrations/003_subscriptions.sql ide-api-pg:/tmp/003.sql
 docker exec ide-api-pg psql -U postgres -d ideenschmiede -v ON_ERROR_STOP=1 -f /tmp/001.sql
 docker exec ide-api-pg psql -U postgres -d ideenschmiede -v ON_ERROR_STOP=1 -f /tmp/002.sql
+docker exec ide-api-pg psql -U postgres -d ideenschmiede -v ON_ERROR_STOP=1 -f /tmp/003.sql
 ```
 
 `001_init.sql` legt 9 Tabellen und 4 Views an (`idea_discussion`,
 `idea_marketplace`, `idea_investor_shares`, `team_investor_shares`).
-`002_auth.sql` legt 2 Tabellen an (`auth_identities`, `auth_challenges`) und
-fasst `001_init.sql` **nicht** an — sie ist eingespielt und verifiziert. Die
-zweite Migration ist einzeln einspielbar und läuft nach der ersten.
+`002_auth.sql` legt 2 Tabellen an (`auth_identities`, `auth_challenges`),
+`003_subscriptions.sql` eine (`subscription_intents`). Keine der neueren
+Migrationen fasst `001_init.sql` an — sie ist eingespielt und verifiziert; jede
+ist einzeln einspielbar und läuft nach der vorigen.
 
 Testdaten von Hand — die `CHECK`-Constraints sind zu beachten
 (`username` entspricht `^[a-z0-9_]{3,30}$`, `title` 3..200 Zeichen,
@@ -169,11 +180,12 @@ selbst — es sind ausdrücklich Testwerte, kein Geheimnis.
 
 Ergebnis des geprüften Laufs (gegen PostgreSQL 16.15 im Container):
 
+    ✓ tests/subscriptions.test.ts (34 tests)
     ✓ tests/auth.test.ts (36 tests)
     ✓ tests/ideas.test.ts (23 tests)
     ✓ tests/health.test.ts (3 tests)
-    Test Files  3 passed (3)
-         Tests  62 passed (62)
+    Test Files  4 passed (4)
+         Tests  96 passed (96)
 
 Geprüft wird unter anderem:
 
@@ -214,6 +226,35 @@ Geprüft wird unter anderem:
   mit Prüfsumme) und muss genau die Callback-URL aus `AUTH_BASE_URL` tragen;
   fehlendes oder zu kurzes `SESSION_SECRET` und fehlende bzw. relative
   `AUTH_BASE_URL` brechen ab — auch beim Start der App.
+* **BTCPay-Webhook** (34 Tests): eine Absicht wird über die Route angelegt (ohne
+  Sitzung `401`); ein zweiter Aufruf liefert **dieselbe** Absicht; mit aktivem
+  Abonnement `409`. Die Signatur wird über die **rohen Bytes** geprüft: eine
+  gültige Zustellung bucht, eine gefälschte Signatur ergibt `401` **ohne jede
+  Buchung**, ein fehlender Kopf ebenso, ein anderes Geheimnis ebenso, und ein
+  Rumpf, dessen Signatur über eine **andere Serialisierung** desselben Inhalts
+  gebildet wurde, ebenfalls `401` — dieselben Bytes signiert und gesendet werden
+  angenommen. DIESELBE Zustellung zweimal: `subscriptions` bleibt bei **1** Zeile
+  und die Frist verschiebt sich nicht; `is_redelivery: true` bucht nichts
+  doppelt, und eine **erste** Zustellung mit `is_redelivery: true` wird trotzdem
+  verbucht (das Feld ist ein Hinweis, keine Absicherung). Eine zweite Rechnung mit
+  derselben `txid` ergibt `duplicate_payment`, keine zweite Zeile und eine
+  **offen** gebliebene Absicht (der Rollback nimmt den Statuswechsel mit). Zwei
+  **gleichzeitige** Zustellungen ergeben genau eine Gutschrift. Alle übrigen
+  Ereignistypen (`InvoiceCreated`, `InvoiceReceivedPayment`, `InvoiceProcessing`,
+  `InvoiceExpired`, `InvoicePaymentSettled`, `InvoiceInvalid`) ergeben `200` ohne
+  Buchung, eine unbekannte `invoice_id` `200` mit `unknown_invoice` (**nicht**
+  `404`), eine abgelaufene Absicht `expired_intent`, ein kaputter Rumpf mit
+  gültiger Signatur `400`. `InvoiceExpired` und `InvoiceInvalid` buchen nichts,
+  schließen die Absicht aber (`status` = `expired`/`invalid`, `closedIntent: true`) —
+  eine danach eintreffende Zahlung auf dieselbe Rechnung ergibt
+  `intent_not_open` und **kein** Abonnement. `manually_marked: true` wird als
+  `manuallyMarked` **gemeldet** und ändert an der Buchung nichts. Nach der Gutschrift
+  steht `role` auf `subscriber`;
+  läuft das Abonnement ab, fällt sie auf `user` **und eine Stimme wird von der
+  Datenbank abgewiesen** (ADR-003). Fehlt `BTCPAY_WEBHOOK_SECRET`, bricht der
+  Start mit Exit-Code 1 ab; mit gesetztem Wert kommt er über die Prüfung hinaus
+  (belegt über einen Kindprozess, der auf einem belegten Port läuft und
+  `EADDRINUSE` meldet).
 
 Die Tests legen ihre Zeilen selbst an und räumen sie wieder ab; sie schreiben
 nichts über die API, sondern per SQL.
@@ -571,6 +612,168 @@ Logzeile wäre ein Zugangsschlüssel in einer Logzeile. Eine Ratenbegrenzung fü
 Proxy), nicht in diese Anwendung; unbegrenzt erzeugte Herausforderungen wachsen
 sonst in `auth_challenges`.
 
+### Abonnement und BTCPay-Webhook (Roadmap Phase 3.3)
+
+Zwei Endpunkte, die zusammengehören: der eine sagt **wer** zahlen will, der
+andere erfährt **dass** gezahlt wurde. Dazwischen liegt eine Rechnung bei BTCPay
+Server, die **nicht** diese API anlegt (dafür braucht es den API-Schlüssel des
+Betreibers).
+
+Der Ablauf:
+
+1. Der Client ruft `POST /api/subscriptions/intent` mit seiner Sitzung auf. Die
+   API legt eine **Absicht** an: sie kennt den **Nutzer**. Antwort: `intentId`,
+   `invoiceId`, `expiresAt` und die `metadata`.
+2. Der Client legt bei BTCPay Server eine Rechnung an und gibt `metadata` als
+   Nutzlast mit (`userId` und `intentId`). BTCPay liefert diese Nutzlast später
+   unverändert im Webhook zurück — sie ist der zweite Weg zur Absicht, falls die
+   `invoice_id` einmal nicht ausreicht.
+3. Der Nutzer zahlt. BTCPay stellt zu.
+4. `POST /api/webhooks/btcpay` prüft die Signatur, findet über `invoice_id` die
+   Absicht und verbucht: eine Zeile in `subscriptions`, Status der Absicht auf
+   `settled`.
+5. Die Rolle ergibt sich daraus **in der Datenbank**:
+   `subscriptions_sync_user_role_trg` setzt `users.role = 'subscriber'`. Die
+   Anwendung setzt sie **nicht** — sie wäre sonst eine zweite Wahrheit neben dem
+   Abonnement (ADR-003).
+
+Warum die Absicht eine eigene Tabelle ist: eine Rechnung bei BTCPay kennt
+**keinen Nutzer**, und `subscriptions` verlangt schon beim `INSERT` ein
+`expires_at`, das niemand kennt, solange nicht bezahlt ist. Ohne die Absicht
+könnte der Webhook die Gutschrift niemandem zuordnen.
+
+#### `POST /api/subscriptions/intent`
+
+Erfordert eine Sitzung (Cookie oder `Authorization: Bearer <token>`); ohne sie
+`401`. Rumpf: keiner.
+
+```
+$ curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+    http://127.0.0.1:3000/api/subscriptions/intent
+{"intentId":"30111aa9-31d1-4ecf-ad80-bc096154d389",
+ "invoiceId":"416f68d4-a29a-4e8c-b2e3-f9b85f19ad54",
+ "status":"open",
+ "expiresAt":"2026-10-06T21:24:27.189Z",
+ "metadata":{"userId":"3995c085-3840-4ebb-bd41-924412fd1b8c",
+             "intentId":"30111aa9-31d1-4ecf-ad80-bc096154d389"}}
+```
+
+`invoiceId` wird **hier** vergeben und ist die Kennung, unter der die Rechnung
+bei BTCPay anzulegen ist — nicht umgekehrt. Nur so existiert die Zuordnung
+schon, bevor die Rechnung existiert.
+
+Eine offene Absicht wird **wiederverwendet**: solange sie offen und innerhalb
+der Frist ist, liefert ein zweiter Aufruf dieselbe `intentId` und dieselbe
+`invoiceId`. Die Nutzlast steckt bereits in einer Rechnung bei BTCPay und ist
+dort unveränderlich; eine zweite Absicht wäre eine Absicht, die niemand mehr
+bedient. Die Frist beträgt 24 Stunden (`INTENT_TTL_MS`).
+
+Besteht bereits ein **aktives** Abonnement, antwortet der Endpunkt `409`
+(`subscription_active`) statt einer zweiten Absicht: `subscriptions_one_active_per_user`
+lässt ohnehin nur eines zu, und eine Absicht, die bei der Gutschrift
+zwangsläufig scheitern müsste, wäre eine Falle.
+
+#### `POST /api/webhooks/btcpay`
+
+**Öffentlich — ohne Sitzung.** Die einzige Berechtigung ist die Signatur.
+Rumpf: das JSON von BTCPay, unverändert. Antwort immer `200`, außer bei
+ungültiger Signatur (`401`) oder unlesbarem JSON (`400`).
+
+```
+{"status":"OK","processed":true,"result":"settled",
+ "event":"InvoiceSettled",
+ "invoiceId":"416f68d4-a29a-4e8c-b2e3-f9b85f19ad54",
+ "intentId":"30111aa9-31d1-4ecf-ad80-bc096154d389",
+ "userId":"3995c085-3840-4ebb-bd41-924412fd1b8c",
+ "subscriptionId":"1aa2bbc2-6a36-49da-8f9a-e64f73e9ef20",
+ "isRedelivery":false,
+ "manuallyMarked":false,
+ "closedIntent":false}
+```
+
+`processed: true` heißt: **diese** Zustellung hat ein Abonnement gebucht.
+`processed: false` heißt: verstanden und bestätigt, aber nichts gebucht — der
+Grund steht in `result`. `closedIntent` trennt zusätzlich „nichts gebucht“ von
+„nichts gebucht, und der Vorgang ist beendet“: nur `InvoiceExpired` und
+`InvoiceInvalid` setzen es auf `true`. `manuallyMarked` spiegelt das Feld
+`manually_marked` der Zustellung — es **meldet** nur, wie die Zahlung festgestellt
+wurde, und entscheidet nichts (siehe Punkt 26).
+
+| Fall | HTTP | `result` | Wirkung |
+|---|---|---|---|
+| `InvoiceSettled`, Absicht offen, Zahlung mit txid | 200 | `settled` | Abonnement angelegt, Absicht `settled`, `role` = `subscriber` |
+| dieselbe Zustellung ein zweites Mal | 200 | `already_settled` / `intent_not_open` | **nichts** — die Absicht ist nicht mehr offen |
+| dieselbe **txid** an einer zweiten Rechnung | 200 | `duplicate_payment` | **nichts** — der Beleg hängt schon an einem Abonnement |
+| anderes `_type` (`InvoiceCreated`, `InvoiceProcessing`, …) | 200 | `ignored_event` | nichts; bestätigt, damit BTCPay nicht wiederholt |
+| `InvoiceExpired` / `InvoiceInvalid` | 200 | `ignored_event`, `closedIntent: true` | **nichts gebucht**; die Absicht wird `expired` bzw. `invalid` — eine verspätete Zahlung auf dieselbe Rechnung begründet danach kein Abonnement mehr |
+| `invoice_id` unbekannt | 200 | `unknown_invoice` | nichts — **kein 404**, sonst wiederholt BTCPay endlos |
+| Absicht abgelaufen (`expires_at` überschritten, Status noch `open`) | 200 | `expired_intent` | nichts; die Absicht bleibt `open` — ihre Frist und der Ablauf der **Rechnung** sind zwei verschiedene Dinge, und den Rechnungszustand meldet BTCPay selbst (`InvoiceExpired`) |
+| `InvoiceSettled` ohne verwertbare txid | 200 | `no_payment_txid` | nichts (siehe Punkt 24) |
+| Signatur falsch oder fehlend | 401 | — | nichts wird ausgewertet |
+| Rumpf kein JSON | 400 | — | nichts |
+
+#### Das Signaturverfahren: die HMAC läuft über die ROHEN BYTES
+
+```
+roh      = der UNVERÄNDERTE Request-Body als Bytes
+erwartet = hex(hmac_sha256(BTCPAY_WEBHOOK_SECRET, roh))
+gesendet = Kopf "BTCPay-Sig"   (Groß-/Kleinschreibung egal)
+```
+
+Verglichen wird zeitkonstant (`timingSafeEqual`); vorher die Länge, weil
+`timingSafeEqual` bei ungleicher Länge wirft — das wäre ein `500` statt eines
+`401`.
+
+**Warum roh und nicht „das Objekt“:** Wer den Rumpf parst und wieder
+serialisiert, rechnet über **andere Bytes**. Ein Leerzeichen, das der
+Serialisierer anders setzt, oder eine andere Schlüsselreihenfolge ergibt eine
+andere Signatur — die Prüfung schlüge fehl, obwohl die Zustellung echt ist.
+Schlimmer als ein Fehlschlag wäre die Umkehrung: würde über die neu erzeugten
+Bytes geprüft, wäre die Signatur an **diese** Bytes gebunden und nicht mehr an
+das, was BTCPay tatsächlich gesendet hat.
+
+Die Referenzimplementierung von BTCPay macht es genauso: sie liest
+`file_get_contents('php://input')` und rechnet
+`hash_hmac('sha256', $raw_post_data, $secret)` — roh, ungeparst.
+
+Umgesetzt ist das an genau zwei Stellen: `readRawBody()` liest
+`c.req.raw.arrayBuffer()` **einmal**, und `processWebhook()` bekommt genau
+dieses `Buffer` — dasselbe Buffer wird signiert-geprüft **und** mit
+`JSON.parse` ausgewertet. Es gibt keinen zweiten Weg in die Verarbeitung, der
+einen bereits geparsten Rumpf entgegennimmt.
+
+#### Idempotenz in drei Schichten
+
+BTCPay stellt planmäßig erneut zu (Timeout, nicht-2xx-Antwort, Neustart des
+Empfängers). Eine Wiederholung darf **nichts** doppelt buchen. Drei Schichten,
+jede mit einer anderen Schwäche — deshalb alle drei:
+
+| # | Schicht | Wo | Was sie auffängt | Schwäche |
+|---|---|---|---|---|
+| 1 | `is_redelivery` im Payload | Anwendung | nichts — sie **meldet** nur | Das Feld kann fehlen; eine Zusage, die davon abhängt, ist keine |
+| 2 | `UNIQUE (lower(payment_txid)) WHERE payment_txid IS NOT NULL` | Schema (001) | dieselbe Bitcoin-Transaktion an einer **zweiten** Rechnung oder nach einem zurückgesetzten Status | greift nicht, wenn die zweite Zustellung eine andere txid trüge (tut sie nicht — es ist dieselbe Zahlung) |
+| 3 | Status der Absicht: `open` → `settled`, bedingt im `UPDATE` | Schema + Anwendung | die Wiederholung derselben Zustellung, auch gleichzeitig | hilft nicht, wenn die Absicht manuell zurückgesetzt würde |
+
+Schicht 3 ist die schnelle: das `UPDATE ... WHERE status = 'open' RETURNING`
+entscheidet in der Datenbank, wer von zwei gleichzeitigen Zustellungen gewinnt —
+dieselbe Haltung wie beim Verbrauch der `k1`. Wer keine Zeile zurückbekommt,
+hat nicht gebucht und legt auch kein Abonnement an. Schicht 2 ist die
+härtere: sie hält auch dann, wenn die Anwendungslogik falsch ist.
+
+Schicht 1 wird **nicht** ausgewertet. Der Webhook verarbeitet eine Zustellung
+mit `is_redelivery: true` genauso wie eine erste — eine echte Zahlung, die der
+Absender als Wiederholung markiert, darf nicht liegen bleiben. Umgekehrt wird
+eine Zustellung ohne das Feld nicht durchgelassen, sondern durch Schicht 3
+aufgehalten.
+
+#### Die Rolle setzt die Anwendung nicht
+
+`users.role` ist laut `CONTRACT.md` die **Ableitung** von „hat ein aktives
+Abonnement“. Zwei Trigger halten das: `subscriptions_sync_user_role_trg`
+(reagiert auf `subscriptions`) und `users_derive_role_trg` (korrigiert `role`
+bei **jedem** Schreibvorgang auf `users`). Der Webhook schreibt nur nach
+`subscriptions` — und genau deshalb genügt das.
+
 ## Entscheidungen und offene Punkte
 
 1. **camelCase und verschachtelt — der offene Punkt ist entschieden und
@@ -717,11 +920,72 @@ sonst in `auth_challenges`.
     PostgreSQL“ — mit Signatur aus `@noble/curves` und der Wiederholung
     desselben Aufrufs als Replay-Nachweis.
 
+24. **`subscription_intents` ist eine eigene Tabelle — und `invoice_id` wird
+    über die Spalte eindeutig, nicht über `lower(invoice_id)`.** Die
+    Vertragsregel „Eindeutigkeit über `lower(...)`“ gilt für **Belegspalten**
+    (`payment_txid`, `txid`), also für Transaktionskennungen, bei denen derselbe
+    Wert in zwei Schreibweisen auftreten kann. Eine **Rechnungsnummer** ist etwas
+    anderes: sie wird von BTCPay vergeben und **unverändert** zurückgeliefert; sie
+    ist keine Transaktionskennung, und zwei Schreibweisen wären zwei Rechnungen.
+    Deshalb `invoice_id text NOT NULL` mit `UNIQUE` **über die Spalte** und der
+    Lookup `WHERE invoice_id = $1` — dieselbe Begründung, die im Abschnitt
+    „Belege“ für die Ausdrucksindizes die **Ausnahme** beschreibt. *Diese
+    Auslegung ist hier festgehalten, weil sie eine Abweichung von der
+    lowercase-Regel ist.*
+25. **`InvoiceSettled` ohne verwertbare Transaktionskennung bucht nicht.**
+    Antwort `200` mit `result: no_payment_txid`. Begründung:
+    `subscriptions.payment_txid` ist der **Beleg**; eine Zeile ohne Beleg wäre
+    ein Stimmrecht ohne Deckung — dieselbe Haltung wie bei den Ledgern, in denen
+    eine Buchung ohne `txid` gar nicht möglich ist. **Offener Punkt, gemeldet
+    und nicht entschieden:** eine **Lightning**-Zahlung trägt keine on-chain-txid,
+    sondern einen Payment Hash. Ob der als Beleg gelten soll (er ist ebenfalls 64
+    Hexzeichen), ist eine Frage an den Auftraggeber — dieser Schritt legt es
+    **nicht** stillschweigend fest. Heute gilt: nur auf-chain-Zahlungen mit
+    `transactionId` werden verbucht.
+26. **`manually_marked` aus `InvoiceSettled` ändert die Buchung nicht.** Das
+    Feld wird gelesen und als `manuallyMarked` im Antwortkörper zurückgemeldet
+    (`webhookResponse()`), aber ein von Hand als bezahlt markiertes Invoice wird
+    wie ein regulär bezahltes verbucht. *Diese Auslegung ist eine Entscheidung und keine
+    Selbstverständlichkeit:* die Alternative wäre, `manually_marked` als
+    Unsicherheitsmerkmal zu behandeln und **nicht** zu buchen — dann bekäme ein
+    zahlender Nutzer sein Abonnement nicht, und ein `200` ohne Buchung ließe
+    BTCPay nicht wiederholen. **Zur Kenntnis und zum Entscheid.**
+27. **Der Intent-Endpunkt antwortet mit `409`, wenn bereits ein aktives
+    Abonnement besteht.** Der Auftragstext sagt das nicht ausdrücklich; die
+    Begründung steht oben. Eine **Verlängerung** (zweite Zahlung auf ein
+    bestehendes Abo) ist damit ausdrücklich **nicht** Teil dieses Schritts —
+    `subscriptions_one_active_per_user` ließe sie nur über `active = false` der
+    alten Zeile zu. **Offener Punkt, gemeldet.**
+28. **`BTCPAY_WEBHOOK_SECRET` ist ein Pflichtwert — aber erst beim Start.**
+    `loadEnv()` liest den Wert nur; die verbindliche Prüfung steht in
+    `src/server.ts`, und ohne ihn endet der Start mit Exit-Code 1. Warum nicht
+    in `loadEnv()`: dort gelten die Prüfungen für **jede** Art von Start, diese
+    gilt für den **Betrieb**. Ein Testlauf, der den Webhook nicht anfasst, soll
+    nicht an einem Geheimnis scheitern, das er nicht benutzt. Der Endpunkt selbst
+    verarbeitet ohne Geheimnis **nichts** und antwortet `401` (`missing_secret`) —
+    es gibt keinen Zustand, in dem er ungeprüft durchlässt.
+29. **Die Migration 003 ist eigenständig und setzt 001 und 002 voraus.** Sie legt
+    `subscription_intents` an, `CREATE UNIQUE INDEX` wird nicht gebraucht (die
+    Eindeutigkeit von `invoice_id` trägt die `UNIQUE`-Constraint), und
+    `001_init.sql` sowie `002_auth.sql` sind **unverändert**. Eingespielt mit
+    `ON_ERROR_STOP=1` gegen PostgreSQL 16 im Container. Die beiden Status
+    `expired` und `invalid` sind **erreichbar**: `InvoiceExpired` und
+    `InvoiceInvalid` schließen die Absicht über `closeIntent()` — eine
+    Aufzählung, deren Werte niemand schreiben kann, wäre eine Behauptung, und
+    eine Funktion ohne Aufrufer toter Code.
+30. **Der Webhook bucht in EINER Transaktion, und die Rolle setzt die Anwendung
+    nicht.** `settleIntent()` läuft in `db.begin(...)`: erst der bedingte
+    Statuswechsel, dann das Abonnement. Scheitert das `INSERT` am
+    `payment_txid`-Index, macht der Rollback auch den Statuswechsel rückgängig —
+    es bleibt keine halbe Buchung stehen (ein Test hält genau das fest). Ein
+    `UPDATE users SET role = ...` kommt im Webhook **nicht** vor; das ist die
+    Zusage aus ADR-003, und ein zweiter Schreiber wäre eine zweite Wahrheit.
+
 ## Verifikation gegen echtes PostgreSQL
 
-Kein Trockenlauf: `postgres:16-alpine` im Container, `001_init.sql` **und**
-`002_auth.sql` mit `ON_ERROR_STOP=1` eingespielt, Server gestartet und die
-Endpunkte per HTTP abgerufen. Signiert wurde mit `@noble/curves` — dieselbe
+Kein Trockenlauf: `postgres:16-alpine` im Container, `001_init.sql`, `002_auth.sql`
+**und** `003_subscriptions.sql` mit `ON_ERROR_STOP=1` eingespielt, Server gestartet
+und die Endpunkte per HTTP abgerufen. Signiert wurde mit `@noble/curves` — dieselbe
 Bibliothek, die die API zum Prüfen benutzt, aber auf der Wallet-Seite des
 Protokolls. Auszug der echten Ausgaben:
 
@@ -786,5 +1050,111 @@ abgelaufene Herausforderung, `action=login` mit unbekanntem Schlüssel) lässt
 `used_at` auf `NULL` — abgewiesen bleibt abgewiesen, ohne die Herausforderung zu
 verbrennen. Ein Angreifer mit geratenen Signaturen kann fremde Anmeldungen damit
 nicht blockieren.
+
+
+### BTCPay-Webhook, nachgemessen (Phase 3.3)
+
+`001_init.sql`, `002_auth.sql` **und** `003_subscriptions.sql` mit
+`ON_ERROR_STOP=1` in `postgres:16-alpine` eingespielt, Server gestartet, echte
+HTTP-Zustellungen gesendet. Signiert wurde mit `createHmac('sha256', secret)`
+über **genau das Buffer**, das gesendet wurde (`scripts/verify-webhook.mjs`).
+Auszug der echten Ausgaben:
+
+```
+--- POST /api/subscriptions/intent (mit Sitzung)
+HTTP 200
+{"intentId":"30111aa9-31d1-4ecf-ad80-bc096154d389",
+ "invoiceId":"416f68d4-a29a-4e8c-b2e3-f9b85f19ad54",
+ "status":"open",
+ "expiresAt":"2026-10-06T21:24:27.189Z",
+ "metadata":{"userId":"3995c085-…","intentId":"30111aa9-…"}}
+
+--- Die gesendeten Bytes
+705 Byte
+{"delivery_id":"d1df39e0-5033-4470-ac4a-fbd25ddf164f","webhook_id":"verify-webho…
+HMAC-SHA256 über genau diese Bytes:
+73f8db7fc13870ce54dce96a301678c47ed42047f9c741ae8420ea2e7686e597
+
+--- 1. Zustellung (korrekt signiert)
+HTTP 200  {"status":"OK","processed":true,"result":"settled",
+           "event":"InvoiceSettled","invoiceId":"416f68d4-…",
+           "intentId":"30111aa9-…","userId":"3995c085-…",
+           "subscriptionId":"1aa2bbc2-6a36-49da-8f9a-e64f73e9ef20",
+           "isRedelivery":false,"manuallyMarked":false,"closedIntent":false}
+Datenbank danach: subscriptions=1  users.role=subscriber
+
+--- 2. Zustellung (DIESELBEN Bytes, dieselbe Signatur)
+HTTP 200  {"status":"OK","processed":false,"result":"intent_not_open",
+           "subscriptionId":null, …}
+Datenbank danach: subscriptions=1  users.role=subscriber
+
+--- 3. Zustellung (Körper verändert, Signatur der Originalbytes)
+HTTP 401  {"status":"ERROR","error":{"code":"invalid_signature",
+           "message":"Die Signatur des Webhooks ist ungueltig"}}
+Datenbank danach: subscriptions=1  users.role=subscriber
+
+--- Datenbank nach dem Durchlauf
+subscriptions:      type=annual active=true
+                    payment_txid=d6ddd1cdc126c53f93b71f2c12655c8c87a0084c04ed47a4549967b3eb54218f
+                    (= die gesendete txid: true)
+                    started_at=2026-10-05T21:24:27.235Z  expires_at=2027-10-05T21:24:27.235Z
+subscription_intents: status=settled  settled_at gesetzt
+users:              role=subscriber
+
+--- Gegenprobe: InvoiceExpired schließt die Absicht, eine verspätete Zahlung bucht nicht
+ (zweiter Nutzer, zweite Absicht: invoice_id=07c27618-f87a-4225-a728-61bf341914f0)
+HTTP 200  {"status":"OK","processed":false,"result":"ignored_event",
+           "event":"InvoiceExpired","closedIntent":true, …}
+Absicht danach: status=expired
+HTTP 200  {"status":"OK","processed":false,"result":"intent_not_open", …}   (danach InvoiceSettled)
+subscriptions=0  (aus einer abgeschlossenen Absicht entsteht kein Abonnement)
+
+--- Gegenprobe Schicht 2 (Absicht von Hand zurück auf 'open', dieselbe Rechnung erneut)
+HTTP 200  {"status":"OK","processed":false,"result":"duplicate_payment",
+           "isRedelivery":true, …}
+Datenbank danach: subscriptions=1 (unverändert)
+Absicht:          status=open, settled_at NULL  (der Rollback hat den Statuswechsel mitgenommen)
+
+--- Ohne BTCPAY_WEBHOOK_SECRET (Start)
+EXITCODE=1
+Ungueltige Konfiguration - die API startet nicht:
+  - BTCPAY_WEBHOOK_SECRET fehlt (Pflichtwert ohne Standardwert)
+    Ohne dieses Geheimnis laesst sich die Signatur des BTCPay-Webhooks nicht
+    pruefen - jede beliebige Stelle koennte dann Zahlungen gutschreiben und
+    damit Stimmrecht verleihen (ADR-003). Der Wert steht in BTCPay Server
+    unter Store -> Webhooks.
+    Vorlage mit allen Variablen: api/.env.example
+```
+
+**Wie die Rohbyte-Bindung belegt ist** — zwei Beobachtungen, die nur zusammen
+etwas beweisen:
+
+1. **Gleicher Inhalt, andere Serialisierung.** Derselbe Nutzeninhalt wurde
+   einmal kompakt (`JSON.stringify(objekt)`) und einmal eingerückt
+   (`JSON.stringify(objekt, null, 2)`) als Bytes erzeugt. Die beiden Buffer sind
+   nachweislich verschieden, und ihre HMACs sind verschieden. Die Signatur der
+   kompakten Fassung auf die eingerückte Fassung angewendet ergibt `401`;
+   dieselben Bytes signiert und gesendet ergeben `200 settled`. Damit ist
+   ausgeschlossen, dass die Prüfung heimlich über eine neu erzeugte
+   Serialisierung läuft — sie würde in beiden Fällen dieselbe Bytes sehen und
+   beide Male zustimmen.
+2. **Der Kopf zählt, nicht der Inhalt.** Der Lauf oben zeigt denselben
+   `InvoiceSettled`-Inhalt dreimal mit drei Ergebnissen (`200 settled`,
+   `200 intent_not_open`, `401`) — das Ergebnis hängt allein an den Bytes und
+   der Signatur, nicht am Inhalt.
+
+**Wie die Idempotenz belegt ist** — die Zahlen aus der Datenbank, nicht die
+Antwort des Servers:
+
+| Zustellung | Antwort | `subscriptions` (DB) | `users.role` (DB) |
+|---|---|---|---|
+| 1. korrekt signiert | `processed: true` | **1** | `subscriber` |
+| 2. identische Bytes | `processed: false` (`intent_not_open`) | **1** | `subscriber` |
+| 3. Körper verändert | `401` | **1** | `subscriber` |
+| Absicht künstlich auf `open`, dieselbe txid erneut | `processed: false` (`duplicate_payment`) | **1** | `subscriber` |
+
+Die vierte Zeile ist die Gegenprobe zu Schicht 3: der Status war absichtlich
+wieder `open`, die schnelle Schicht griff also **nicht** — und die txid-Schicht
+hielt trotzdem. Genau dafür gibt es beide.
 
 Der Container wurde nach der Prüfung entfernt.
