@@ -341,7 +341,12 @@ CREATE TABLE idea_investments (
 --     Kontos darf keine Zahlungsgeschichte mitnehmen (wie ideas.author_id).
 -- FK-Abdeckung: jede Fremdschluesselspalte ist erste Spalte eines Index.
 -- Der Btree aus UNIQUE (txid) bedient die Belegsuche, keine FK-Pruefung.
-CREATE INDEX idea_investments_idea_id_idx     ON idea_investments (idea_id);
+--
+-- idea_id braucht KEINEN eigenen Einzelindex: der Index unten beginnt mit
+-- idea_id und bedient damit die FK-Pruefung vollstaendig (CONTRACT.md,
+-- Abschnitt Indizes, Leading-Column-Regel). Gleiche Begruendung wie bei
+-- team_investments. Der Index wird ausserdem vom Trigger
+-- idea_investments_sync_counters genutzt, der je Idee aggregiert.
 CREATE INDEX idea_investments_investor_id_idx ON idea_investments (investor_id);
 
 -- Genau die Abfrage, aus der raised_sat, investor_count und die 20/80-
