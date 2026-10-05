@@ -41,6 +41,30 @@ export interface Env {
    * ab (Phase 3.3, ADR-003) - siehe missingWebhookSecretMessage().
    */
   readonly BTCPAY_WEBHOOK_SECRET: string;
+  /**
+   * Ratenbegrenzung des oeffentlichen POST /api/auth/challenge:
+   * erlaubte Aufrufe je Quelle und Fenster. Standard: 30.
+   *
+   * Hier ist ein Standardwert RICHTIG - anders als bei den Pflichtwerten oben.
+   * Eine fehlende Begrenzung waere der gefaehrlichere Zustand (ein Aufrufer
+   * ohne Konto kann die Tabelle unbegrenzt wachsen lassen), deshalb ist der
+   * sichere Wert die Vorgabe und nicht der Abbruch.
+   */
+  readonly AUTH_RATE_LIMIT: number;
+  /** Laenge des gleitenden Fensters in Millisekunden. Standard: 60000 (1 Minute). */
+  readonly AUTH_RATE_WINDOW_MS: number;
+  /**
+   * Adressen von Reverse Proxies, deren X-Forwarded-For geglaubt wird -
+   * kommasepariert, Standard: leer (kein Proxy).
+   *
+   * Warum die Vorgabe leer ist: X-Forwarded-For ist ein gewoehnlicher
+   * HTTP-Kopf und damit von jedem Aufrufer setzbar. Wuerde er immer gelesen,
+   * koennte ein Angreifer mit jeder Anfrage eine andere erfundene Adresse
+   * schicken und die Begrenzung waere wirkungslos. Geglaubt wird der Kopf
+   * deshalb nur, wenn die Verbindung selbst von einem eingetragenen Proxy
+   * kommt.
+   */
+  readonly AUTH_TRUSTED_PROXIES: readonly string[];
   /** Port der HTTP-Schnittstelle. Standard: 3000. */
   readonly PORT: number;
   /** Adresse, auf der gelauscht wird. Standard: 127.0.0.1 (nicht oeffentlich). */
@@ -59,6 +83,22 @@ export const MAX_PORT = 65_535;
  * kryptografische Grenze, sondern eine Untergrenze gegen "geheim" und "test".
  */
 export const MIN_SESSION_SECRET_LENGTH = 32;
+export const DEFAULT_AUTH_RATE_LIMIT = 30;
+/**
+ * Obergrenze der einstellbaren Grenze. Keine Sicherheitsgrenze, sondern ein
+ * Schutz gegen einen Vertipper mit Wirkung: "300000" waere eine Begrenzung,
+ * die nie greift - und damit genau der Zustand, den dieser Schritt behebt.
+ */
+export const MAX_AUTH_RATE_LIMIT = 10_000;
+export const DEFAULT_AUTH_RATE_WINDOW_MS = 60_000;
+/**
+ * Untergrenze des Fensters. Ein Fenster von wenigen Millisekunden waere keine
+ * Begrenzung, sondern eine Bremse mit Zufallsergebnis; darunter ist der Wert
+ * mit Sicherheit ein Vertipper (Sekunden statt Millisekunden).
+ */
+export const MIN_AUTH_RATE_WINDOW_MS = 1_000;
+/** Obergrenze des Fensters: ein Tag. Wer laenger begrenzen will, will sperren - das ist etwas anderes. */
+export const MAX_AUTH_RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 const NODE_ENVS = ['development', 'test', 'production'] as const;
 
@@ -152,6 +192,27 @@ export function loadEnv(source: EnvSource = process.env): Env {
     }
   }
 
+  // Ratenbegrenzung: beide Werte haben einen Standardwert (siehe die Anmerkung
+  // am Feld). Ein unbrauchbarer Wert ist trotzdem ein Fehler und keine stille
+  // Korrektur: "AUTH_RATE_LIMIT= dreissig" soll nicht heimlich 30 bedeuten.
+  const authRateLimit = parsePositiveInteger({
+    raw: (source.AUTH_RATE_LIMIT ?? '').trim(),
+    name: 'AUTH_RATE_LIMIT',
+    fallback: DEFAULT_AUTH_RATE_LIMIT,
+    min: 1,
+    max: MAX_AUTH_RATE_LIMIT,
+    problems,
+  });
+  const authRateWindowMs = parsePositiveInteger({
+    raw: (source.AUTH_RATE_WINDOW_MS ?? '').trim(),
+    name: 'AUTH_RATE_WINDOW_MS',
+    fallback: DEFAULT_AUTH_RATE_WINDOW_MS,
+    min: MIN_AUTH_RATE_WINDOW_MS,
+    max: MAX_AUTH_RATE_WINDOW_MS,
+    problems,
+  });
+  const authTrustedProxies = parseTrustedProxies((source.AUTH_TRUSTED_PROXIES ?? '').trim(), problems);
+
   const host = (source.HOST ?? '').trim() || DEFAULT_HOST;
 
   const rawNodeEnv = (source.NODE_ENV ?? '').trim();
@@ -173,10 +234,89 @@ export function loadEnv(source: EnvSource = process.env): Env {
     SESSION_SECRET: sessionSecret,
     AUTH_BASE_URL: normalizeAuthBaseUrl(authBaseUrl),
     BTCPAY_WEBHOOK_SECRET: btcpayWebhookSecret,
+    AUTH_RATE_LIMIT: authRateLimit,
+    AUTH_RATE_WINDOW_MS: authRateWindowMs,
+    AUTH_TRUSTED_PROXIES: authTrustedProxies,
     PORT: port,
     HOST: host,
     NODE_ENV: nodeEnv,
   };
+}
+
+/**
+ * Eine ganze Zahl aus einer Umgebungsvariablen, mit Standardwert.
+ *
+ * Leer heisst "nicht gesetzt" und ergibt den Standardwert. Ein gesetzter, aber
+ * unbrauchbarer Wert wird GEMELDET und nicht stillschweigend ersetzt - sonst
+ * fiele ein Tippfehler in der Konfiguration nie auf, und das Ergebnis waere
+ * eine Begrenzung, die anders arbeitet als eingestellt.
+ */
+function parsePositiveInteger(args: {
+  readonly raw: string;
+  readonly name: string;
+  readonly fallback: number;
+  readonly min: number;
+  readonly max: number;
+  readonly problems: string[];
+}): number {
+  const { raw, name, fallback, min, max, problems } = args;
+  if (raw === '') {
+    return fallback;
+  }
+  if (!/^\d+$/.test(raw)) {
+    problems.push(`${name}="${raw}" ist keine ganze Zahl`);
+    return fallback;
+  }
+  const parsed = Number(raw);
+  if (parsed < min || parsed > max) {
+    problems.push(`${name}=${parsed} liegt ausserhalb von ${min}..${max}`);
+    return fallback;
+  }
+  return parsed;
+}
+
+/**
+ * Die Adressen, deren X-Forwarded-For geglaubt wird.
+ *
+ * Bewusst nur EINZELADRESSEEN und keine CIDR-Bereiche: ein Bereich (10.0.0.0/8)
+ * laedt dazu ein, ihn weit zu fassen - und je weiter er ist, desto mehr
+ * Aufrufer duerfen ihren eigenen Kopf bestimmen. Wer einen Proxy betreibt, kann
+ * dessen Adresse eintragen; ein zweiter Proxy ist ein zweiter Eintrag.
+ *
+ * Doppelte Eintraege werden entfernt, damit die Pruefung nicht von der
+ * Schreibweise der Liste abhaengt.
+ */
+function parseTrustedProxies(raw: string, problems: string[]): readonly string[] {
+  if (raw === '') {
+    return [];
+  }
+  const adressen = raw
+    .split(',')
+    .map((eintrag) => eintrag.trim().toLowerCase())
+    .filter((eintrag) => eintrag !== '');
+  for (const adresse of adressen) {
+    if (!istIpAdresse(adresse)) {
+      problems.push(
+        `AUTH_TRUSTED_PROXIES enthaelt "${adresse}", was keine IPv4- oder IPv6-Adresse ist (erwartet z.B. 127.0.0.1, 10.0.0.5, ::1)`,
+      );
+    }
+  }
+  return [...new Set(adressen)];
+}
+
+/**
+ * Grobe Formpruefung einer IP-Adresse. Sie entscheidet nicht ueber Gueltigkeit
+ * (das tut der Vergleich mit der Verbindungsadresse), sondern darueber, ob der
+ * Eintrag ueberhaupt eine Adresse sein KANN. Ein Hostname oder ein CIDR-Bereich
+ * wird damit abgewiesen, statt still nie zu passen.
+ */
+export function istIpAdresse(value: string): boolean {
+  const ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(value);
+  // IPv6 enthaelt immer einen Doppelpunkt; die genaue Form prueft diese
+  // Anwendung nicht nach - sie vergleicht die Adresse nur mit der Adresse der
+  // Verbindung, und die kommt vom Betriebssystem.
+  const ipv6 = value.includes(':') && /^[0-9a-f:.]+$/.test(value);
+  return ipv4 || ipv6;
 }
 
 /**

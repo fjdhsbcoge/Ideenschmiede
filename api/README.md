@@ -47,7 +47,10 @@ Skripte.
 | `src/db.ts` | Verbindungspool zum PostgreSQL — **die einzige** Stelle, an der eine Verbindung entsteht |
 | `src/app.ts` | Die Hono-App: `GET /health`, `GET /api/ideas`, die vier LNURL-auth-Endpunkte, 404 und Fehler als JSON |
 | `src/auth.ts` | LNURL-auth: k1 erzeugen, LNURL bauen, DER-Signatur prüfen (secp256k1), Sitzungs-Token (HS256-JWT) |
-| `src/authStore.ts` | Die Datenbankzugriffe dazu — inklusive des bedingten `UPDATE`, das eine k1 verbraucht |
+| `src/authStore.ts` | Die Datenbankzugriffe dazu — inklusive des bedingten `UPDATE`, das eine k1 verbraucht, der Ratenzählung und des Aufräumens |
+| `src/rateLimit.ts` | Ratenbegrenzung von `POST /api/auth/challenge`: Client-Adresse bestimmen, gleitendes Fenster zählen, 429 auslösen |
+| `src/cleanup.ts` | Aufräumen: Fristen und Reihenfolge für abgelaufene und verbrauchte Herausforderungen sowie alte Ratenzeilen |
+| `scripts/cleanup-auth.mjs` | Dasselbe Aufräumen von Hand oder per Cron (`npm run cleanup`) |
 | `src/subscriptions.ts` | BTCPay-Webhook: HMAC-Prüfung über die **rohen Bytes**, Auswertung des Ereignisses, Idempotenz beim Buchen |
 | `scripts/verify-webhook.mjs` | Verifikationsskript gegen den laufenden Server (nicht Teil der Testsuite) — signiert echte Bytes und stellt dreimal zu |
 | `src/bech32.ts` | bech32 nach BIP-173 (nur Kodieren) — die LNURL für den QR-Code |
@@ -56,8 +59,11 @@ Skripte.
 | `tests/` | Vitest gegen die echte Datenbank |
 | `migrations/001_init.sql` | **Unverändert.** Eingespielt und verifiziert |
 | `migrations/002_auth.sql` | `auth_identities` und `auth_challenges` (Phase 3.2) |
-| `migrations/003_subscriptions.sql` | **Neu.** `subscription_intents` — die Absicht, die Nutzer und BTCPay-Rechnung verbindet (Phase 3.3) |
-| `tests/subscriptions.test.ts` | **Neu.** 34 Tests zum Webhook (Phase 3.3) |
+| `migrations/003_subscriptions.sql` | `subscription_intents` — die Absicht, die Nutzer und BTCPay-Rechnung verbindet (Phase 3.3) |
+| `migrations/004_ideas_listing.sql` | Sortierindex für die Ideenliste |
+| `migrations/005_ratelimit.sql` | **Neu.** `auth_rate_events` — eine Zeile je erlaubtem Aufruf, gezählt über ein gleitendes Fenster |
+| `tests/subscriptions.test.ts` | 34 Tests zum Webhook (Phase 3.3) |
+| `tests/ratelimit.test.ts` | **Neu.** 26 Tests zu Ratenbegrenzung, Client-Adresse (inkl. `X-Forwarded-For`) und Aufräumen |
 | `CONTRACT.md` | **Unverändert.** Kanonischer Datenvertrag |
 
 ## Konfiguration
@@ -70,6 +76,9 @@ Alles über Umgebungsvariablen (oder `api/.env`, siehe `.env.example`):
 | `SESSION_SECRET` | **ja** | — | Geheimnis der Sitzungs-Token (HS256), mindestens 32 Zeichen |
 | `AUTH_BASE_URL` | **ja** | — | Basis-URL dieser Instanz, z. B. `https://auth.ideenschmiede.example` — sie steckt im QR-Code |
 | `BTCPAY_WEBHOOK_SECRET` | **ja** (für den Start) | — | Geheimnis, mit dem BTCPay den Webhook signiert (Kopf `BTCPay-Sig`) |
+| `AUTH_RATE_LIMIT` | nein | `30` | Erlaubte Aufrufe von `POST /api/auth/challenge` je Client-Adresse und Fenster (1..10000) |
+| `AUTH_RATE_WINDOW_MS` | nein | `60000` | Länge des **gleitenden** Fensters in Millisekunden (1000 .. 86400000) |
+| `AUTH_TRUSTED_PROXIES` | nein | leer | Adressen von Reverse Proxies, deren `X-Forwarded-For` geglaubt wird (kommasepariert) |
 | `PORT` | nein | `3000` | Port der HTTP-Schnittstelle (1..65535) |
 | `HOST` | nein | `127.0.0.1` | Lauschadresse; im Container `0.0.0.0` |
 | `NODE_ENV` | nein | `development` | `development`, `test`, `production` |
@@ -99,15 +108,21 @@ docker exec ide-api-pg pg_isready -U postgres
 docker cp api/migrations/001_init.sql ide-api-pg:/tmp/001.sql
 docker cp api/migrations/002_auth.sql ide-api-pg:/tmp/002.sql
 docker cp api/migrations/003_subscriptions.sql ide-api-pg:/tmp/003.sql
+docker cp api/migrations/004_ideas_listing.sql ide-api-pg:/tmp/004.sql
+docker cp api/migrations/005_ratelimit.sql ide-api-pg:/tmp/005.sql
 docker exec ide-api-pg psql -U postgres -d ideenschmiede -v ON_ERROR_STOP=1 -f /tmp/001.sql
 docker exec ide-api-pg psql -U postgres -d ideenschmiede -v ON_ERROR_STOP=1 -f /tmp/002.sql
 docker exec ide-api-pg psql -U postgres -d ideenschmiede -v ON_ERROR_STOP=1 -f /tmp/003.sql
+docker exec ide-api-pg psql -U postgres -d ideenschmiede -v ON_ERROR_STOP=1 -f /tmp/004.sql
+docker exec ide-api-pg psql -U postgres -d ideenschmiede -v ON_ERROR_STOP=1 -f /tmp/005.sql
 ```
 
 `001_init.sql` legt 9 Tabellen und 4 Views an (`idea_discussion`,
 `idea_marketplace`, `idea_investor_shares`, `team_investor_shares`).
 `002_auth.sql` legt 2 Tabellen an (`auth_identities`, `auth_challenges`),
-`003_subscriptions.sql` eine (`subscription_intents`). Keine der neueren
+`003_subscriptions.sql` eine (`subscription_intents`), `004_ideas_listing.sql`
+einen Sortierindex, `005_ratelimit.sql` eine (`auth_rate_events` - die
+Ratenbegrenzung, siehe „Ratenbegrenzung und Aufräumen“). Keine der neueren
 Migrationen fasst `001_init.sql` an — sie ist eingespielt und verifiziert; jede
 ist einzeln einspielbar und läuft nach der vorigen.
 
@@ -157,11 +172,18 @@ npm start
 
 Beim Start wird die Verbindung einmal geprüft und **gemeldet**:
 
+    [api] Aufgeraeumt: 0 verbrauchte Herausforderungen, 12 abgelaufene Herausforderungen, 480 Ratenzeilen (Stand 2026-10-05T22:06:36.560Z)
     [api] PostgreSQL verbunden: postgres://***:***@127.0.0.1:55454/ideenschmiede (server_version 16.15)
-    [api] Ideenschmiede-API 0.1.0 hoert auf http://127.0.0.1:3000 (NODE_ENV=development)
+    [api] Ideenschmiede-API 0.1.0 hoert auf http://127.0.0.1:3000 (NODE_ENV=development, BTCPAY_WEBHOOK_SECRET gesetzt)
 
 Zugangsdaten werden dabei maskiert. Ist die Datenbank nicht erreichbar, startet
 der Prozess trotzdem — `/health` meldet dann `db: false`.
+
+Die erste Zeile ist das **Aufräumen beim Start** (siehe „Aufräumen“): es läuft
+vor dem Binden des Ports, damit der Zustand feststeht, wenn die API erreichbar
+ist. Scheitert es, wird das gemeldet und der Start läuft weiter:
+
+    [api] Aufraeumen beim Start fehlgeschlagen (der Start laeuft weiter): <Meldung>
 
 ## Testen
 
@@ -182,10 +204,11 @@ Ergebnis des geprüften Laufs (gegen PostgreSQL 16.15 im Container):
 
     ✓ tests/subscriptions.test.ts (34 tests)
     ✓ tests/auth.test.ts (36 tests)
+    ✓ tests/ratelimit.test.ts (26 tests)
     ✓ tests/ideas.test.ts (23 tests)
     ✓ tests/health.test.ts (3 tests)
-    Test Files  4 passed (4)
-         Tests  96 passed (96)
+    Test Files  5 passed (5)
+         Tests  122 passed (122)
 
 Geprüft wird unter anderem:
 
@@ -255,9 +278,36 @@ Geprüft wird unter anderem:
   Start mit Exit-Code 1 ab; mit gesetztem Wert kommt er über die Prüfung hinaus
   (belegt über einen Kindprozess, der auf einem belegten Port läuft und
   `EADDRINUSE` meldet).
+* **Ratenbegrenzung und Aufräumen** (26 Tests, `tests/ratelimit.test.ts`): unter
+  der Grenze gelingen mehrere Aufrufe; **der nächste** ergibt `429` mit
+  `{"status":"ERROR","reason":"Too many requests"}` und einem ganzzahligen
+  `Retry-After`; die abgewiesene Anfrage schreibt **keine** Zeile. Nach Ablauf
+  des Fensters ist wieder erlaubt — **ohne echte Wartezeit**, die Uhr kommt aus
+  `AuthConfig.now`. Die Grenze gilt **je Client-Adresse** (ein belegter fremder
+  Schlüssel sperrt den eigenen nicht aus) und **nicht** auf anderen Endpunkten
+  (`/api/ideas`, `/health`, `/api/auth/logout`, `/api/users/me`,
+  `/api/auth/callback` werden von der erreichten Grenze nicht berührt). Ein
+  Nutzer mit mehreren vollständigen Anmeldungen im Fenster kommt durch (dreimal
+  dieselbe `userId`). `X-Forwarded-For` wird **nicht** geglaubt, wenn die
+  Verbindung von keinem eingetragenen Proxy kommt (fünf erfundene Adressen
+  landen in **einem** Topf und der sechste Aufruf ergibt `429`); kommt sie von
+  einem eingetragenen, zählt der **erste** Eintrag der Kette, und zwei Clients
+  haben getrennte Grenzen; ein leerer oder unbrauchbar langer Kopf fällt auf die
+  Verbindungsadresse zurück; ohne feststellbare Adresse gilt **ein** Topf
+  (`unknown`). Die Adressbildung selbst ist ohne HTTP geprüft (`clientAddress`,
+  `forwardedClientAddress`, `peerAddressOf`). Aufgeräumt wird gegen eine echte
+  Datenbank: verbrauchte Herausforderungen verschwinden, abgelaufene erst nach
+  der Nachfrist, **gültige unbenutzte bleiben stehen**; der zweite Lauf meldet
+  `0, 0, 0`, und zwei **gleichzeitige** Läufe löschen zusammen genau einmal.
+  Zuletzt: das Aufräumen beim Start wird aufgerufen und **ein Fehler dabei
+  beendet den Start nicht** (beide Fälle mit einer injizierten Funktion geprüft).
+  Die Konfiguration hat Standardwerte (`30`/`60000`), lässt sich überschreiben
+  und meldet unbrauchbare Werte, statt sie still zu ersetzen.
 
 Die Tests legen ihre Zeilen selbst an und räumen sie wieder ab; sie schreiben
-nichts über die API, sondern per SQL.
+nichts über die API, sondern per SQL. `tests/auth.test.ts` setzt die Grenze für
+seinen Lauf ausdrücklich hoch (10 000): er ruft den Endpunkt vielfach auf und
+prüft die **Anmeldung**, nicht die Begrenzung — die hat eine eigene Datei.
 
 ## Endpunkte
 
@@ -438,6 +488,22 @@ nicht stillschweigend zu `login`.
 `expiresAt` ist ISO-8601 mit `Z` — wie jeder Zeitstempel dieser API. Die Frist
 beträgt 5 Minuten (`CHALLENGE_TTL_MS`).
 
+**Ratenbegrenzung.** Der Endpunkt ist öffentlich, und jeder Aufruf schreibt eine
+Zeile. Deshalb zählt er je Client-Adresse in einem **gleitenden** Fenster
+(Standard: 30 Aufrufe je 60 Sekunden, `AUTH_RATE_LIMIT` / `AUTH_RATE_WINDOW_MS`):
+
+| Fall | HTTP | Antwort |
+|---|---|---|
+| innerhalb der Grenze | 200 | `{ k1, lnurl, expiresAt }` |
+| Grenze überschritten | 429 | `{"status":"ERROR","reason":"Too many requests"}` + `Retry-After: 60` |
+
+Die abgewiesene Anfrage erzeugt **keine** Herausforderung und **keine** Ratenzeile
+— sonst wäre die Zähltabelle selbst der Schreibverstärker, den sie begrenzen
+soll. `Retry-After` nennt ganze Sekunden (RFC 9110) und ist eine obere Schranke:
+so lange, bis der älteste gezählte Aufruf aus dem Fenster fällt. Einzelheiten,
+Grenzen und die Behandlung von `X-Forwarded-For`: „Ratenbegrenzung“ unter
+„Sicherheitshinweise zum Login“.
+
 #### `GET /api/auth/callback`
 
 Parameter: `k1` (64 Hexzeichen), `key` (33 Byte compressed, hex — 02/03-Präfix),
@@ -607,10 +673,138 @@ können die Adresse später ändern.
 
 `expiresAt`-Angaben und Token werden **nicht** protokolliert; im Serverprotokoll
 steht bei einem Fehler nur die feste Begründung (`reason`). Ein Token in einer
-Logzeile wäre ein Zugangsschlüssel in einer Logzeile. Eine Ratenbegrenzung für
-`/api/auth/challenge` gibt es **nicht** — sie gehört vor den Betrieb (Reverse
-Proxy), nicht in diese Anwendung; unbegrenzt erzeugte Herausforderungen wachsen
-sonst in `auth_challenges`.
+Logzeile wäre ein Zugangsschlüssel in einer Logzeile. Eine abgewiesene Anfrage
+(429) hinterlässt eine Zeile mit dem **Schlüssel** (der Client-Adresse), nicht
+mit einem Token oder einer `k1`.
+
+#### Ratenbegrenzung und Aufräumen
+
+Zwei Mechanismen, die zusammengehören: der eine **begrenzt**, wie schnell neue
+Zeilen entstehen, der andere **entfernt** sie wieder.
+
+##### Ratenbegrenzung: in der Datenbank, nicht im Arbeitsspeicher
+
+`POST /api/auth/challenge` ist der einzige Endpunkt, den ein Unbeteiligter
+**ohne Anmeldung** in einer Schleife aufrufen kann, und jeder Aufruf schreibt
+eine Zeile. Ohne Begrenzung ist das ein Schreibverstärker.
+
+Die Zählung liegt in der Tabelle `auth_rate_events` (Migration 005) und **nicht**
+in einer Map im Prozess. Gründe:
+
+* Ein Zähler im Speicher geht beim **Neustart** verloren — wer die Grenze
+  erreicht hat, dürfte danach sofort weiter. Ein Neustart wäre ein Umgehungsweg.
+* Er gilt nur für **einen Prozess**. Bei mehreren Instanzen hinter einem
+  Lastverteiler (ADR-004 lässt Föderation zu) wäre die wirksame Grenze das
+  n-fache der eingestellten.
+
+**Form: Ereigniszeilen mit Zeitstempel** (`auth_rate_events.moment`), gezählt über
+ein gleitendes Fenster — nicht ein Zähler je Kalenderfenster. Der Grund ist die
+Kante: ein Zähler je Kalenderfenster erlaubt im ungünstigsten Fall die doppelte
+Menge (29 Aufrufe kurz vor dem Fensterwechsel, 30 direkt danach). Das gleitende
+Fenster hat diese Kante nicht: es zählen zu jedem Zeitpunkt die letzten
+`AUTH_RATE_WINDOW_MS`. Der Index
+`auth_rate_events_bucket_key_moment_idx (bucket, key, moment)` macht die
+Zählung zur Bereichssuche. Die vollständige Begründung steht in
+`migrations/005_ratelimit.sql`.
+
+**Was gezählt wird:** die Client-Adresse. Sie kommt aus der **Verbindung**
+(`c.env.incoming.socket.remoteAddress`). `X-Forwarded-For` wird **nur** gelesen,
+wenn die Verbindung selbst von einer Adresse aus `AUTH_TRUSTED_PROXIES` stammt:
+
+| Verbindung von | `X-Forwarded-For` | gezählter Schlüssel |
+|---|---|---|
+| nicht eingetragenem Proxy | beliebig | Adresse der Verbindung |
+| unmittelbarem Client | gesetzt | Adresse der Verbindung |
+| eingetragenem Proxy | gesetzt und plausibel | **erster** Eintrag des Kopfes |
+| eingetragenem Proxy | leer / unbrauchbar | Adresse der Verbindung |
+| nicht feststellbar | beliebig | `unknown` (ein gemeinsamer Topf) |
+
+Der Kopf ist ein **gewöhnlicher HTTP-Kopf** und damit von jedem Aufrufer setzbar.
+Würde er immer gelesen, schriebe ein Angreifer in jede Anfrage eine andere
+erfundene Adresse — und die Begrenzung liefe für ihn nie an. Deshalb ist die
+Vorgabe `AUTH_TRUSTED_PROXIES=` (leer): der Kopf wird **nie** gelesen, solange
+niemand den Proxy ausdrücklich einträgt. Ohne Eintrag ist der Kopf wirkungslos.
+
+**Grenzen dieser Wahl — ausdrücklich:**
+
+1. **Hinter einem Reverse Proxy ohne Eintrag teilen sich alle Nutzer einen
+   Topf.** Die Verbindung kommt dann vom Proxy, und alle Aufrufer haben dessen
+   Adresse. Wer die API hinter nginx, Caddy, Traefik oder Cloudflare betreibt,
+   muss die Adresse des Proxys in `AUTH_TRUSTED_PROXIES` eintragen — sonst kann
+   ein einzelner Vielnutzer alle anderen ausbremsen. Für Docker-Netze ist das
+   die Adresse des Gateways (z. B. `172.17.0.1`), für Cloudflare die dort
+   veröffentlichten Bereiche (dann je Adresse ein Eintrag; CIDR-Bereiche werden
+   **nicht** unterstützt, siehe `src/env.ts`).
+2. **Nur der ERSTE Eintrag** der Kette wird genommen (`Client, Proxy1, …`). Der
+   letzte wäre der nächste Proxy und würde alle dessen Nutzer zusammenfassen.
+   Bei mehreren Proxies hintereinander muss **jeder** eingetragen sein, und der
+   äußerste bestimmt, was im Kopf steht.
+3. **Ein vorgeschalteter Proxy, der den Kopf ungeprüft durchreicht oder selbst
+   aus dem Kopf übernimmt, hebt die Begrenzung aus.** Wer `AUTH_TRUSTED_PROXIES`
+   setzt, muss wissen, dass sein Proxy `X-Forwarded-For` **setzt** und nicht
+   übernimmt.
+4. **Die Grenze gilt je Adresse, nicht global.** Ein Angreifer mit vielen
+   Adressen (Botnetz) umgeht sie; sie begrenzt, was **eine** Quelle anrichten
+   kann. Gegen verteilte Angriffe hilft nur eine vorgelagerte Stufe.
+5. **IPv6 wird je Adresse gezählt, nicht je Präfix.** Ein Anschluss mit einem
+   /64-Netz hat damit viele „Adressen“.
+6. **Die Grenze ist keine Sperre.** Sie verhindert nicht, dass jemand über
+   Stunden viele Herausforderungen erzeugt — nur, dass es schnell geht. Genau
+   dafür gibt es das Aufräumen.
+
+**Ein Nutzer mit mehreren Anmeldungen kommt durch.** Die Standardgrenze ist 30
+Aufrufe je Minute. Eine Anmeldung ist **ein** Aufruf des Endpunkts: ein Nutzer,
+der sich mehrfach anmeldet, verbraucht je Versuch einen Platz. 30 sind deutlich
+mehr, als ein echter Anmeldeversuch braucht (QR-Code erzeugen, scannen,
+bestätigen — samt einem oder zwei Fehlversuchen), und deutlich weniger als eine
+Schleife. Als Richtwert: fünf vollständige Anmeldungen je Minute sind erlaubt,
+sechzig nicht. Geprüft ist genau das in `tests/ratelimit.test.ts` („sperrt einen
+Nutzer mit mehreren Anmeldungen im Fenster nicht aus“).
+
+##### Aufräumen: eigener Vorgang, nicht im Anmeldepfad
+
+`auth_challenges` bekommt bei jedem Anmeldeversuch eine Zeile, `auth_rate_events`
+bei jedem erlaubten Aufruf. Beide wachsen ohne Aufräumen dauerhaft.
+
+Das Aufräumen läuft **nicht** im heißen Weg (Anmeldung): ein `DELETE` über eine
+wachsende Tabelle in jedem Aufruf wäre Last ohne Nutzen — die Anmeldung braucht
+die alten Zeilen nicht — und zwei gleichzeitige Aufrufer würden gegeneinander
+sperren. Es ist ein eigener, **wiederholbarer** Vorgang:
+
+```bash
+# aus api/, von Hand oder per Cron
+npm run cleanup            # liest dist/ (nach npm run build), sonst src/ ueber tsx
+node scripts/cleanup-auth.mjs   # derselbe Vorgang ohne npm; braucht dist/
+```
+
+    Aufgeraeumt: 0 verbrauchte Herausforderungen, 25 abgelaufene Herausforderungen, 40 Ratenzeilen (Stand 2026-10-05T22:08:37.028Z)
+
+Cron, stündlich (die Fristen sind eine Stunde, also reicht das):
+
+    0 * * * * cd /pfad/zu/api && npm run cleanup >> /var/log/ideenschmiede-cleanup.log 2>&1
+
+Zusätzlich läuft derselbe Vorgang **beim Serverstart** (fehlertolerant, siehe
+„Starten“). Beides ist derselbe Code (`src/cleanup.ts`); das Skript ist nur die
+Verbindung für den Aufruf von außen. Es liest den **gebauten** Stand aus `dist/`
+— also genau den Code, den auch der Server ausführt — und weicht nur dann auf
+`src/` aus, wenn nicht gebaut wurde (dann läuft es unter `tsx`, siehe
+`package.json`).
+
+**Fristen** (die Zahlen stehen in `src/cleanup.ts` mit ihrer Begründung):
+
+| Zeilen | Frist | Begründung |
+|---|---|---|
+| **verbrauchte** Herausforderungen (`used_at`) | 1 Stunde | verbraucht heißt sofort unbenutzbar — das entscheidet `used_at`, nicht die Zeile. Eine Stunde lässt einen gemeldeten Vorfall noch nachvollziehen. |
+| **abgelaufene** Herausforderungen (`expires_at`) | 1 Stunde Nachfrist | deckt den Uhrenunterschied zwischen Anwendung und Datenbank ab (die Frist entsteht aus `AuthConfig.now`, verglichen wird mit `now()` der Datenbank). Ohne Nachfrist könnte eine nach Anwendungsuhr noch gültige Zeile verschwinden — der Nutzer sähe „Unknown k1“ statt „Challenge expired“. |
+| **Ratenzeilen** (`moment`) | 1 Stunde über dem Fenster | sie zählen nur im Fenster; die Stunde ist eine Versicherung: wird `AUTH_RATE_WINDOW_MS` später **erhöht**, sind die Zeilen der letzten Stunde noch da und zählen wieder mit. |
+
+**Gültige, unbenutzte Herausforderungen bleiben unangetastet** — sie sind ein
+laufender Anmeldevorgang. Wer sie wegräumt, lässt einen QR-Code im Nichts enden.
+
+**Gefahrlos mehrfach ausführbar:** jeder Schritt ist ein `DELETE` mit einer
+Bedingung; beim zweiten Lauf trifft sie nichts, und die Zähler sind 0. Zwei
+gleichzeitige Läufe sind ebenfalls unbedenklich: PostgreSQL lässt einen die
+Zeilen sperren, der andere meldet danach 0. Beides ist getestet.
 
 ### Abonnement und BTCPay-Webhook (Roadmap Phase 3.3)
 
@@ -980,12 +1174,48 @@ bei **jedem** Schreibvorgang auf `users`). Der Webhook schreibt nur nach
     es bleibt keine halbe Buchung stehen (ein Test hält genau das fest). Ein
     `UPDATE users SET role = ...` kommt im Webhook **nicht** vor; das ist die
     Zusage aus ADR-003, und ein zweiter Schreiber wäre eine zweite Wahrheit.
+31. **Die Ratenbegrenzung steht in der Datenbank, nicht im Arbeitsspeicher.**
+    Ein Zähler im Prozess ginge beim Neustart verloren (wer die Grenze erreicht
+    hat, dürfte danach sofort weiter — ein Neustart wäre ein Umgehungsweg) und
+    gälte bei mehreren Instanzen nur je Prozess (ADR-004: die wirksame Grenze
+    wäre das n-fache). Die Zählung liegt deshalb in `auth_rate_events`
+    (Migration 005). Das ist die **Kehrseite derselben Entscheidung**, die schon
+    für die `k1` gilt (Punkt 15): Zustand, der einen Neustart überleben muss,
+    gehört in die Datenbank. Die vollständige Begründung samt der Wahl
+    *Ereigniszeilen statt Zähler je Fenster* steht in `migrations/005_ratelimit.sql`.
+32. **Aufgeräumt wird als eigener Vorgang, nicht im Anmeldepfad — und
+    zusätzlich beim Start.** Ein `DELETE` über eine wachsende Tabelle in jedem
+    Aufruf wäre Last ohne Nutzen, und zwei gleichzeitige Aufrufer würden
+    gegeneinander sperren. Aufgerufen wird derselbe Code an zwei Stellen:
+    `npm run cleanup` (von Hand oder per Cron) und der Serverstart. **Die
+    Verzögerung beim Start ist Absicht:** `createApp` ist deshalb `async` und
+    wartet das Aufräumen ab, damit der Zustand feststeht, wenn der Port offen
+    ist; ein Hintergrundlauf während der ersten Anfragen wäre ein zweiter,
+    unsichtbarer Zustand. Fehlertolerant ist es trotzdem: ein Fehler wird
+    gemeldet, der Start läuft weiter (alte Ratenzeilen sind ein
+    Schönheitsfehler, ein Ausfall wäre keiner).
+33. **`X-Forwarded-For` wird nur aus einer eingetragenen Proxy-Verbindung
+    geglaubt — Vorgabe: gar nicht.** Der Kopf ist von jedem Aufrufer setzbar;
+    würde er immer gelesen, wäre die Begrenzung mit einer erfundenen Adresse je
+    Anfrage umgangen. Die Kehrseite ist ausdrücklich benannt (siehe
+    „Ratenbegrenzung“): ohne Eintrag in `AUTH_TRUSTED_PROXIES` teilen sich
+    hinter einem Reverse Proxy **alle** Nutzer einen Topf. Ein Eintrag ist
+    deshalb keine Feinheit, sondern die Voraussetzung für den Betrieb hinter
+    einem Proxy.
+34. **Die Ratenbegrenzung wird als Standardwert ausgeliefert, nicht als
+    Pflichtwert.** Anders als `DATABASE_URL`, `SESSION_SECRET` und
+    `AUTH_BASE_URL` (Punkt 6 der Konfiguration) gibt es hier einen
+    Standardwert — und zwar den **sicheren**: eine fehlende Begrenzung wäre der
+    gefährlichere Zustand. Ein geratener Datenbankname zeigt auf die falsche
+    Datenbank; eine fehlende Begrenzung öffnet einen Schreibverstärker für
+    jeden. Ein **unbrauchbarer** gesetzter Wert bricht trotzdem ab, statt still
+    auf den Standardwert zurückzufallen.
 
 ## Verifikation gegen echtes PostgreSQL
 
-Kein Trockenlauf: `postgres:16-alpine` im Container, `001_init.sql`, `002_auth.sql`
-**und** `003_subscriptions.sql` mit `ON_ERROR_STOP=1` eingespielt, Server gestartet
-und die Endpunkte per HTTP abgerufen. Signiert wurde mit `@noble/curves` — dieselbe
+Kein Trockenlauf: `postgres:16-alpine` im Container, `001_init.sql` bis
+`005_ratelimit.sql` mit `ON_ERROR_STOP=1` eingespielt, Server gestartet und die
+Endpunkte per HTTP abgerufen. Signiert wurde mit `@noble/curves` — dieselbe
 Bibliothek, die die API zum Prüfen benutzt, aber auf der Wallet-Seite des
 Protokolls. Auszug der echten Ausgaben:
 
@@ -1156,5 +1386,89 @@ Antwort des Servers:
 Die vierte Zeile ist die Gegenprobe zu Schicht 3: der Status war absichtlich
 wieder `open`, die schnelle Schicht griff also **nicht** — und die txid-Schicht
 hielt trotzdem. Genau dafür gibt es beide.
+
+### Ratenbegrenzung und Aufräumen, nachgemessen (Nachtrag zu Phase 3.2)
+
+`001_init.sql` bis `005_ratelimit.sql` mit `ON_ERROR_STOP=1` in
+`postgres:16-alpine` eingespielt, Server gestartet (`AUTH_RATE_LIMIT=30`,
+`AUTH_RATE_WINDOW_MS=60000`) und der Endpunkt **wirklich** 40-mal aufgerufen.
+Auszug der echten Ausgaben (`Invoke-WebRequest`, ohne Beschönigung):
+
+```
+--- Aufraeumen beim Start (erste Zeile des Serverprotokolls)
+[api] Aufgeraeumt: 0 verbrauchte Herausforderungen, 0 abgelaufene Herausforderungen, 100 Ratenzeilen (Stand 2026-10-05T22:06:36.560Z)
+[api] PostgreSQL verbunden: postgres://***:***@localhost:55455/ideenschmiede (server_version 16.15)
+[api] Ideenschmiede-API 0.1.0 hoert auf http://127.0.0.1:3100 (NODE_ENV=development, BTCPAY_WEBHOOK_SECRET gesetzt)
+
+--- POST /api/auth/challenge, 40 Aufrufe hintereinander
+Aufruf  1: HTTP 200
+...
+Aufruf 30: HTTP 200
+Aufruf 31: HTTP 429  Retry-After=60  {"status":"ERROR","reason":"Too many requests"}
+Aufruf 32: HTTP 429  Retry-After=60  {"status":"ERROR","reason":"Too many requests"}
+...
+Aufruf 40: HTTP 429  Retry-After=60  {"status":"ERROR","reason":"Too many requests"}
+
+--- Derselbe Client, aber mit ERFUNDENEM X-Forwarded-For (kein Proxy eingetragen)
+XFF 198.51.100.1 (unvertrauter Kopf): HTTP 429
+XFF 198.51.100.2 (unvertrauter Kopf): HTTP 429
+XFF 198.51.100.3 (unvertrauter Kopf): HTTP 429
+XFF 198.51.100.4 (unvertrauter Kopf): HTTP 429
+XFF 198.51.100.5 (unvertrauter Kopf): HTTP 429
+   -> die erfundene Adresse aendert nichts: die Grenze gilt fuer die Verbindung.
+
+--- Neustart mit AUTH_TRUSTED_PROXIES=127.0.0.1 und AUTH_RATE_LIMIT=3
+Client 198.51.100.7, Aufruf 1 -> HTTP 200
+Client 198.51.100.7, Aufruf 2 -> HTTP 200
+Client 198.51.100.7, Aufruf 3 -> HTTP 200
+Client 198.51.100.7, Aufruf 4 -> HTTP 429
+Client 198.51.100.7, Aufruf 5 -> HTTP 429
+Client 198.51.100.8, Aufruf 1 -> HTTP 200     <- eigener Topf, eigene Grenze
+Client 198.51.100.8, Aufruf 2 -> HTTP 200
+Client 198.51.100.8, Aufruf 3 -> HTTP 200
+Client 198.51.100.8, Aufruf 4 -> HTTP 429
+
+--- auth_rate_events danach (der Schluessel ist die Adresse aus dem Kopf)
+      key      | treffer
+---------------+---------
+ 127.0.0.1     |      60     <- die 30 Aufrufe der ersten Runde, je Grenze eigen
+ 198.51.100.7  |       3
+ 198.51.100.8  |       3
+```
+
+**Aufräumen, dieselbe Datenbank — Zeilenzahlen vorher und nachher:**
+
+```
+--- VORHER (50 Herausforderungen aus 002, davon 30 abgelaufen;
+     dazu 25 laenger als die Nachfrist abgelaufene und 100 alte Ratenzeilen)
+ challenges | abgelaufen | raten
+------------+------------+-------
+        142 |         55 |   106
+
+--- npm run cleanup (erster Lauf)
+Aufgeraeumt: 0 verbrauchte Herausforderungen, 25 abgelaufene Herausforderungen, 40 Ratenzeilen (Stand 2026-10-05T22:08:37.028Z)
+
+--- NACHHER
+ challenges | abgelaufen | raten
+------------+------------+-------
+        117 |         30 |    66
+
+--- npm run cleanup (zweiter Lauf, unmittelbar danach)
+Aufgeraeumt: 0 verbrauchte Herausforderungen, 0 abgelaufene Herausforderungen, 0 Ratenzeilen (Stand 2026-10-05T22:08:38.265Z)
+
+--- Kontrollzeile: gueltige, unbenutzte Herausforderungen
+             was              | anzahl
+------------------------------+--------
+ Kontrollzeile gueltig/unbenutzt |     87    <- unangetastet
+ verbraucht                      |      0
+```
+
+Die Zahlen sind kein Zufall: 142 - 25 = 117 Herausforderungen und 106 - 40 = 66
+Ratenzeilen. Die 25 entfernten Herausforderungen waren laenger als eine Stunde
+abgelaufen; die **30** noch verbliebenen `abgelaufen` sind es **noch nicht** —
+sie liegen innerhalb der Nachfrist und bleiben stehen (genau das ist die Frist).
+Der zweite Lauf meldet `0, 0, 0` und beweist damit die Wiederholbarkeit. Die 87
+gueltigen, unbenutzten Herausforderungen sind unverändert: ein laufender
+Anmeldevorgang wird nicht weggeräumt.
 
 Der Container wurde nach der Prüfung entfernt.

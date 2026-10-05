@@ -77,6 +77,13 @@ export const AUTH_ERROR_REASONS = {
   linkNotSupported: 'Action link requires an authenticated session',
   unauthorized: 'Unauthorized',
   internal: 'Internal error',
+  /**
+   * Die Ratenbegrenzung (src/rateLimit.ts). Sie steht in DIESER Liste, weil
+   * AuthError.reason ein AuthErrorReason ist und die Antwort dieselbe Form
+   * traegt - NICHT, weil die Spezifikation sie nennt: LNURL-auth kennt keine
+   * Ratenbegrenzung, und ein Wallet soll diesen Wert nicht auswerten muessen.
+   */
+  rateLimited: 'Too many requests',
 } as const;
 export type AuthErrorReason = (typeof AUTH_ERROR_REASONS)[keyof typeof AUTH_ERROR_REASONS];
 
@@ -102,6 +109,23 @@ export interface AuthConfig {
   readonly baseUrl: string;
   /** Injizierbare Uhr - damit der Ablauf pruefbar ist und nicht nur behauptet. */
   readonly now: () => number;
+  /**
+   * Ratenbegrenzung des oeffentlichen POST /api/auth/challenge: erlaubte
+   * Aufrufe je Client-Adresse und Fenster (AUTH_RATE_LIMIT, Standard 30).
+   *
+   * Sie steht in DIESER Konfiguration, weil sie mit derselben Uhr rechnen muss
+   * wie die Herausforderung: die Fenster liegen in der Datenbank, und eine
+   * zweite Zeitquelle waere eine zweite Wahrheit.
+   */
+  readonly rateLimit: number;
+  /** Laenge des gleitenden Fensters in Millisekunden (AUTH_RATE_WINDOW_MS, Standard 60000). */
+  readonly rateWindowMs: number;
+  /**
+   * Adressen, deren X-Forwarded-For geglaubt wird (AUTH_TRUSTED_PROXIES,
+   * Standard leer). Leer heisst: der Kopf wird NIE gelesen - er ist von jedem
+   * Aufrufer setzbar und darf eine Schutzmassnahme nicht abschalten koennen.
+   */
+  readonly trustedProxies: readonly string[];
 }
 
 /**
@@ -113,7 +137,14 @@ export interface AuthConfig {
  */
 export function authConfigFromEnv(source: NodeJS.ProcessEnv = process.env): AuthConfig {
   const env = loadEnv(source);
-  return { secret: env.SESSION_SECRET, baseUrl: env.AUTH_BASE_URL, now: Date.now };
+  return {
+    secret: env.SESSION_SECRET,
+    baseUrl: env.AUTH_BASE_URL,
+    now: Date.now,
+    rateLimit: env.AUTH_RATE_LIMIT,
+    rateWindowMs: env.AUTH_RATE_WINDOW_MS,
+    trustedProxies: env.AUTH_TRUSTED_PROXIES,
+  };
 }
 
 /** Die Callback-URL aus AUTH_BASE_URL - nie aus dem Host der Anfrage. */

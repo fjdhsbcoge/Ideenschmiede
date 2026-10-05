@@ -4,7 +4,7 @@ import { createApp } from '../src/app.js';
 import { closeDb, dbVersion, pingDb } from '../src/db.js';
 import { databaseUrl, sql } from './helpers.js';
 
-const app = createApp(sql);
+const app = await createApp(sql, { cleanupOnStart: async () => undefined });
 
 describe('GET /health', () => {
   afterAll(async () => {
@@ -46,7 +46,7 @@ describe('GET /health', () => {
     });
 
     try {
-      const response = await createApp(unerreichbar).request('/health');
+      const response = await (await createApp(unerreichbar)).request('/health');
       expect(response.status).toBe(503);
 
       const body = (await response.json()) as { status: string; db: boolean };

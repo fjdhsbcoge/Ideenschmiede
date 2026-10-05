@@ -29,8 +29,8 @@ const WEBHOOK_SECRET = process.env.BTCPAY_WEBHOOK_SECRET as string;
 
 const SECRET_FEHLT = 'geheimnis-fehlt-absichtlich';
 
-const app = createApp(sql);
-const appOhneGeheimnis = createApp(sql, { webhookSecret: '' });
+const app = await createApp(sql, { cleanupOnStart: async () => undefined });
+const appOhneGeheimnis = await createApp(sql, { webhookSecret: '', cleanupOnStart: async () => undefined });
 
 const config: AuthConfig = authConfigFromEnv();
 

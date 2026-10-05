@@ -12,7 +12,7 @@ import {
   type TestUser,
 } from './helpers.js';
 
-const app = createApp(sql);
+const app = await createApp(sql, { cleanupOnStart: async () => undefined });
 
 /** Die dokumentierte Antwortform (ARCHITECTURE.md Anhang 5.2, interface Idea). */
 interface MarketplaceBody {

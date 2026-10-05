@@ -9,7 +9,7 @@
  * nicht die Anwendung. Zwei Prozesse koennen dieselbe k1 nicht beide benutzen,
  * auch nicht bei paralleler Ausfuehrung.
  */
-import type { ISql } from 'postgres';
+import type { ISql, Sql } from 'postgres';
 import { AuthError, AUTH_ERROR_REASONS, type AuthAction } from './auth.js';
 
 /** Eine Zeile aus `users`, unter den Namen, die die API ausliefert. */
@@ -269,4 +269,134 @@ export async function consumeChallenge(
   // Weder abgelaufen noch verbraucht, und trotzdem keine Zeile: ein paralleler
   // Aufruf war schneller. Fuer den Aufrufer ist das dieselbe Auskunft.
   throw new AuthError(AUTH_ERROR_REASONS.usedChallenge);
+}
+
+// -----------------------------------------------------------------------------
+// Ratenbegrenzung (Migration 005, auth_rate_events)
+// -----------------------------------------------------------------------------
+
+/** Die Grenze, wie sie im Aufruf gilt: erlaubte Aufrufe je Schluessel und Fenster. */
+export interface RateLimitPolicy {
+  readonly limit: number;
+  readonly windowMs: number;
+}
+
+/**
+ * Wie viele Aufrufe dieses Schluessels im GLEITENDEN Fenster liegen.
+ *
+ * Das Fenster ist (jetzt - windowMs, jetzt]: ein Aufruf, der genau windowMs alt
+ * ist, zaehlt NICHT mehr mit. Damit ist ein Aufruf nach Ablauf des Fensters in
+ * jedem Fall wieder erlaubt - ohne Sonderfall im Aufrufer.
+ *
+ * Die Bedingung lautet wie in 005_ratelimit.sql angelegt: erst die beiden
+ * Gleichheiten (bucket, key), dann der Bereich (moment) - nur so benutzt
+ * PostgreSQL auth_rate_events_bucket_key_moment_idx als Suche und nicht als
+ * Filter ueber die ganze Tabelle.
+ *
+ * Gezaehlt werden nur ERLAUBTE Aufrufe: abgewiesene schreiben nichts (siehe
+ * recordRateEvent), sonst waere diese Tabelle selbst der Schreibverstaerker,
+ * den sie verhindern soll.
+ */
+export async function countRecentEvents(
+  db: ISql,
+  bucket: string,
+  key: string,
+  now: Date,
+  windowMs: number,
+): Promise<number> {
+  const rows: { anzahl: string }[] = await db`
+      SELECT count(*)::text AS anzahl
+        FROM auth_rate_events
+       WHERE bucket = ${bucket}
+         AND key = ${key}
+         AND moment > ${new Date(now.getTime() - windowMs)}
+  `;
+  return Number(rows[0]?.anzahl ?? '0');
+}
+
+/**
+ * Einen erlaubten Aufruf zaehlen.
+ *
+ * Der Zeitpunkt kommt aus der Anwendung (injizierbare Uhr), nicht aus now() der
+ * Datenbank: die Begrenzung soll mit DERSELBEN Uhr rechnen wie der Rest der
+ * Anmeldung (AuthConfig.now), und ein Test soll die Fenster verschieben koennen,
+ * ohne echte Wartezeiten abzuwarten.
+ */
+export async function recordRateEvent(
+  db: ISql,
+  bucket: string,
+  key: string,
+  moment: Date,
+): Promise<void> {
+  await db`
+      INSERT INTO auth_rate_events (bucket, key, moment)
+      VALUES (${bucket}, ${key}, ${moment})
+  `;
+}
+
+// -----------------------------------------------------------------------------
+// Aufraeumen (src/cleanup.ts)
+// -----------------------------------------------------------------------------
+
+/** Die Zeilen, die eine Aufraeumrunde entfernt hat - je Tabelle eine Zahl. */
+export interface CleanupCounts {
+  readonly usedChallenges: number;
+  readonly expiredChallenges: number;
+  readonly rateEvents: number;
+}
+
+/**
+ * Entfernt abgelaufene und verbrauchte Herausforderungen sowie alte
+ * Ratenzeilen - in EINER Transaktion.
+ *
+ * Warum eine Transaktion: die drei Loeschvorgaenge gehoeren zu einem Vorgang
+ * ("aufgeraeumt bis jetzt"). Bricht er in der Mitte ab, ist danach nicht
+ * entscheidbar, welcher Teil gelaufen ist; mit Transaktion ist das Ergebnis
+ * eindeutig - ganz oder gar nicht.
+ *
+ * Warum es GEFARHLOS MEHRFACH laufen kann: jeder Vorgang ist ein DELETE mit
+ * einer Bedingung, die sich beim zweiten Lauf auf dieselben Zeilen bezieht.
+ * Beim zweiten Mal gibt es sie nicht mehr, die Bedingung trifft nichts, und die
+ * Zaehler sind 0. Es gibt keinen Zwischenschritt, keinen Zeiger und keinen
+ * Zustand, der beim zweiten Lauf etwas anderes bedeuten wuerde.
+ *
+ * Zwei gleichzeitige Laeufe sind ebenfalls unbedenklich: beide loeschen
+ * dieselben Zeilen, PostgreSQL laesst nur einen gewinnen. Der zweite wartet auf
+ * die Zeilensperre und meldet danach 0 - kein Fehler, kein doppelter Effekt.
+ *
+ * Die Fristen kommen als Zeitpunkte herein, nicht als Regeln: WAS weg darf,
+ * entscheidet src/cleanup.ts an einer Stelle, und dort stehen auch die Zahlen
+ * mit ihrer Begruendung.
+ */
+export async function deleteStaleAuthRows(
+  // Sql (nicht ISql): gebraucht wird begin() fuer die Transaktion. ISql hat kein
+  // begin(); das ist genau der Unterschied zwischen dem Pool und einer
+  // Transaktion.
+  db: Sql,
+  fristen: {
+    readonly usedBefore: Date;
+    readonly expiredBefore: Date;
+    readonly rateBefore: Date;
+  },
+): Promise<CleanupCounts> {
+  return db.begin(async (tx) => {
+    const q: ISql = tx;
+
+    // sql.unsafe() mit Parametern ($1, $2): kein Vorlagenliteral, keine
+    // Zeichenkette, die aus Werten gebaut wird. Die Parameter bindet der
+    // Treiber.
+    const verbraucht = await q.unsafe('DELETE FROM auth_challenges WHERE used_at IS NOT NULL AND used_at < $1', [
+      fristen.usedBefore,
+    ]);
+    const abgelaufen = await q.unsafe('DELETE FROM auth_challenges WHERE used_at IS NULL AND expires_at < $1', [
+      fristen.expiredBefore,
+    ]);
+    const raten = await q.unsafe('DELETE FROM auth_rate_events WHERE moment < $1', [fristen.rateBefore]);
+
+    return {
+      usedChallenges: verbraucht.count,
+      expiredChallenges: abgelaufen.count,
+      rateEvents: raten.count,
+    };
+  });
 }

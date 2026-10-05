@@ -41,7 +41,10 @@ function requireWebhookSecret(value: string): string {
 const env = loadEnvOrExit();
 requireWebhookSecret(env.BTCPAY_WEBHOOK_SECRET);
 const db = getDb();
-const app = createApp(db);
+// createApp ist async: es wartet das Aufraeumen beim Start ab (src/cleanup.ts),
+// damit der Zustand feststeht, bevor der Server den Port annimmt. Fehler beim
+// Aufraeumen beendet den Start nicht - das meldet createApp selbst.
+const app = await createApp(db);
 
 // Verbindung einmal beim Start pruefen und MELDEN. Ein Nichterreichen beendet
 // den Start nicht: genau dafuer gibt es /health mit db: false.

@@ -37,7 +37,20 @@ const AUTH_BASE_URL = (process.env.AUTH_BASE_URL as string).replace(/\/+$/, '');
 
 /** Die Konfiguration, mit der die App im Test laeuft (Uhr injizierbar). */
 let config: AuthConfig = authConfigFromEnv();
-const app = createApp(sql, { auth: config });
+/**
+ * Die App dieses Testlaufs.
+ *
+ * Sie entsteht in beforeAll, NICHT als const auf Modulebene: createApp ist
+ * async, weil es das Aufraeumen beim Start abwartet (src/app.ts), und ein
+ * await auf Modulebene waere hier ein zweiter Mechanismus fuer dieselbe Sache.
+ *
+ * Die Ratenbegrenzung wird fuer diesen Lauf ausdruecklich hoch gesetzt: dieser
+ * Test prueft die ANMELDUNG, nicht die Begrenzung. Er ruft den Endpunkt
+ * vielfach auf - mit der Vorgabe von 30 Aufrufen je Minute wuerde er sich
+ * selbst aussperren, und der Fehler saehe wie ein Fehler der Anmeldung aus.
+ * Die Begrenzung selbst hat eine eigene Datei (tests/ratelimit.test.ts).
+ */
+let app: Awaited<ReturnType<typeof createApp>>;
 
 /**
  * Aufraeumbuch: jede angelegte k1 wird am Ende geloescht, ebenso die Nutzer,
@@ -105,10 +118,24 @@ async function callback(url: string): Promise<{ status: number; body: CallbackBo
   return { status: antwort.status, body, setCookie: antwort.headers.get('set-cookie') };
 }
 
-beforeAll(() => {
+beforeAll(async () => {
   // Die Uhr wird erst hier festgelegt, damit der Ablauf-Test sie verschieben
   // kann, ohne die uebrigen Faelle zu beruehren.
   config = authConfigFromEnv();
+
+  // Eigener Anfangszustand: Zeilen aus einem frueheren Lauf wuerden sonst
+  // mitgezaehlt und der erste Aufruf koennte 429 statt 200 ergeben.
+  await sql.unsafe('DELETE FROM auth_rate_events WHERE key = ANY($1::text[])', [
+    ['unknown', '127.0.0.1'],
+  ]);
+
+  app = await createApp(sql, {
+    auth: { ...config, rateLimit: 10_000, rateWindowMs: 60_000, trustedProxies: [] },
+    // cleanupOnStart als Attrappe: das Aufraeumen beim Start braucht eine
+    // eigene, vollstaendige Pruefung (tests/ratelimit.test.ts) und soll hier
+    // keine Zeilen anfassen, die dieser Test gerade untersucht.
+    cleanupOnStart: async () => undefined,
+  });
 });
 
 afterAll(async () => {
@@ -119,6 +146,11 @@ afterAll(async () => {
     await sql.unsafe('DELETE FROM users WHERE id IN (SELECT user_id FROM auth_identities WHERE lower(linking_key) = lower($1))', [key]);
     await sql.unsafe('DELETE FROM auth_identities WHERE lower(linking_key) = lower($1)', [key]);
   }
+  // Und die Ratenzeilen dieses Laufs - sie gehoeren diesem Test, nicht der
+  // Datenbank. Sonst waeren sie der Anfangszustand des naechsten.
+  await sql.unsafe('DELETE FROM auth_rate_events WHERE key = ANY($1::text[])', [
+    ['unknown', '127.0.0.1'],
+  ]);
   await closeDb();
 });
 
@@ -666,13 +698,13 @@ describe('Konfiguration', () => {
     }
   });
 
-  it('bricht auch createApp ab, wenn die Umgebung kein SESSION_SECRET hat', () => {
+  it('bricht auch createApp ab, wenn die Umgebung kein SESSION_SECRET hat', async () => {
     // createApp ohne injizierte Konfiguration liest die Umgebung. Fehlt dort
     // etwas, startet die API nicht - wie bei DATABASE_URL.
     const vorher = process.env.SESSION_SECRET;
     delete process.env.SESSION_SECRET;
     try {
-      expect(() => createApp(sql)).toThrow(EnvError);
+      await expect(createApp(sql)).rejects.toThrow(EnvError);
     } finally {
       process.env.SESSION_SECRET = vorher;
     }

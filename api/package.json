@@ -13,6 +13,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "test": "vitest run",
+    "cleanup": "tsx scripts/cleanup-auth.mjs",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {

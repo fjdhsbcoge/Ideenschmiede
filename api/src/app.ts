@@ -49,7 +49,9 @@ import {
   type AuthResult,
 } from './auth.js';
 import { findUserById, toPublicUser, type UserRecord } from './authStore.js';
+import { cleanupAuth, describeCleanup, type CleanupResult } from './cleanup.js';
 import { getDb, pingDb } from './db.js';
+import { clientAddress, enforceRateLimit, isRateLimitError, peerAddressOf } from './rateLimit.js';
 import {
   BTCPAY_SIGNATURE_HEADER,
   INTENT_TTL_MS,
@@ -71,6 +73,14 @@ export const MAX_OFFSET = 1_000_000;
 
 interface AppEnv {
   Variables: { db: Sql; auth: AuthConfig; webhookSecret: string };
+  /**
+   * Die Bindung des Node-Adapters: er legt die rohe eingehende Nachricht unter
+   * incoming ab. Daraus kommt die Adresse der VERBINDUNG fuer die
+   * Ratenbegrenzung (src/rateLimit.ts, peerAddressOf). Beide Felder sind
+   * optional, weil app.request() im Test keine Verbindung hat - dann greift der
+   * Schluessel 'unknown'.
+   */
+  Bindings: { incoming?: { socket?: { remoteAddress?: string }; connection?: { remoteAddress?: string } } };
 }
 
 /**
@@ -290,15 +300,56 @@ export interface CreateAppOptions {
    * Zustand, in dem er ungeprueft durchlaesst.
    */
   webhookSecret?: string;
+  /**
+   * Aufraeumen beim Start (src/cleanup.ts) - injizierbar, damit der Aufruf
+   * pruefbar ist und der Fehlerfall (Aufraeumen scheitert, Start laeuft weiter)
+   * ohne eine kaputte Datenbank geprueft werden kann.
+   *
+   * Ohne Angabe wird wirklich aufgeraeumt. Ein Fehler dabei wird GEMELDET und
+   * verschluckt: dass alte Zeilen liegen bleiben, ist ein Schoenheitsfehler -
+   * dass die API deswegen nicht startet, ein Ausfall. Der Vorgang ist
+   * wiederholbar; der naechste Lauf (Skript oder Neustart) holt ihn nach.
+   */
+  cleanupOnStart?: (db: Sql) => Promise<unknown>;
 }
 
-export function createApp(db: Sql = getDb(), options: CreateAppOptions = {}): Hono<AppEnv> {
+export async function createApp(
+  db: Sql = getDb(),
+  options: CreateAppOptions = {},
+): Promise<Hono<AppEnv>> {
   // Bewusst OHNE Standardwert: ein fest eingebautes SESSION_SECRET waere ein
   // Geheimnis, das in der Versionsverwaltung steht, und eine geratene
   // AUTH_BASE_URL wuerde alle Nutzer an eine fremde Domain binden. Fehlt einer
   // der Werte, bricht der Start mit Klartext ab - genau wie bei DATABASE_URL.
   const auth = options.auth ?? authConfigFromEnv();
   const webhookSecret = options.webhookSecret ?? webhookSecretFromEnv();
+  const cleanupOnStart = options.cleanupOnStart ?? cleanupAuth;
+
+  // Aufraeumen beim Start, FEHLERTOLERANT.
+  //
+  // Warum es hier steht: ohne diesen Aufruf bliebe die Tabelle nach einem
+  // Neustart so lange liegen, bis jemand das Skript von Hand startet. Mit ihm
+  // ist der Zustand nach dem Start mindestens so gut wie vor dem letzten Lauf.
+  //
+  // Warum fehlertolerant: dass alte Zeilen liegen bleiben, ist ein
+  // Schoenheitsfehler - dass die API deswegen nicht startet, ein Ausfall. Der
+  // Vorgang ist wiederholbar; der naechste Lauf holt ihn nach.
+  //
+  // Warum die Verzoegerung hingenommen wird: das Aufraeumen laeuft VOR dem
+  // Zurueckgeben, damit der Startzustand feststeht, wenn die App steht - ein
+  // Aufraeumen, das im Hintergrund noch laeuft, waehrend die ersten Anfragen
+  // eintreffen, waere ein zweiter, unsichtbarer Zustand. Die Kosten sind drei
+  // DELETE-Vorgaenge; der Server hoert erst danach auf den Port (src/server.ts
+  // baut die App vor serve()).
+  try {
+    console.log('[api] ' + describeCleanup((await cleanupOnStart(db)) as CleanupResult));
+  } catch (error: unknown) {
+    console.warn(
+      '[api] Aufraeumen beim Start fehlgeschlagen (der Start laeuft weiter): ' +
+        (error instanceof Error ? error.message : String(error)),
+    );
+  }
+
   const app = new Hono<AppEnv>();
 
   app.use('*', async (c, next) => {
@@ -372,6 +423,42 @@ export function createApp(db: Sql = getDb(), options: CreateAppOptions = {}): Ho
   // for each user").
   app.post('/api/auth/challenge', async (c) => {
     const config = authOf(c);
+
+    // Ratenbegrenzung VOR allem anderen - und vor dem Lesen des Koerpers.
+    //
+    // WARUM VOR DEM KOERPER: wer den Endpunkt in einer Schleife aufruft, soll
+    // nicht auch noch einen Koerper einlesen lassen; die Arbeit, die eine
+    // abgewiesene Anfrage verursacht, ist damit ein Zaehlvorgang und sonst
+    // nichts. Und warum vor der Pruefung der action: ein Aufrufer, der die
+    // Grenze ueberschritten hat, bekommt 429 - nicht 400. Die Begrenzung ist
+    // die Auskunft, die er braucht.
+    //
+    // Gezaehlt wird je Client-Adresse (siehe src/rateLimit.ts). Die Adresse
+    // kommt aus der Verbindung; X-Forwarded-For gilt nur, wenn die Verbindung
+    // aus AUTH_TRUSTED_PROXIES stammt - der Kopf ist von jedem setzbar.
+    const clientKey = clientAddress({
+      peer: peerAddressOf(c.env),
+      forwardedFor: c.req.header('x-forwarded-for'),
+      trustedProxies: config.trustedProxies,
+    });
+    try {
+      await enforceRateLimit(c.get('db'), clientKey, config);
+    } catch (error) {
+      if (isRateLimitError(error)) {
+        // Dieselbe Fehlerform wie jeder andere Auth-Fehler:
+        // { status: 'ERROR', reason }. Zusaetzlich Retry-After in SEKUNDEN -
+        // die einzige Angabe, die einem automatischen Aufrufer hilft, und
+        // genau die Form, die RFC 9110 dafuer vorsieht (eine ganze Zahl).
+        // Das Fenster ist gleitend: nach dieser Zeit ist mindestens der
+        // aelteste gezaehlte Aufruf heraus, ein neuer Versuch also wieder
+        // erlaubt. Die Angabe ist damit eine obere Schranke, keine Schaetzung.
+        const wartezeit = Math.max(1, Math.ceil(config.rateWindowMs / 1000));
+        c.header('Retry-After', String(wartezeit));
+        return authFailure(c, 429, AUTH_ERROR_REASONS.rateLimited, `Ratenbegrenzung fuer ${clientKey}`);
+      }
+      throw error;
+    }
+
     let action: AuthAction = 'login';
     const body = await readJsonBody(c.req.raw);
     if (body !== null && body.action !== undefined) {
