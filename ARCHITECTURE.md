@@ -62,6 +62,11 @@ Vollbild-Overlay (`components/bits.tsx → Paywall`).
 | `ideenschmiede_applications` | Eigene Team-Bewerbungen |
 | `ideenschmiede_votes` | Abgegebene Stimmen (Ideen- & Milestone-Voting) |
 | `ideenschmiede_allocations` | Investor Team Selection (80 %-Pool-Verteilung) |
+| `ideenschmiede_settings` | Einstellungen der Settings-Seite (`store.tsx`) |
+
+**Zurücksetzen:** `resetDemo()` in `store.tsx` löscht die Demo-Persistenz
+vollständig; die Datenschutzerklärung verweist darauf als Löschweg des
+Nutzers (Art. 17 DSGVO).
 
 **Migrationspfad:** Jeder dieser Schlüssel entspricht später 1:1 einem
 API-Endpunkt (siehe Anhang §6). Der Store ist die einzige Stelle, die dann
