@@ -45,10 +45,30 @@ ADR-006 wird damit in der Datenbank durchgesetzt, nicht nur dokumentiert.
 | Feld | Typ | Wertebereich |
 |---|---|---|
 | `direction` | `text` | `'up'` oder `'down'` — **nicht** `-1`/`+1` |
-| `subscription_id` | `uuid` | `REFERENCES subscriptions(id) ON DELETE SET NULL` — belegt, welches Abo die Stimme gedeckt hat |
+| `subscription_id` | `uuid` | `REFERENCES subscriptions(id) ON DELETE RESTRICT` — belegt, welches Abo die Stimme gedeckt hat. **Unveränderlich nach dem Einfügen** |
 
 `direction` ist Text, damit die Absicht in jeder Abfrage lesbar bleibt und
 `SUM(value)` nicht versehentlich über eine Richtung gebildet wird.
+
+**Der Stimmbeleg ist unveränderlich.** `subscription_id` hält fest, welches
+Abonnement die Stimme gedeckt hat, und ist ein historischer Beleg. Ein
+`UPDATE`, das die Spalte ändert — auch auf `NULL` — wird abgewiesen. Ein
+`NULL` würde die Stimme nachträglich unbegründbar machen.
+
+Daraus folgt `ON DELETE RESTRICT` statt `SET NULL`: Ein Abonnement, auf das
+Stimmen zeigen, ist nicht löschbar. Die Deklaration muss der Wirkung
+entsprechen — `SET NULL` kann hier nie greifen, weil die Prüfung des
+Stimmrechts vor der Fremdschlüsselaktion läuft und dann kein aktives
+Abonnement mehr findet.
+
+**Wann geprüft wird.** Die Prüfung „aktives Abonnement" gehört an den
+Zeitpunkt der Stimmabgabe, nicht an jedes spätere `UPDATE`:
+
+| Operation | Verhalten |
+|---|---|
+| `INSERT` | prüft das Stimmrecht, stempelt `subscription_id` |
+| `UPDATE` | prüft **nicht** neu (das Recht wurde bei der Abgabe geprüft und ist im Beleg festgehalten); jede Änderung von `subscription_id` wird abgewiesen |
+| `DELETE` | frei — Zurückziehen braucht kein Abonnement |
 
 ### Zähler
 

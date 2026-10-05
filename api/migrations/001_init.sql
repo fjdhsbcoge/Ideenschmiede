@@ -21,6 +21,16 @@
 --   * ADR-003: das Abonnement ist das Stimmrecht. Deshalb ist es eine eigene
 --     Tabelle mit Historie (nicht eine Spalte), und deshalb setzt die
 --     Datenbank selbst durch, dass nur Abonnenten stimmen koennen.
+--   * Der Stimmbeleg ist UNVERAENDERLICH: idea_votes.subscription_id haelt
+--     fest, WELCHES Abonnement eine Stimme gedeckt hat, und laesst sich nicht
+--     mehr aendern - auch nicht auf NULL. Ein NULL machte die Stimme
+--     nachtraeglich unbegruendbar. Geprueft wird das Stimmrecht deshalb beim
+--     INSERT (Zeitpunkt der Stimmabgabe); ein spaeteres UPDATE (direction
+--     umdrehen) aendert den Beleg nicht und wird nicht erneut geprueft.
+--     Der Fremdschluessel steht auf ON DELETE RESTRICT: ein Abonnement, auf
+--     das Stimmen zeigen, ist nicht loeschbar - dieselbe Regel wie bei den
+--     Geldbelegen der beiden Ledger. Deklaration und Wirkung stimmen damit
+--     ueberein (vorher stand dort SET NULL, das nie greifen konnte).
 --   * Jeder Zaehler hat eine Quelltabelle und genau einen Schreiber (Trigger):
 --       vote_up / vote_down         <- idea_votes
 --       raised_sat / investor_count <- idea_investments  (in ideas)
@@ -28,6 +38,10 @@
 --       comment_count               <- idea_comments (Migration 002)
 --     Ein Zaehler ohne Quelltabelle waere Datenverlust: der Wert ist spaeter
 --     nicht rekonstruierbar.
+--   * users.role ist die Abkuerzung von "hat ein aktives Abonnement" und
+--     wird ausschliesslich ABGELEITET: der BEFORE-Trigger users_derive_role_trg
+--     rechnet sie bei jedem INSERT/UPDATE aus subscriptions neu aus. Ein
+--     direktes UPDATE auf role kann sie damit nicht faelschen (ADR-003).
 --   * Alle Zeitstempel sind TIMESTAMPTZ (immer absolut, nie lokal).
 --   * Jeder Fremdschluessel hat eine ON DELETE-Regel und Indexabdeckung.
 --
@@ -62,6 +76,10 @@ CREATE TABLE users (
     email         text        NOT NULL,
     avatar_url    text,
     language      text        NOT NULL DEFAULT 'de',
+    -- Abkuerzung von "hat ein aktives Abonnement" (ADR-003) - KEIN Eingabefeld.
+    -- Den Wert leitet users_derive_role_trg bei jedem INSERT/UPDATE aus
+    -- subscriptions ab; ein direktes SET role kann ihn deshalb nicht faelschen.
+    -- 'visitor' ist der Einstieg und wird nie automatisch vergeben.
     role          text        NOT NULL DEFAULT 'visitor',
     created_at    timestamptz NOT NULL DEFAULT now(),
     updated_at    timestamptz NOT NULL DEFAULT now(),
@@ -279,7 +297,24 @@ CREATE TABLE idea_votes (
     -- ADR-003 + Entscheidung 2: welches Abonnement dieses Stimmrecht verliehen
     -- hat. Weil subscriptions Historie behaelt, ist die Wahl auch dann noch
     -- nachpruefbar, wenn das Abonnement laengst abgelaufen ist.
-    subscription_id uuid        REFERENCES subscriptions (id) ON DELETE SET NULL,
+    --
+    -- Der Beleg ist UNVERAENDERLICH: idea_votes_require_subscription weist ein
+    -- UPDATE ab, das subscription_id aendert - auch ein UPDATE auf NULL. Ein
+    -- NULL machte die Stimme nachtraeglich unbegruendbar ("wer hat das
+    -- gedeckt?" waere nicht mehr beantwortbar).
+    --
+    -- ON DELETE RESTRICT ist hier gewaehlt, nicht gesetzt. Die fruehere
+    -- Deklaration ON DELETE SET NULL konnte NIE greifen: die FK-Aktion setzt
+    -- subscription_id = NULL, dieses UPDATE laeuft durch den BEFORE-Trigger
+    -- idea_votes_require_subscription, der dann kein aktives Abonnement mehr
+    -- findet - und der ganze DELETE scheitert mit 23514
+    -- ('ADR-003: Stimmrecht erfordert ein aktives Abonnement'), obwohl das
+    -- Schema das Loeschen zugesagt hatte. Ein Entwickler, der sich auf die
+    -- Deklaration verlaesst, baute gegen eine Falle.
+    -- Jetzt gilt dieselbe Regel wie bei den Ledgern: ein Abonnement, auf das
+    -- Stimmen zeigen, ist nicht loeschbar (23503). Der Beleg ueberlebt; ein
+    -- Abonnement ohne Stimmen bleibt loeschbar.
+    subscription_id uuid        REFERENCES subscriptions (id) ON DELETE RESTRICT,
 
     created_at      timestamptz NOT NULL DEFAULT now(),
     updated_at      timestamptz NOT NULL DEFAULT now(),
@@ -544,14 +579,51 @@ CREATE TRIGGER idea_votes_set_updated_at
 -- ADR-003 in der Datenbank: stimmen darf nur, wer ein aktives Abonnement hat.
 -- Die BEFORE-Trigger-Funktion prueft das UND stempelt das verleihende
 -- Abonnement in die Stimme. Kein API-Bug kann das umgehen.
--- Sie greift bei INSERT und bei UPDATE: eine umgedrehte Stimme ist eine neue
--- Stimmabgabe und braucht dasselbe Stimmrecht. Das Zurueckziehen (DELETE)
--- bleibt jederzeit moeglich - dafuer braucht es kein Abonnement.
+--
+-- Sie greift weiterhin bei INSERT und UPDATE, tut aber je Operation etwas
+-- anderes - und das ist der Kern der Korrektur:
+--
+--   * TG_OP = 'INSERT': das Stimmrecht wird JETZT geprueft (aktives
+--     Abonnement mit expires_at > now()) und das verleihende Abonnement wird
+--     in die Stimme gestempelt. Ein mitgeschickter Wert wird dabei
+--     ueberschrieben - der Beleg ist nicht faelschbar.
+--   * TG_OP = 'UPDATE': der Beleg wird NUR geschuetzt, nicht neu vergeben und
+--     nicht erneut geprueft. Eine umgedrehte Stimme aendert ausschliesslich
+--     direction; das Stimmrecht wurde bei der Abgabe geprueft und steht als
+--     subscription_id in der Zeile. Wer hier erneut pruefen wuerde, machte
+--     jede Stimme ungueltig, sobald das Abonnement ablaeuft - eine
+--     Wahlruecknahme durch Zeitablauf.
+--   * DELETE bleibt frei: Zurueckziehen braucht kein Abonnement.
+--
+-- Genau diese UPDATE-Pruefung war der Defekt. Die FK-Aktion ON DELETE SET NULL
+-- setzt subscription_id = NULL; dieses UPDATE lief durch den Trigger, der kein
+-- aktives Abonnement mehr fand, und der DELETE scheiterte mit
+-- 'ADR-003: Stimmrecht erfordert ein aktives Abonnement' (23514) - die
+-- deklarierte Aktion konnte nie greifen. Der Fremdschluessel steht deshalb auf
+-- RESTRICT, und die UPDATE-Verzweigung weist eine Aenderung des Belegs selbst
+-- ab (auch auf NULL): der Beleg ist unveraenderlich.
 CREATE FUNCTION idea_votes_assign_subscription() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
     v_subscription_id uuid;
 BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        -- Unveraenderlicher Beleg: eine Stimme darf nicht nachtraeglich
+        -- umgehaengt oder auf NULL gesetzt werden. Beides wuerde die Frage
+        -- "welches Abonnement hat diese Stimme gedeckt?" nachtraeglich
+        -- unbeantwortbar machen - und mit ihr die Begruendung der Stimme.
+        IF NEW.subscription_id IS DISTINCT FROM OLD.subscription_id THEN
+            RAISE EXCEPTION
+                'ADR-003: idea_votes.subscription_id ist ein unveraenderlicher Beleg und darf per UPDATE nicht geaendert werden (vote_id=%, alt=%, neu=%)',
+                OLD.id, OLD.subscription_id, NEW.subscription_id
+                USING ERRCODE = 'check_violation';
+        END IF;
+
+        -- Kein Stempeln, keine erneute Abo-Pruefung: 'direction' umzudrehen
+        -- ist erlaubt, auch wenn das Abonnement inzwischen abgelaufen ist.
+        RETURN NEW;
+    END IF;
+
     SELECT s.id INTO v_subscription_id
       FROM subscriptions s
      WHERE s.user_id = NEW.user_id
@@ -759,6 +831,71 @@ CREATE TRIGGER subscriptions_sync_user_role_trg
     FOR EACH ROW EXECUTE FUNCTION subscriptions_sync_user_role();
 
 
+-- Die Sperre gegen die zweite Wahrheit: users.role ist eine ABLEITUNG, kein
+-- Eingabefeld. Der Trigger oben pflegt sie, wenn sich ein ABONNEMENT aendert -
+-- er feuert aber nur auf subscriptions. Ein direktes
+--
+--     UPDATE users SET role = 'subscriber' WHERE id = <ohne Abo>;
+--
+-- kam bisher ungeprueft durch und hinterliess die Grundlage des Stimmrechts
+-- (ADR-003) ohne Abonnement. Dieser BEFORE-Trigger schliesst die Luecke: er
+-- leitet role bei JEDEM Schreibvorgang auf users neu aus dem tatsaechlichen
+-- Abo-Zustand ab. Es gibt keinen Pfad an ihm vorbei - auch ein INSERT mit
+-- mitgegebenem role laeuft durch ihn hindurch.
+--
+--   * aktives Abonnement (active AND expires_at > now()) -> 'subscriber'
+--   * sonst, falls role 'subscriber' ist                 -> 'user'
+--   * sonst                                              -> unveraendert
+--
+-- 'visitor' wird nie automatisch vergeben: das ist der Einstieg, keine
+-- Herabstufung. Ein INSERT ohne Abonnement behaelt deshalb sein 'visitor'
+-- (Spaltenvorgabe), ein INSERT mit role='user' behaelt 'user'.
+--
+-- Bewusst KORRIGIEREND statt abweisend (anders als ADR-003 bei der Stimme, die
+-- ohne Abonnement hart abgewiesen wird): role ist eine Abkuerzung, kein zweiter
+-- Wahrheitswert - abgeleitete Werte werden nachgerechnet, nicht geprueft. Das
+-- Abonnement bleibt die Wahrheit, die Spalte folgt ihr. Ein abgewiesenes UPDATE
+-- wuerde ausserdem jeden Aufrufer brechen, der role mitschickt und das
+-- Abonnement im selben Vorgang anlegt - der kuenftige
+-- BTCPay-Webhook ist genau so ein Aufrufer, und die Reihenfolge seiner beiden
+-- Schreibvorgaenge darf keine Rolle spielen. Unsichtbar bleibt der Versuch
+-- trotzdem nicht: er wird als WARNUNG protokolliert.
+CREATE FUNCTION users_derive_role() RETURNS trigger
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_active boolean;
+BEGIN
+    -- Beim INSERT ist diese Pruefung immer falsch: subscriptions.user_id zeigt
+    -- per Fremdschluessel auf users, ein Abonnement kann fuer eine noch nicht
+    -- existierende users-Zeile nicht existieren. Sie steht trotzdem hier, damit
+    -- INSERT und UPDATE dieselbe Regel durchlaufen - NEW.id ist bereits
+    -- gesetzt, weil Spaltenvorgaben vor dem BEFORE-Trigger ausgewertet werden.
+    -- Der Fall "neuer Nutzer ohne Abo -> visitor" bleibt damit unberuehrt.
+    SELECT EXISTS (
+        SELECT 1 FROM subscriptions s
+         WHERE s.user_id = NEW.id
+           AND s.active
+           AND s.expires_at > now()
+    ) INTO v_active;
+
+    IF v_active THEN
+        NEW.role := 'subscriber';
+    ELSIF NEW.role = 'subscriber' THEN
+        NEW.role := 'user';
+        RAISE WARNING
+            'users.role ist abgeleitet: % auf users setzt ''subscriber'', aber es gibt kein aktives Abonnement - role wird auf ''user'' herabgestuft (user_id=%).',
+            TG_OP, NEW.id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER users_derive_role_trg
+    BEFORE INSERT OR UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION users_derive_role();
+
+
 -- =============================================================================
 -- 11. Views
 -- =============================================================================
@@ -857,10 +994,11 @@ SELECT p.team_id                           AS team_id,
 -- 12. Einheiten dokumentieren (ADR-006: Satoshi, ganzzahlig)
 -- =============================================================================
 COMMENT ON TABLE  users            IS 'Konten. role ist die Abkuerzung von "hat aktives Abonnement" (ADR-003).';
+COMMENT ON COLUMN users.role       IS 'Abgeleitet, kein Eingabefeld: users_derive_role_trg setzt role bei jedem INSERT/UPDATE aus subscriptions neu (aktives Abo = subscriber, sonst hoechstens user). visitor ist der Einstieg und wird nie automatisch vergeben.';
 COMMENT ON TABLE  subscriptions    IS 'Abonnement-Historie. Das aktive Abonnement ist das Stimmrecht (ADR-003).';
 COMMENT ON TABLE  user_wallets     IS 'Oeffentliche Schluessel. Die Plattform sieht nie einen privaten Schluessel (ADR-006).';
 COMMENT ON TABLE  ideas            IS 'Ideen mit discussion- und marketplace-Phase (ARCHITECTURE 5.2).';
-COMMENT ON TABLE  idea_votes       IS 'Einzelstimmen - die Wahrheit hinter vote_up/vote_down.';
+COMMENT ON TABLE  idea_votes       IS 'Einzelstimmen - die Wahrheit hinter vote_up/vote_down, je Stimme mit dem Beleg, welches Abonnement sie gedeckt hat (ADR-003).';
 COMMENT ON TABLE  idea_investments IS 'Ledger der Direktzahlungen - die Quelle von raised_sat und investor_count und die Grundlage der 20/80-Aufteilung.';
 COMMENT ON TABLE  teams            IS 'Teams je Idea (ARCHITECTURE 5.4).';
 COMMENT ON TABLE  team_investments IS 'Ledger der Team-Shares - die Quelle von teams.raised_sat und teams.investor_count und die Grundlage der Team-Seite der 20/80-Aufteilung.';
@@ -876,7 +1014,7 @@ COMMENT ON COLUMN teams.skin_in_game_sat      IS 'Satoshi (BIGINT, ganzzahlig)';
 COMMENT ON COLUMN milestones.funding_release_sat IS 'Satoshi (BIGINT, ganzzahlig)';
 COMMENT ON COLUMN subscriptions.payment_amount IS 'Satoshi (BIGINT, ganzzahlig)';
 
-COMMENT ON COLUMN idea_votes.subscription_id  IS 'Das Abonnement, das dieses Stimmrecht verliehen hat (ADR-003).';
+COMMENT ON COLUMN idea_votes.subscription_id  IS 'Das Abonnement, das dieses Stimmrecht verliehen hat (ADR-003). Unveraenderlicher Beleg: wird beim INSERT gestempelt und kann per UPDATE nicht geaendert werden (auch nicht auf NULL). ON DELETE RESTRICT - ein Abonnement mit Stimmen ist nicht loeschbar.';
 COMMENT ON COLUMN ideas.comment_count         IS 'Zaehler. Wird von der idea_comments-Tabelle (Migration 002) gepflegt.';
 COMMENT ON COLUMN idea_investments.amount_sat IS 'Satoshi (BIGINT, ganzzahlig), immer > 0.';
 COMMENT ON COLUMN idea_investments.txid       IS 'Transaktionskennung (64 Hexzeichen), UNIQUE - derselbe Beleg zaehlt nur einmal.';

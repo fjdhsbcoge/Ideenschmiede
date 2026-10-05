@@ -35,9 +35,10 @@ Ohne laufende Datenbank, im Postgres-Dialekt geparst:
     python .../maschine/pruefe_sql.py api/migrations/001_init.sql
     python .../maschine/pruefe_vertrag.py api/migrations/001_init.sql
 
-Ergebnis fuer diese Datei: 81 Statements, 9 Tabellen (alle neun
+Ergebnis fuer diese Datei: 82 Statements, 9 Tabellen (alle neun
 Pflichtentitaeten des Vertrags), keine Gleitkomma-Spalten, 13 Fremdschluessel
-(alle mit `ON DELETE`), 26 Indizes, `ERGEBNIS: PARSE OK`. Der Vertragspruefer
+(alle mit `ON DELETE`), 24 Indizes per `CREATE INDEX` (dazu 24 implizite aus
+`PRIMARY KEY`/`UNIQUE`), `ERGEBNIS: PARSE OK`. Der Vertragspruefer
 meldet `ERGEBNIS: KONFORM zu api/CONTRACT.md` — ohne Warnungen.
 
 Statische Pruefung genuegt nicht — ein Parser bestaetigt nichts ueber das
@@ -64,6 +65,56 @@ den **konkreten SQLSTATE**:
 | `team_investor_shares` | 8000/2000 bp, 1 von 3 sat = 3333 bp | bestanden |
 | Nachweis „Zaehler = Ledger“ ueber alle Teams | 0 Abweichungen | bestanden |
 | DELETE aus dem Ledger | senkt beide Zaehler | bestanden |
+
+Fuer die Rollenintegritaet lief im selben Lauf ein zweiter `DO`-Block mit inneren
+`EXCEPTION`-Zweigen gegen `postgres:16-alpine` (PostgreSQL 16.15):
+
+| Fall | erwartet | Ergebnis |
+|---|---|---|
+| a) INSERT eines neuen Nutzers ohne Abo | `visitor` | bestanden |
+| b) `UPDATE users SET role='subscriber'` ohne Abo | bleibt nicht `subscriber` | bestanden (wird zu `user`; `WARNING` protokolliert) |
+| c) aktives Abo anlegen | `subscriber` | bestanden |
+| d) `expires_at` in die Vergangenheit setzen | faellt auf `user` | bestanden |
+| e) Stimme ohne Abo | `23514` (ADR-003) | bestanden |
+| f) Stimme mit Abo | akzeptiert, `subscription_id` gestempelt | bestanden |
+| g) INSERT mit `role='user'` | bleibt `user` | bestanden |
+| Zusatz: `UPDATE role='visitor'` bei aktivem Abo | bleibt `subscriber` | bestanden |
+| Zusatz: Webhook-Reihenfolge (`role` vor dem Abo) | `subscriber` erst mit dem Abo | bestanden |
+| Zusatz: Nachweis `role` = Abo-Zustand ueber alle Nutzer | 0 Abweichungen | bestanden |
+
+Der Fall d) braucht `started_at` mit in die Vergangenheit: `subscriptions_period_check`
+verlangt `expires_at > started_at`, sonst scheitert der Test an der
+Datenqualitaet statt an der Rollenlogik (`CONTRACT.md`, "Pruefpflicht").
+
+Fuer den **Stimmbeleg** lief im selben Lauf ein dritter `DO`-Block mit inneren
+`EXCEPTION`-Zweigen gegen `postgres:16-alpine` (PostgreSQL 16.15). Er prueft
+genau den Defekt, der diese Fassung ausgeloest hat: `idea_votes.subscription_id`
+stand auf `ON DELETE SET NULL`, und diese Aktion konnte nie greifen.
+
+| Fall | erwartet | Ergebnis |
+|---|---|---|
+| a) Stimme ohne Abo | `23514` (ADR-003 unveraendert) | bestanden |
+| b) Stimme mit Abo | gelingt, `subscription_id` gestempelt | bestanden |
+| c) `direction` umdrehen | gelingt, `subscription_id` **unveraendert** | bestanden |
+| d) `subscription_id = NULL` | abgewiesen (`23514`) | bestanden |
+| e) `subscription_id` = anderes Abo | abgewiesen (`23514`) | bestanden |
+| f) Abo loeschen, auf das Stimmen zeigen | `23503` (RESTRICT) | bestanden |
+| g) Abo loeschen, auf das keine Stimme zeigt | gelingt | bestanden |
+| h) Stimme zurueckziehen (DELETE) ohne aktives Abo | gelingt | bestanden |
+| i) Nachweis „Zaehler = Einzelstimmen“ | 0 Abweichungen | bestanden |
+| Zusatz: Konto **mit** Stimme loeschen | gelingt; das `RESTRICT` greift nicht dazwischen | bestanden |
+
+`pg_constraint.confdeltype` bestaetigt die Deklaration zur Laufzeit:
+`idea_votes_subscription_id_fkey` ist `'r'` (RESTRICT) — vorher `'n'` (SET NULL).
+
+Eine Testdaten-Falle hat im Lauf zugeschlagen und ist hier festgehalten, weil
+sie nichts ueber die Logik aussagt (`CONTRACT.md`, „Pruefpflicht“: Testdaten
+muessen die eigenen Regeln erfuellen):
+
+* Fall i) braucht **aktive** Abonnements fuer beide Waehler. Der zweite Nutzer
+  hat sein Abo in g) verloren — das war der Zweck von g). Ohne ein neues Abo
+  scheitert die Stimme aus i) an ADR-003 statt an der Nachweisregel — der Test
+  faellt dann an der Datenqualitaet, nicht an der Nachweisregel.
 
 ---
 
@@ -105,7 +156,11 @@ Zeitbezug*: „durfte diese Person am 3. Maerz stimmen?“ ist eine andere Frage
    `idea_votes.subscription_id` auf die konkrete Abonnement-Zeile zeigt, bleibt
    jede Stimme dauerhaft begruendbar — auch nach Ablauf oder Kuendigung. Eine
    Spalte `users.subscription_expires_at` koennte das nicht: sie ueberschreibt die
-   Vergangenheit bei jeder Verlaengerung.
+   Vergangenheit bei jeder Verlaengerung. Damit diese Begruendung traegt, ist der
+   Beleg **unveraenderlich**: ein `UPDATE`, das `subscription_id` aendert (auch
+   auf `NULL`), wird abgewiesen, und ein Abonnement, auf das Stimmen zeigen, ist
+   per `ON DELETE RESTRICT` nicht loeschbar (siehe „Der Stimmbeleg ist
+   unveraenderlich“).
 2. **Der Geldfluss braucht einen Ort.** Jede Verlaengerung ist ein eigener
    Zahlungsvorgang mit eigener Transaktion (ADR-006, non-custodial).
    `payment_txid` und `payment_amount` sind die Belegkette. In einer einzelnen
@@ -157,6 +212,9 @@ ist ein Beweis.
 
 1. **Die Wahrheit liegt in `idea_votes`:** wer, wann, welche Richtung — und ueber
    `subscription_id` auch, welches Abonnement dieses Stimmrecht verliehen hat.
+   Der Beleg wird beim `INSERT` gestempelt und ist danach unveraenderlich; die
+   Pruefung des Stimmrechts haengt am Zeitpunkt der Stimmabgabe, nicht an jedem
+   spaeteren Schreibvorgang (siehe „Der Stimmbeleg ist unveraenderlich“).
 2. **Doppelstimmen sind strukturell unmoeglich.** `UNIQUE (idea_id, user_id)`
    entscheidet in der Datenbank, nicht die Anwendung. Kein Race Condition, kein
    Bug in einem Endpunkt kann sie erzeugen.
@@ -277,12 +335,131 @@ auseinander, sobald ein Abonnement ablaeuft — deshalb haelt
 `subscriptions_sync_user_role` die Spalte aktuell. `visitor` wird nie automatisch
 vergeben: das ist der Einstieg, keine Herabstufung.
 
+### Die Abkuerzung `users.role` ist nicht direkt faelschbar
+
+Eine Abkuerzung, die sich direkt schreiben laesst, ist keine Abkuerzung — und
+genau das war der Fall. `subscriptions_sync_user_role` feuert nur auf
+`subscriptions`; ein direkter Schreibvorgang auf `users` kam ungeprueft durch:
+
+```sql
+UPDATE users SET role = 'subscriber' WHERE id = <Nutzer ohne Abo>;  -- gelingt
+```
+
+Am laufenden PostgreSQL 16.15 nachgestellt: ein neuer Nutzer ohne Abonnement
+ergab korrekt `visitor`, dasselbe UPDATE danach `subscriber` bei
+`aktives Abo = false`. Damit war die Grundlage des Stimmrechts aus ADR-003 ohne
+Abonnement zu haben. Besonders relevant, weil ein kuenftiger BTCPay-Webhook genau
+`role = 'subscriber'` setzen wird.
+
+Geschlossen wird die Luecke in derselben Datei durch einen zweiten Trigger auf
+derselben Spalte: `users_derive_role_trg`, ein `BEFORE INSERT OR UPDATE`-Trigger
+auf `users`, der `role` aus dem tatsaechlichen Abo-Zustand ableitet.
+
+| Zustand beim Schreibvorgang | `role` danach |
+|---|---|
+| aktives Abonnement (`active AND expires_at > now()`) | `subscriber` |
+| sonst, falls `role` gerade `subscriber` ist | `user` |
+| sonst | unveraendert |
+
+Zwei Trigger, eine Spalte, zwei Richtungen: `subscriptions_sync_user_role`
+reagiert auf das Abonnement — auch auf ein ablaufendes, ohne dass jemand `users`
+anfasst —, `users_derive_role_trg` auf jeden Schreibvorgang auf `users`. Der
+zweite ist die Sperre: es gibt keinen Pfad an ihm vorbei, auch ein `INSERT` mit
+mitgegebenem `role` laeuft durch ihn hindurch.
+
+**Warum korrigierend und nicht abweisend.** `role` ist eine Abkuerzung, kein
+zweiter Wahrheitswert — abgeleitete Werte werden nachgerechnet, nicht geprueft.
+Dieselbe Haltung hat `set_updated_at`, das ein mitgeschicktes `updated_at`
+stillschweigend ueberschreibt. Ein abweisendes `UPDATE` wuerde ausserdem jeden
+Aufrufer brechen, der `role` mitschickt und das Abonnement im selben Vorgang
+anlegt; der Webhook darf seine beiden Schreibvorgaenge in beliebiger Reihenfolge
+absetzen. Unsichtbar bleibt der Versuch trotzdem nicht — er wird als `WARNING`
+protokolliert. Bei ADR-003 selbst bleibt es umgekehrt: eine Stimme ohne
+Abonnement wird hart abgewiesen (`23514`), weil eine Stimme eine neue Behauptung
+ist und keine Ableitung.
+
+**Der INSERT-Fall bleibt unberuehrt.** Beim `INSERT` existiert die Zeile in
+`subscriptions` noch nicht — sie kann es auch nicht, `subscriptions.user_id`
+zeigt per Fremdschluessel auf `users`. Die Ableitung findet dort kein aktives
+Abonnement und laesst `role` stehen: ein neuer Nutzer ohne Abo ergibt `visitor`,
+ein `INSERT` mit `role = 'user'` bleibt `user`. `visitor` vergibt der Trigger
+nie; das ist der Einstieg, keine Herabstufung.
+
 **ADR-003 wird in der Datenbank durchgesetzt.** `idea_votes_require_subscription`
 weist einen INSERT ab, wenn kein aktives Abonnement vorliegt, und stempelt das
 verleihende Abonnement in die Stimme. Damit kann kein API-Fehler einer
 Nicht-Abonnentin eine Stimme verschaffen. Sollte ein spaeteres ADR auch anderen
 Rollen ein Stimmrecht geben, ist das ein `DROP TRIGGER` — die Regel ist bewusst an
 einer Stelle gebuendelt.
+
+### Der Stimmbeleg ist unveraenderlich
+
+`idea_votes.subscription_id` ist ein **historischer Beleg**: er haelt fest,
+*welches* Abonnement eine Stimme gedeckt hat. Er wird beim `INSERT` gestempelt
+(ein mitgeschickter Wert wird ueberschrieben) und laesst sich danach nicht mehr
+aendern — auch nicht auf `NULL`. Ein `NULL` machte die Stimme nachtraeglich
+unbegruendbar: die Frage „durfte diese Person am 3. Maerz stimmen?“ waere nicht
+mehr zu beantworten, obwohl die Stimme weiter zaehlt.
+
+Daraus folgen drei Regeln, die zusammengehoeren:
+
+| Operation | Verhalten | Begruendung |
+|---|---|---|
+| `INSERT` | prueft aktives Abonnement (sonst `23514`) und stempelt `subscription_id` | Stimmrecht wird **bei der Abgabe** geprueft — das ist der Zeitpunkt, an dem es gelten muss |
+| `UPDATE` | prueft **nicht** erneut, stempelt **nicht** neu; aendert sich `subscription_id`, wird abgewiesen (`23514`) | eine umgedrehte Stimme aendert nur `direction`; das Stimmrecht steht als Beleg in der Zeile |
+| `DELETE` | frei | Zurueckziehen braucht kein Abonnement |
+
+Dazu der Fremdschluessel `idea_votes.subscription_id` → `subscriptions` auf
+`ON DELETE RESTRICT`: **ein Abonnement, auf das Stimmen zeigen, ist nicht
+loeschbar** (`23503`). Dieselbe Regel wie bei den Ledgern — Zahlungsbelege
+ueberleben ebenfalls per `RESTRICT`. Der Beleg und die Abrechnung sind damit
+dieselbe Sorte Zusage: was einmal belegt ist, wird nicht weggeraeumt.
+
+**Warum die Pruefung nicht an jedem UPDATE haengen darf.** Eine Stimme ist ein
+Ereignis mit Zeitstempel, keine fortlaufende Behauptung. Wuerde jedes `UPDATE`
+erneut ein aktives Abonnement verlangen, waere jede Stimme ungueltig, sobald das
+Abonnement ablaeuft — eine Wahlruecknahme durch Zeitablauf. Und ein
+`ON DELETE SET NULL` waere zugleich unmoeglich: die FK-Aktion ist selbst ein
+`UPDATE` auf `idea_votes`, liefe durch dieselbe Pruefung und scheiterte. Genau
+das war der Defekt.
+
+### Der Defekt (behoben): eine Zusage, die nie greifen konnte
+
+Die fruehere Fassung deklarierte `ON DELETE SET NULL` mit der Begruendung „die
+Stimme ueberlebt das Aufraeumen der Abrechnung“. Am laufenden PostgreSQL 16.15
+nachgestellt galt das Gegenteil:
+
+```sql
+-- Nutzer mit aktivem Abo, Idee, eine Stimme -> subscription_id ist gesetzt
+DELETE FROM subscriptions WHERE id = <Abo der Stimme>;
+-- ABGEWIESEN: 23514
+-- 'ADR-003: Stimmrecht erfordert ein aktives Abonnement'
+```
+
+Der Ablauf: die FK-Aktion setzt `subscription_id = NULL`; dieses `UPDATE` feuert
+`idea_votes_require_subscription`; der Trigger sucht ein **aktives** Abonnement
+und findet keines mehr (es wird ja gerade geloescht) — und bricht den gesamten
+`DELETE` ab. Verantwortlich war nicht eine der beiden Regeln allein, sondern die
+Kombination aus `SET NULL` und einer Pruefung, die auf `UPDATE` von
+`idea_votes` feuerte. Das Schema dokumentierte damit ein Verhalten, das es nicht
+hatte; ein Entwickler, der sich auf `SET NULL` verliess, baute gegen eine Falle.
+
+Behoben ist das nicht durch Nachgeben bei der Pruefung, sondern durch
+**Uebereinstimmung von Deklaration und Wirkung**: `RESTRICT` sagt jetzt, was
+tatsaechlich passiert, und der Beleg ist unveraenderlich. Ob eine Stimme ohne
+Abo ueberhaupt entstehen darf, entscheidet weiterhin allein der `INSERT`.
+
+**Abweichung vom Datenvertrag — gemeldet, nicht stillschweigend.** `CONTRACT.md`
+fuehrt in der Stimmen-Tabelle noch `REFERENCES subscriptions(id) ON DELETE SET
+NULL` und beschreibt im Abschnitt „Nachweisregeln“ einen `BEFORE INSERT OR
+UPDATE`-Trigger, der Stimmen ohne aktives Abo abweist. Beides trifft auf diese
+Fassung nicht mehr zu: die FK-Aktion ist `RESTRICT`, und geprueft wird beim
+`INSERT`. Der Vertrag erlaubt Abweichungen ausdruecklich, verlangt aber eine
+Begruendung im Commit („Abweichungen sind erlaubt, muessen aber im Commit
+begruendet werden — stillschweigende Abweichung nicht“) — sie steht hier. Die
+Vertragsdatei selbst bleibt unveraendert; die beiden betroffenen Stellen muessen
+in einem eigenen Schritt nachgezogen werden, sonst dokumentiert der kanonische
+Vertrag weiterhin `SET NULL`.
 
 **`ON DELETE`-Regeln sind gewaehlt, nicht gesetzt:**
 
@@ -291,12 +468,22 @@ einer Stelle gebuendelt.
 | `subscriptions`, `user_wallets` → `users` | `CASCADE` | Gehoeren der Person; ohne sie sinnlos. |
 | `ideas.author_id` → `users` | `RESTRICT` | Das Loeschen eines Kontos darf keine Beitragsgeschichte mitnehmen. |
 | `idea_votes` → `ideas`, `users` | `CASCADE` | Eine Stimme ohne Gegenstand oder ohne Waehlerin ist keine Stimme. |
-| `idea_votes.subscription_id` → `subscriptions` | `SET NULL` | Die Stimme ueberlebt das Aufraeumen der Abrechnung; sie bleibt gueltig. |
+| `idea_votes.subscription_id` → `subscriptions` | `RESTRICT` | Der Beleg ist unveraenderlich: ein Abonnement, auf das Stimmen zeigen, wird nicht geloescht. Die frueher deklarierte Aktion `SET NULL` konnte nie greifen (siehe „Der Defekt“). |
 | `teams.idea_id` → `ideas` | `CASCADE` | Ein Team ohne Idee hat keinen Auftrag. |
 | `teams.leader_id` → `users` | `RESTRICT` | Eine Teamleitung wird uebergeben, nicht geloescht. |
 | `team_investments.team_id` → `teams` | `RESTRICT` | Geldbelege werden nicht mitgeloescht — auch nicht mittelbar ueber das `CASCADE` von `teams.idea_id`. Ein Team mit Belegen ist nicht loeschbar. |
 | `team_investments.investor_id` → `users` | `RESTRICT` | Das Loeschen eines Kontos darf keine Zahlungsgeschichte mitnehmen. |
 | `milestones.team_id` → `teams` | `CASCADE` | Meilensteine gehoeren zum Team. |
+
+**Ehemals offener Widerspruch — entschieden und behoben.** Die Zeile
+`idea_votes.subscription_id` → `subscriptions` trug `SET NULL` („die Stimme
+ueberlebt das Aufraeumen der Abrechnung“), was zur Laufzeit nie galt: die
+FK-Aktion setzt `subscription_id = NULL`, dieses `UPDATE` feuerte
+`idea_votes_require_subscription`, der kein aktives Abonnement mehr fand, und
+der ganze `DELETE` scheiterte mit `23514`. Die Aufloesung steht oben unter
+„Der Stimmbeleg ist unveraenderlich“: `RESTRICT` statt `SET NULL`, Pruefung nur
+beim `INSERT`, unveraenderlicher Beleg. Der Fall ist gegen `postgres:16-alpine`
+mit den Faellen a) bis i) nachgewiesen (Abschnitt „Pruefen“).
 
 **Indizes auf allen Fremdschluesseln — mit einer bewussten Ausnahme.**
 `idea_votes.idea_id` hat *keinen* eigenen Index, weil die
