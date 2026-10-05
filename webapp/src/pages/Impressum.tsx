@@ -80,7 +80,11 @@ export default function Impressum() {
           <span className="badge badge-orange" style={{ fontSize: 11.5 }}>{T.statusStandValue}</span>
         </div>
         <Body>{T.statusChangeText}</Body>
-        <Link to="/" className="btn-secondary" style={{ display: 'inline-block', textDecoration: 'none', marginTop: 6 }}>{T.backToHome}</Link>
+        <p style={{ fontSize: 12.5, color: 'var(--text-tertiary)', lineHeight: 1.7, marginBottom: 18 }}>{T.seeDatenschutz}</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          <Link to="/datenschutz" className="btn-secondary" style={{ display: 'inline-block', textDecoration: 'none', marginTop: 6 }}>🔒 {T.datenschutzLink}</Link>
+          <Link to="/" className="btn-secondary" style={{ display: 'inline-block', textDecoration: 'none', marginTop: 6 }}>{T.backToHome}</Link>
+        </div>
       </Section>
     </Page>
   );

@@ -879,6 +879,8 @@ export const de = {
       statusChangeText: 'Diese Erklärung beschreibt ausschließlich den aktuellen Stand: eine reine Frontend-Demo ohne Backend. Mit der Umsetzung des MVP-Backends (Roadmap Phase 3) ändert sich das grundlegend – dann entstehen serverseitige Speicherung, Nutzerkonten und Zahlungsvorgänge. Diese Erklärung wird vor diesem Schritt überarbeitet und veröffentlicht.',
       statusNote: 'Maßgeblich ist immer die auf dieser Seite veröffentlichte Fassung.',
       backToHome: '← Zur Startseite',
+      seeImpressum: 'Angaben zum Betreiber findest du im Impressum.',
+      impressumLink: 'Impressum',
     },
 
     impressum: {
@@ -915,6 +917,8 @@ export const de = {
       statusStandValue: '5. Oktober 2026',
       statusChangeText: 'Dieses Impressum wird angepasst, sobald sich die Angaben zum Anbieter ändern – insbesondere bei Eintragung eines Unternehmens oder Aufnahme eines kommerziellen Betriebs.',
       backToHome: '← Zur Startseite',
+      seeDatenschutz: 'Wie mit deinen Daten umgegangen wird, steht in der Datenschutzerklärung.',
+      datenschutzLink: 'Datenschutzerklärung',
     },
   },
 };
