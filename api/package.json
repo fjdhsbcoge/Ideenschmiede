@@ -6,7 +6,7 @@
   "type": "module",
   "main": "dist/server.js",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",

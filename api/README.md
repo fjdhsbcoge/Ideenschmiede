@@ -24,7 +24,7 @@ dokumentierte Form. Die Zuordnung camelCase ↔ snake_case steht vollständig in
 
 | | Version |
 |---|---|
-| Node.js | 20 oder neuer (entwickelt und geprüft mit 24.19) |
+| Node.js | **20.19.0 oder neuer** (entwickelt und geprüft mit 24.19). Die Untergrenze stammt von `@noble/curves`, das die Signaturprüfung macht: ältere 20.x-Versionen lassen die Installation durchlaufen und scheitern erst beim Anmeldeversuch. |
 | PostgreSQL | 16 (geprüft mit 16.15; das Schema verlangt 11+) |
 | Docker | nur für den bequemen Weg zur Testdatenbank nötig |
 
