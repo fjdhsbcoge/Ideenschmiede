@@ -1,8 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { IDEAS_PLAN, initialIdeas, loadIdeas, type IdeasLoadResult, type IdeasSource } from '@/lib/dataSource';
+import { getCurrentUser } from '@/lib/api';
+import { canRole, roleFromApi, type Role } from '@/lib/role';
 import type { Idea } from '@/lib/data';
 
-export type Role = 'visitor' | 'user' | 'subscriber';
+// Die Rolle steht in lib/role.ts - EINE Stelle. Hier nur weitergereicht, damit
+// die vielen import { type Role } from '@/lib/store' nicht alle angefasst
+// werden muessen.
+export type { Role };
 
 export const ROLE_CONFIG: Record<Role, { name: string; icon: string; handle: string; description: string }> = {
   visitor: { name: 'Visitor', icon: '🌐', handle: 'Gast', description: 'Nicht angemeldet' },
@@ -86,8 +91,13 @@ function load<T>(key: string, fallback: T): T {
 const StoreContext = createContext<StoreState | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
+  // Die Rolle kommt im API-Betrieb vom SERVER und wird dort auch durchgesetzt.
+  // Der Wert in localStorage gilt nur noch fuer den Demo-Betrieb ohne API -
+  // sonst koennte jeder Besucher sich im Browser zum Subscriber machen und die
+  // Oberflaeche gaebe Rechte frei, die der Server danach mit HTTP 403 abweist.
   const [role, setRoleState] = useState<Role>(() => {
-    return (localStorage.getItem('ideenschmiede_role') as Role) || 'visitor';
+    if (IDEAS_PLAN.mode === 'api') return 'visitor';
+    return roleFromApi(localStorage.getItem('ideenschmiede_role'));
   });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [toastKey, setToastKey] = useState(0);
@@ -119,6 +129,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [ideaReloads]);
 
   const reloadIdeas = useCallback(() => { setIdeaReloads((n) => n + 1); }, []);
+
+  /**
+   * Holt die Rolle vom Server - die einzige Quelle im API-Betrieb.
+   *
+   * Nicht angemeldet (HTTP 401) ist ein erwarteter Zustand und ergibt
+   * 'visitor'; getCurrentUser liefert dafuer null und wirft nicht. Ein
+   * Netzfehler wird NICHT als Rolle missdeutet: die vorige Rolle bleibt
+   * stehen, statt jemanden mitten in der Sitzung zum Gast zu machen.
+   */
+  const refreshRole = useCallback(async () => {
+    if (IDEAS_PLAN.mode !== 'api') return;
+    try {
+      const nutzer = await getCurrentUser();
+      setRoleState(nutzer === null ? 'visitor' : roleFromApi(nutzer.role));
+    } catch {
+      // Netz weg oder unbrauchbare Antwort - die Rolle bleibt, wie sie war.
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshRole();
+  }, [refreshRole]);
 
   const getIdea = useCallback((id: string) => ideaState.ideas.find((i) => i.id === id), [ideaState.ideas]);
 
@@ -156,7 +188,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  /**
+   * Im API-Betrieb aendert das die Rolle NICHT - und sagt das auch.
+   *
+   * Die Rolle ist eine Ableitung aus dem Abonnement (ADR-003); die Datenbank
+   * setzt sie ueber users_derive_role_trg, die Anwendung schreibt die Spalte nie
+   * selbst. Ein Schalter im Browser, der sie trotzdem aendert, waere genau die
+   * Faelschung, die diese Datei verhindern soll.
+   *
+   * Aber nicht stumm: fuenf Stellen in der Oberflaeche rufen setRole auf
+   * ('Rolle wechseln', 'Subscriber werden'). Ein stiller No-op machte sie zu
+   * toten Knoepfen - der Nutzer klickt und nichts geschieht, ohne Erklaerung.
+   * Die Meldung nennt den Grund, damit die Ablehnung verstaendlich ist.
+   *
+   * Im Demo-Betrieb ohne API bleibt der Schalter erhalten: dort gibt es keinen
+   * Server, der widersprechen koennte.
+   */
   const setRole = useCallback((r: Role) => {
+    if (IDEAS_PLAN.mode === 'api') {
+      setToastMsg('Deine Rolle ergibt sich aus deinem Abonnement - sie lässt sich hier nicht umschalten.');
+      setToastKey((n) => n + 1);
+      return;
+    }
     setRoleState(r);
     localStorage.setItem('ideenschmiede_role', r);
   }, []);
@@ -187,18 +240,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(t);
   }, [toastMsg, toastKey]);
 
-  const can = useCallback((action: string) => {
-    switch (action) {
-      case 'read': return true;
-      case 'post':
-      case 'comment': return role === 'user' || role === 'subscriber';
-      case 'vote':
-      case 'invest':
-      case 'teams':
-      case 'marketplace': return role === 'subscriber';
-      default: return false;
-    }
-  }, [role]);
+  // Die Regel steht in lib/role.ts neben der Herkunft der Rolle: beide gehoeren
+  // zusammen, und getrennt liessen sie sich aendern, ohne dass es auffiele.
+  const can = useCallback((action: string) => canRole(role, action), [role]);
 
   return (
     <StoreContext.Provider value={{ ideas: ideaState.ideas, ideasSource: ideaState.source, reloadIdeas, getIdea, role, setRole, can, toast, applications, addApplication, withdrawApplication, votes, castVote, allocations, saveAllocation, settings, saveSettings, resetDemo }}>
