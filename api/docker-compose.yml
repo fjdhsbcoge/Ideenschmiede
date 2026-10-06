@@ -1,0 +1,87 @@
+# =============================================================================
+# Ideenschmiede - API und Datenbank
+# =============================================================================
+# Start:   docker compose --env-file api/.env -f api/docker-compose.yml up -d
+# Die Datei api/.env ist Pflicht und steht in api/.gitignore.
+#
+# WARUM BTCPAY NICHT HIER STEHT
+# ARCHITECTURE.md nennt als Zielbild 'app, postgres, btcpay'. BTCPay Server
+# braucht einen vollstaendigen Bitcoin-Knoten; das ist ein eigener Rechner mit
+# mindestens 1 TB Speicher, kein Nebenprozess. Es steht deshalb AUSSERHALB
+# dieses Stapels und wird ueber BTCPAY_WEBHOOK_SECRET angebunden. Ein halber
+# Knoten in einer Datei waere ein Betrieb, der aussieht als liefe er.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER muss in api/.env stehen}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss in api/.env stehen}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB muss in api/.env stehen}
+      # Die Vorgabe 128MB ist fuer kleine Rechner zu knapp, wenn die Ansichten
+      # gerechnet werden. Fuer eine DS 224+ sind 64MB reichlich.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS:-128MB}
+      - -c
+      - work_mem=${POSTGRES_WORK_MEM:-16MB}
+      - -c
+      - max_connections=${POSTGRES_MAX_CONNECTIONS:-40}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Migrationen liegen im Abbild, damit sie auch dann da sind, wenn nur der
+      # Stapel laeuft und das Quellverzeichnis woanders liegt. Eingespielt
+      # werden sie NICHT automatisch - siehe api/README.md.
+      - ./migrations:/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - intern
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ideenschmiede/api:lokal
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # Die vollstaendige Konfiguration kommt aus api/.env. Kein 'environment:'
+    # daneben: zwei Orte fuer dieselbe Einstellung sind zwei Wahrheiten, und
+    # irgendwann widersprechen sie sich.
+    env_file:
+      - .env
+    environment:
+      # Diese beiden sind AUSNAHMEN und stehen bewusst hier, weil sie vom
+      # Behaelter abhaengen und nicht vom Rechner:
+      # HOST - im Behaelter muss auf allen Schnittstellen gelauscht werden,
+      #   sonst ist der Dienst von aussen unerreichbar.
+      # DATABASE_URL - der Wirt heisst hier 'db', nicht 'localhost'.
+      HOST: 0.0.0.0
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    # Nur an die Schleife des Wirts gebunden. Nach aussen kommt die API
+    # ausschliesslich ueber den Reverse Proxy, der auch TLS beendet.
+    ports:
+      - "${API_BIND:-127.0.0.1}:${API_PORT:-3000}:3000"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - intern
+
+volumes:
+  db_data:
+
+networks:
+  # Ein eigenes Netz. Die Datenbank hat KEIN veroeffentlichtes Port - sie ist
+  # nur aus diesem Netz erreichbar, also nur von der API.
+  intern:
+    driver: bridge

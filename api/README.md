@@ -155,6 +155,103 @@ SELECT id,
   FROM users WHERE username = 'anna_demo';
 ```
 
+---
+
+## Betrieb mit Docker Compose (Roadmap Phase 3.1)
+
+`api/docker-compose.yml` startet **zwei** Dienste: die Datenbank und die API.
+
+```bash
+cd api
+cp .env.example .env      # und darin die Pflichtwerte eintragen
+docker compose --env-file .env up -d --build
+docker compose --env-file .env ps
+```
+
+Fehlt ein Pflichtwert in `.env`, bricht schon die Auswertung der Datei ab:
+`required variable POSTGRES_USER is missing a value: POSTGRES_USER muss in
+api/.env stehen`. Das ist Absicht — ein Stapel, der mit halber Konfiguration
+startet, sieht aus als liefe er.
+
+### Was in der Datei steht und warum
+
+| Einstellung | Warum so |
+|---|---|
+| `db` hat **kein** `ports:` | Die Datenbank ist nur aus dem eigenen Netz erreichbar, also nur von der API. `docker ps` zeigt für sie `5432/tcp` **ohne** Host-Bindung |
+| `api` bindet an `${API_BIND:-127.0.0.1}` | Nach außen kommt die API nur über den Reverse Proxy, der auch TLS beendet. Die Bindung an der Schleife ist die Voreinstellung, nicht die Ausnahme |
+| `env_file: .env`, kein `environment:` daneben | Zwei Orte für dieselbe Einstellung sind zwei Wahrheiten. Ausnahmen sind nur `HOST` und `DATABASE_URL` — sie hängen vom Behälter ab, nicht vom Rechner |
+| `HOST: 0.0.0.0` **im Behälter** | Ohne das lauscht der Dienst nur auf der Schleife *innerhalb* des Behälters und ist von außen unerreichbar — der häufigste Fehler beim ersten Behälterstart. `HOST=127.0.0.1` gehört in `.env` für den Betrieb **ohne** Behälter |
+| `DATABASE_URL` mit Wirt `db` | Im Netz des Stapels heißt die Datenbank `db`, nicht `localhost` |
+| `read_only: true`, `no-new-privileges` | Die API schreibt nichts auf die Platte; sie braucht kein beschreibbares Dateisystem |
+| `depends_on: condition: service_healthy` | Die API startet erst, wenn `pg_isready` antwortet. Sie startet zwar auch sonst (sie meldet eine tote Datenbank und läuft weiter), aber ein unnötiger Fehler im Protokoll ist ein Fehler zu viel |
+
+### Migrationen laufen NICHT von selbst
+
+Die API spielt **keine** Migrationen ein — bewusst nicht: ein Dienst, der beim
+Start das Schema ändert, ändert es auch dann, wenn niemand das wollte. Das
+Einspeisen bleibt ein eigener, sichtbarer Schritt. Der Ordner `migrations/`
+liegt im Behälter unter `/migrations` (nur lesbar):
+
+```bash
+docker compose --env-file .env exec -T db \
+  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 \
+  -f /migrations/001_init.sql
+```
+
+**Reihenfolge und `ON_ERROR_STOP` sind keine Höflichkeit.** Ohne das Abbruch-
+Verhalten läuft ein Skript nach einem Fehler weiter und hinterlässt ein halb
+angelegtes Schema. Ohne die Reihenfolge scheitern die späteren Migrationen an
+fehlenden Tabellen.
+
+**Ein unmissverständlicher Hinweis zum Schalter für `psql`.** Auf dem Wirt gibt
+es kein `psql`; `-f /migrations/001_init.sql` ist ein Pfad **im Behälter**.
+Wer den Wirtspfad einsetzt, bekommt `No such file or directory` und sucht an der
+falschen Stelle. Der Wirtspfad funktioniert nur mit Ein- und Ausgabe über die
+Standardeingabe:
+
+```bash
+# PowerShell
+Get-Content migrations/001_init.sql -Raw | docker exec -i <db-behaelter> psql -U <benutzer> -d <datenbank> -v ON_ERROR_STOP=1 -q
+```
+
+### Warum BTCPay Server nicht in dieser Datei steht
+
+ARCHITECTURE.md nennt als Zielbild „Docker Compose: app, postgres, btcpay“.
+BTCPay Server braucht einen **vollständigen Bitcoin-Knoten** — das ist ein
+eigener Rechner mit mindestens 1 TB Speicher, kein Nebenprozess. Er steht
+deshalb außerhalb dieses Stapels und wird über `BTCPAY_WEBHOOK_SECRET`
+angebunden. Ein halber Knoten in einer Datei wäre ein Betrieb, der aussieht als
+liefe er.
+
+### Kleine Rechner (Synology DS 224+)
+
+Die Vorgaben sind auf einem kleinen Gerät zu großzügig. In `.env`:
+
+```
+POSTGRES_SHARED_BUFFERS=64MB
+POSTGRES_WORK_MEM=8MB
+POSTGRES_MAX_CONNECTIONS=20
+```
+
+### Testlauf, nachgemessen
+
+Der Stapel wurde gebaut und gestartet, nicht nur geschrieben:
+
+| Prüfung | Ergebnis |
+|---|---|
+| `docker compose config` ohne `.env` | bricht ab: `required variable POSTGRES_USER is missing a value` |
+| Behälter `db` | `Up (healthy)` |
+| Behälter `api` | `Up (healthy)` nach 15 s, `RestartCount=0` |
+| `GET /health` | status ok, db true, version 0.1.0 |
+| `GET /api/ideas` | items leer, count 0, limit 20 — echtes SQL, leere Datenbank |
+| Port der Datenbank auf dem Wirt | `Test-NetConnection 127.0.0.1:5432` gibt `False`. Sie ist von außen **nicht** erreichbar |
+| Aufräumen beim Start | erst nach dem Einspielen der Migrationen; vorher meldet es `relation "auth_challenges" does not exist` |
+
+Die letzte Zeile ist der Grund, warum das Aufräumen einen Fehler **meldet** und
+den Start nicht abbricht: ein nicht migrierter Stapel läuft und sagt, was fehlt.
+
+---
+
 ## Starten
 
 ```bash

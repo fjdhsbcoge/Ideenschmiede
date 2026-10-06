@@ -1,6 +1,6 @@
 # Ideenschmiede – Roadmap (technische Umsetzung)
 
-**Stand: Juli 2026 · Aktuelle Version: v1.2 (Frontend-Demo, live auf GitHub Pages)**
+**Stand: 6. Oktober 2026 · Aktuelle Version: v1.2 (Frontend-Demo, live auf GitHub Pages), Backend in Arbeit (Phase 3)**
 
 Aufwandsschätzungen gehen von KI-gestützter Entwicklung (Mensch + KI-Agent,
 Teilzeit) aus. Siehe auch ARCHITECTURE.md Teil 2 (Zielarchitektur) und
@@ -33,8 +33,8 @@ Deployment per Push.
 |---|---|---|---|
 | 2.1 | Pages-Quelle auf „GitHub Actions" umstellen (einmalig, manuell) | 5 Min | ✅ erledigt – live: https://fjdhsbcoge.github.io/Ideenschmiede/ |
 | 2.2 | Custom Domain in Pages eintragen + DNS (CNAME/A-Records) | ~1 h + DNS-Propagation | ✅ erledigt – https://ideenschmiede-forum.de/ |
-| 2.3 | HTTPS erzwingen (Let's Encrypt via GitHub) | automatisch | offen |
-| 2.4 | Impressum + Datenschutzerklärung (Pflicht in DE) | ~1 h + juristische Prüfung | offen |
+| 2.3 | HTTPS erzwingen (Let's Encrypt via GitHub) | automatisch | ⚠️ **offen** — am 06.10.2026 nachgemessen: `http://ideenschmiede-forum.de/` antwortet mit **200**, nicht mit einer Weiterleitung (`Server: GitHub.com`, kein `Location`-Kopf). Die Zertifikate sind da, das Erzwingen ist es nicht. **Einmalig von Hand:** GitHub → Settings → Pages → „Enforce HTTPS“ ankreuzen. Kein Codeänderung möglich |
+| 2.4 | Impressum + Datenschutzerklärung (Pflicht in DE) | ~1 h + juristische Prüfung | ✅ **erledigt** — beide Seiten live und im Bundle nachgewiesen (`Impressum.tsx`, `Datenschutz.tsx`); die **juristische Prüfung** bleibt offen und ist Bedingung für den Betrieb (siehe 3.6) |
 
 ---
 
@@ -45,10 +45,10 @@ vor rechtlicher Klärung (siehe 3.6).*
 
 | # | Aufgabe | Aufwand | Anmerkung |
 |---|---|---|---|
-| 3.1 | Backend-Grundgerüst: Hono + PostgreSQL, Docker Compose | 4–6 Tage | Datenmodelle: ARCHITECTURE.md Anhang §5 |
+| 3.1 | Backend-Grundgerüst: Hono + PostgreSQL, Docker Compose | 4–6 Tage | Datenmodelle: ARCHITECTURE.md Anhang §5. **`api/docker-compose.yml` steht** (Datenbank nur im eigenen Netz, API an der Schleife, Migrationen als eigener Schritt) und wurde gebaut und gestartet; BTCPay Server steht **bewusst außerhalb** — es braucht einen vollen Bitcoin-Knoten |
 | 3.2 | Auth: LNURL-auth (Lightning-Login) + Session-JWT | 2–3 Tage | Fallback E-Mail/Passwort abwägen (ADR-offen) |
 | 3.3 | BTCPay-Server: Subscription-Invoices, Webhook → Rolle „Subscriber" | 2–4 Tage | non-custodial, BTC + Lightning |
-| 3.4 | Frontend-Umbau: Store von localStorage auf API | 3–4 Tage | einzige Umstell-Stelle, siehe ARCHITECTURE.md §1.4 |
+| 3.4 | Frontend-Umbau: Store von localStorage auf API | 3–4 Tage | 🔄 **läuft** — Datenquelle umschaltbar (`dataSource.ts`), Ideenliste über die API. Offen: Stimmen und Bewerbungen liegen weiter im `localStorage` des Browsers und haben keine API-Gegenstelle |
 | 3.5 | Härtung: Backups, Monitoring, Rate-Limits, Impressum | 2–3 Tage | |
 | 3.6 | **Rechtliche Prüfung Investments** (VermAnlG/WpHG, Fachanwalt) | 1–2 Termine | **Gate für alles, was echte Gewinnbeteiligung abbildet** |
 
