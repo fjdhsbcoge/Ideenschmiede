@@ -258,7 +258,20 @@ function umgebungMit(secret: string | null): NodeJS.ProcessEnv {
     NODE_ENV: 'test',
   };
   if (secret === null) {
-    delete env[WEBHOOK_SECRET_ENV];
+    // NICHT loeschen, sondern LEER setzen - und das ist der ganze Punkt.
+    //
+    // src/env.ts laedt beim Import 'dotenv/config', das api/.env liest, falls
+    // die Datei existiert. Eine GELOESCHTE Variable ist fuer dotenv nicht
+    // gesetzt, also fuellt es sie aus der Datei nach - und der Kindprozess
+    // startet mit einem Geheimnis, obwohl der Test gerade das Fehlen pruefen
+    // will. Der Test waere dann eine Aussage ueber die .env-Datei des
+    // Entwicklers und nicht ueber den Code: wer eine api/.env hat, sieht hier
+    // dauerhaft rot.
+    //
+    // Ein LEERER Wert wird von dotenv nicht ueberschrieben (es fuellt nur,
+    // was fehlt). loadEnv trimmt ihn zu '' und requireWebhookSecret bricht
+    // mit Exit-Code 1 ab - genau der Zustand, der geprueft werden soll.
+    env[WEBHOOK_SECRET_ENV] = '';
   } else {
     env[WEBHOOK_SECRET_ENV] = secret;
   }
