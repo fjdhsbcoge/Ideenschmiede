@@ -350,16 +350,33 @@ function serverHint(payload: unknown): string {
  * Eine Anfrage, drei moegliche Fehler - und keiner davon still:
  * kein Netz, keine JSON-Antwort, oder ein Fehlerstatus.
  */
-async function performRequest(path: string, signal?: AbortSignal): Promise<RawResponse> {
+interface RequestOptions {
+  signal?: AbortSignal;
+  /** Standard GET. Die schreibenden Aufrufe nennen POST oder DELETE. */
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  /** Wird als JSON gesendet, wenn gesetzt. Der Kopf entsteht daraus. */
+  body?: unknown;
+}
+
+async function performRequest(path: string, options: RequestOptions = {}): Promise<RawResponse> {
   const url = `${apiBaseUrl()}${path}`;
+  const method = options.method ?? 'GET';
+  // Der Kopf 'content-type' NUR, wenn wirklich ein Rumpf mitgeht: ein
+  // content-type ohne Rumpf ist eine Zusage ueber etwas, das nicht da ist.
+  const headers: Record<string, string> = { accept: 'application/json' };
+  if (options.body !== undefined) headers['content-type'] = 'application/json';
   let response: Response;
   try {
     // credentials: 'include' - die Sitzung dieser API haengt an einem Cookie
     // (SESSION_COOKIE_NAME). Ohne das kaeme /api/users/me nie als angemeldet an.
+    // Auch bei POST und DELETE: das Cookie ist der einzige Ausweis, den diese
+    // API kennt (siehe parseSessionToken - Cookie ODER Bearer).
     response = await fetch(url, {
-      headers: { accept: 'application/json' },
+      method,
+      headers,
       credentials: 'include',
-      signal,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal: options.signal,
     });
   } catch (cause) {
     throw new ApiError(`Die API ist nicht erreichbar: ${url}.`, { url, cause });
@@ -381,8 +398,8 @@ async function performRequest(path: string, signal?: AbortSignal): Promise<RawRe
   return { ok: response.ok, status: response.status, url, payload };
 }
 
-async function requestJson(path: string, signal?: AbortSignal): Promise<unknown> {
-  const { ok, status, url, payload } = await performRequest(path, signal);
+async function requestJson(path: string, options: RequestOptions = {}): Promise<unknown> {
+  const { ok, status, url, payload } = await performRequest(path, options);
   if (!ok) {
     throw new ApiError(`${path} wurde mit HTTP ${status} abgelehnt.${serverHint(payload)}`, { status, url });
   }
@@ -418,7 +435,7 @@ export async function listIdeas(params: ListIdeasParams = {}): Promise<ApiIdeaPa
     throw new ApiError(`listIdeas: offset muss eine ganze Zahl zwischen 0 und ${MAX_OFFSET} sein, war ${String(offset)}.`);
   }
 
-  const payload = await requestJson(`/api/ideas?limit=${limit}&offset=${offset}`, params.signal);
+  const payload = await requestJson(`/api/ideas?limit=${limit}&offset=${offset}`, { signal: params.signal });
   return parseIdeaPage(payload);
 }
 
@@ -430,10 +447,217 @@ export async function listIdeas(params: ListIdeasParams = {}): Promise<ApiIdeaPa
  * kein JSON, unerwartete Form) wirft.
  */
 export async function getCurrentUser(options: { signal?: AbortSignal } = {}): Promise<ApiUser | null> {
-  const { ok, status, url, payload } = await performRequest('/api/users/me', options.signal);
+  const { ok, status, url, payload } = await performRequest('/api/users/me', { signal: options.signal });
   if (status === 401) return null;
   if (!ok) {
     throw new ApiError(`/api/users/me wurde mit HTTP ${status} abgelehnt.${serverHint(payload)}`, { status, url });
   }
   return parseUser(payload);
 }
+
+// ---------------------------------------------------------------------------
+// Stimmen (POST/DELETE /api/ideas/:id/vote, GET /api/ideas/:id/votes)
+// ---------------------------------------------------------------------------
+
+/** Die beiden Richtungen - dieselben Werte wie idea_votes_direction_check. */
+export type VoteDirection = 'up' | 'down';
+
+export interface VoteCounts {
+  voteUp: number;
+  voteDown: number;
+}
+
+/**
+ * Die Zaehler, wie sie die API liefert.
+ *
+ * ACHTUNG, hier lauert eine Verwechslung: an DIESEM Endpunkt heissen die
+ * Zahlen flach `voteUp`/`voteDown`, in der Ideenliste dagegen verschachtelt
+ * `discussion.votes.up`/`.down`. Dieselbe Sache, zwei Formen - die Begruendung
+ * steht in api/CONTRACT.md unter "Zaehlerstaende". Wer die beiden vertauscht,
+ * bekommt keine Fehlermeldung, sondern still `undefined`.
+ */
+export function parseVoteCounts(value: unknown, path = 'antwort'): VoteCounts {
+  const raw = expectObject(value, path);
+  return {
+    voteUp: expectNumber(raw.voteUp, `${path}.voteUp`),
+    voteDown: expectNumber(raw.voteDown, `${path}.voteDown`),
+  };
+}
+
+function pruefeRichtung(direction: VoteDirection): void {
+  if (direction !== 'up' && direction !== 'down') {
+    throw new ApiError(`Richtung muss 'up' oder 'down' sein, war ${JSON.stringify(direction)}.`);
+  }
+}
+
+/**
+ * POST /api/ideas/:id/vote - Stimme abgeben oder aendern.
+ *
+ * Erfordert eine Sitzung UND nach ADR-003 ein aktives Abonnement; ohne das
+ * antwortet die API mit HTTP 403 und der Code steht in der Meldung. Das ist ein
+ * erwarteter Zustand, kein Netzfehler - der Aufrufer unterscheidet ihn am
+ * ApiError.status.
+ */
+export async function castVote(
+  ideaId: string,
+  direction: VoteDirection,
+  options: { signal?: AbortSignal } = {},
+): Promise<VoteCounts> {
+  pruefeRichtung(direction);
+  const payload = await requestJson(`/api/ideas/${encodeURIComponent(ideaId)}/vote`, {
+    method: 'POST',
+    body: { direction },
+    signal: options.signal,
+  });
+  return parseVoteCounts(payload);
+}
+
+/** DELETE /api/ideas/:id/vote - eigene Stimme zuruecknehmen (idempotent). */
+export async function withdrawVote(
+  ideaId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<VoteCounts> {
+  const payload = await requestJson(`/api/ideas/${encodeURIComponent(ideaId)}/vote`, {
+    method: 'DELETE',
+    signal: options.signal,
+  });
+  return parseVoteCounts(payload);
+}
+
+/** GET /api/ideas/:id/votes - oeffentlich, ohne Sitzung. */
+export async function getVotes(
+  ideaId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<VoteCounts> {
+  const payload = await requestJson(`/api/ideas/${encodeURIComponent(ideaId)}/votes`, {
+    signal: options.signal,
+  });
+  return parseVoteCounts(payload);
+}
+
+// ---------------------------------------------------------------------------
+// Teambewerbungen
+// ---------------------------------------------------------------------------
+
+export interface ApiApplicationTeam {
+  id: string;
+  name: string;
+}
+
+export interface ApiApplicationApplicant {
+  id: string;
+  username: string;
+  displayName: string;
+}
+
+/**
+ * Eine Bewerbung, wie die API sie liefert.
+ *
+ * `team` und `applicant` FEHLEN, wenn sie nicht gefragt wurden - sie sind nicht
+ * null. Die API begruendet das in applications.ts damit, dass ein `team: null`
+ * eine zweite Schreibweise fuer "hier nicht gefragt" waere. Der Pruefer haelt
+ * sich daran: er verlangt die Teile nur, wenn sie da sind.
+ */
+export interface ApiApplication {
+  id: string;
+  teamId: string;
+  userId: string;
+  status: string;
+  message: string;
+  createdAt: string;
+  decidedAt: string | null;
+  team?: ApiApplicationTeam;
+  applicant?: ApiApplicationApplicant;
+}
+
+function parseApplicant(value: unknown, path: string): ApiApplicationApplicant {
+  const raw = expectObject(value, path);
+  return {
+    id: expectString(raw.id, `${path}.id`),
+    username: expectString(raw.username, `${path}.username`),
+    displayName: expectString(raw.displayName, `${path}.displayName`),
+  };
+}
+
+export function parseApplication(value: unknown, path = 'bewerbung'): ApiApplication {
+  const raw = expectObject(value, path);
+  const decided = raw.decidedAt;
+  if (decided !== null && typeof decided !== 'string') {
+    fail(`${path}.decidedAt`, 'ein Zeitstempel oder null', decided);
+  }
+  const application: ApiApplication = {
+    id: expectString(raw.id, `${path}.id`),
+    teamId: expectString(raw.teamId, `${path}.teamId`),
+    userId: expectString(raw.userId, `${path}.userId`),
+    status: expectString(raw.status, `${path}.status`),
+    message: expectString(raw.message, `${path}.message`),
+    createdAt: expectString(raw.createdAt, `${path}.createdAt`),
+    decidedAt: decided,
+  };
+  if (raw.team !== undefined && raw.team !== null) {
+    const team = expectObject(raw.team, `${path}.team`);
+    application.team = {
+      id: expectString(team.id, `${path}.team.id`),
+      name: expectString(team.name, `${path}.team.name`),
+    };
+  }
+  if (raw.applicant !== undefined && raw.applicant !== null) {
+    application.applicant = parseApplicant(raw.applicant, `${path}.applicant`);
+  }
+  return application;
+}
+
+/** Antwort der Listen-Endpunkte: { items, count }. */
+export function parseApplicationList(value: unknown, path = 'antwort'): ApiApplication[] {
+  const raw = expectObject(value, path);
+  if (!Array.isArray(raw.items)) fail(`${path}.items`, 'eine Liste von Bewerbungen', raw.items);
+  return raw.items.map((entry, i) => parseApplication(entry, `${path}.items[${i}]`));
+}
+
+/**
+ * POST /api/teams/:id/applications - bewerben.
+ *
+ * Die Mindestlaenge des Textes prueft das Frontend NICHT selbst: die Grenze
+ * steht in der Datenbank (team_applications_message_check) und in der API, und
+ * eine dritte Zahl hier waere eine dritte Wahrheit, die irgendwann abweicht.
+ * Die API antwortet mit HTTP 400 und nennt die Grenze im Klartext.
+ */
+export async function applyToTeam(
+  teamId: string,
+  message: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<ApiApplication> {
+  const payload = await requestJson(`/api/teams/${encodeURIComponent(teamId)}/applications`, {
+    method: 'POST',
+    body: { message },
+    signal: options.signal,
+  });
+  const raw = expectObject(payload, 'antwort');
+  return parseApplication(raw.application, 'antwort.application');
+}
+
+/** GET /api/users/me/applications - die eigenen Bewerbungen, mit Team. */
+export async function getMyApplications(
+  options: { signal?: AbortSignal } = {},
+): Promise<ApiApplication[]> {
+  const payload = await requestJson('/api/users/me/applications', { signal: options.signal });
+  return parseApplicationList(payload);
+}
+
+/**
+ * GET /api/teams/:id/applications - nur der Teamleiter.
+ *
+ * Ein Fremder bekommt HTTP 403 `not_team_leader`. Das ist der Kern der
+ * Zugriffsregel und wird in api/tests/applications.test.ts gegen echtes
+ * PostgreSQL nachgemessen; hier wird der Status nur durchgereicht.
+ */
+export async function getTeamApplications(
+  teamId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<ApiApplication[]> {
+  const payload = await requestJson(`/api/teams/${encodeURIComponent(teamId)}/applications`, {
+    signal: options.signal,
+  });
+  return parseApplicationList(payload);
+}
+
