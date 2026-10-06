@@ -1,7 +1,15 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { IDEAS_PLAN, initialIdeas, loadIdeas, type IdeasLoadResult, type IdeasSource } from '@/lib/dataSource';
-import { castVote as castVoteApi, getCurrentUser, withdrawVote } from '@/lib/api';
+import {
+  applyToTeam as applyToTeamApi,
+  castVote as castVoteApi,
+  getCurrentUser,
+  getMyApplications,
+  withdrawApplication as withdrawApplicationApi,
+  withdrawVote as withdrawVoteApi,
+} from '@/lib/api';
 import { planVote, type VoteValue } from '@/lib/votePlan';
+import { planWithdraw, toMyApplications } from '@/lib/applications';
 import { canRole, roleFromApi, type Role } from '@/lib/role';
 import type { Idea } from '@/lib/data';
 
@@ -170,23 +178,94 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     void refreshRole();
   }, [refreshRole]);
 
+  /**
+   * Holt die eigenen Bewerbungen vom Server.
+   *
+   * Ohne API bleibt es beim localStorage-Stand - der Demo-Betrieb braucht
+   * keinen Server und muss sich genau wie vorher verhalten. Ein Fehler ist
+   * kein stiller: die vorige Liste bleibt stehen, damit die Seite nicht leer
+   * wird, und die Meldung sagt, dass der Stand nicht aktuell ist.
+   */
+  const refreshApplications = useCallback(async () => {
+    if (IDEAS_PLAN.mode !== 'api') return;
+    try {
+      const liste = await getMyApplications();
+      setApplications(toMyApplications(liste));
+    } catch (fehler: unknown) {
+      setToastMsg('Die eigenen Bewerbungen konnten nicht geladen werden: ' + (fehler instanceof Error ? fehler.message : String(fehler)));
+      setToastKey((n) => n + 1);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshApplications();
+  }, [refreshApplications]);
+
   const getIdea = useCallback((id: string) => ideaState.ideas.find((i) => i.id === id), [ideaState.ideas]);
 
+  /**
+   * Bewerben - im API-Betrieb beim Server, sonst im Browser.
+   *
+   * Die zusaetzlichen Formularfelder (skills, hours) gehen NICHT mit: die API
+   * kennt sie nicht, und ein Feld zu senden, das niemand speichert, waere eine
+   * Zusage ueber etwas, das verloren geht. Siehe UEBERGABE.md - das ist eine
+   * offene Produktentscheidung, keine Nachlaessigkeit.
+   */
   const addApplication = useCallback((a: Omit<MyApplication, 'id' | 'date' | 'status'>) => {
+    if (IDEAS_PLAN.mode === 'api') {
+      void applyToTeamApi(a.teamId, a.message)
+        .then(() => refreshApplications())
+        .catch((fehler: unknown) => {
+          // Kein stiller Fehlschlag: eine zu kurze Nachricht ergibt 400, eine
+          // zweite Bewerbung 409. Beides muss der Nutzer erfahren.
+          const text = fehler instanceof Error ? fehler.message : String(fehler);
+          setToastMsg(text);
+          setToastKey((n) => n + 1);
+        });
+      return;
+    }
     setApplications(prev => {
       const next = [...prev, { ...a, id: `myapp-${Date.now()}`, date: new Date().toISOString().slice(0, 10), status: 'offen' as const }];
       localStorage.setItem('ideenschmiede_applications', JSON.stringify(next));
       return next;
     });
-  }, []);
+  }, [refreshApplications]);
 
+  /**
+   * Bewerbung zuruecknehmen - im API-Betrieb beim Server.
+   *
+   * Die API nimmt NUR eine offene Bewerbung zurueck (sonst 409, nachgemessen).
+   * Die Entscheidung, ob ueberhaupt gefragt wird, steht in lib/applications.ts.
+   */
   const withdrawApplication = useCallback((id: string) => {
-    setApplications(prev => {
-      const next = prev.filter(a => a.id !== id);
-      localStorage.setItem('ideenschmiede_applications', JSON.stringify(next));
-      return next;
+    const vorher = applications.find((a) => a.id === id);
+    const plan = planWithdraw({
+      apiMode: IDEAS_PLAN.mode === 'api',
+      status: vorher?.status ?? 'offen',
     });
-  }, []);
+
+    if (plan.kind === 'local') {
+      setApplications(prev => {
+        const next = prev.filter(a => a.id !== id);
+        localStorage.setItem('ideenschmiede_applications', JSON.stringify(next));
+        return next;
+      });
+      return;
+    }
+    if (plan.kind === 'refused') {
+      setToastMsg(plan.reason);
+      setToastKey((n) => n + 1);
+      return;
+    }
+
+    void withdrawApplicationApi(id)
+      .then(() => refreshApplications())
+      .catch((fehler: unknown) => {
+        const text = fehler instanceof Error ? fehler.message : String(fehler);
+        setToastMsg(text);
+        setToastKey((n) => n + 1);
+      });
+  }, [applications, refreshApplications]);
 
   /**
    * Eine Stimme abgeben - im API-Betrieb an den Server, sonst in den Browser.
@@ -219,7 +298,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
     if (plan.kind === 'none') return;
 
-    const lauf = plan.withdraw ? withdrawVote(key) : castVoteApi(key, plan.direction);
+    const lauf = plan.withdraw ? withdrawVoteApi(key) : castVoteApi(key, plan.direction);
     void lauf
       .then((zaehler) => {
         merken();

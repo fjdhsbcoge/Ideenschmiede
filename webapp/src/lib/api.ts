@@ -636,6 +636,23 @@ export async function applyToTeam(
   return parseApplication(raw.application, 'antwort.application');
 }
 
+/**
+ * DELETE /api/applications/:id - eigene Bewerbung zuruecknehmen.
+ *
+ * Die API antwortet mit HTTP 204 OHNE Rumpf. Deshalb kein parseApplication
+ * hier: wer einen Rumpf erwartet, wo keiner ist, baut sich einen Fehler ein.
+ * Erfolg heisst: der Aufruf ist durchgelaufen (kein Wurf).
+ */
+export async function withdrawApplication(
+  applicationId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<void> {
+  await requestJson(`/api/applications/${encodeURIComponent(applicationId)}`, {
+    method: 'DELETE',
+    signal: options.signal,
+  });
+}
+
 /** GET /api/users/me/applications - die eigenen Bewerbungen, mit Team. */
 export async function getMyApplications(
   options: { signal?: AbortSignal } = {},
