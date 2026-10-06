@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { IDEAS_PLAN, initialIdeas, loadIdeas, type IdeasLoadResult, type IdeasSource } from '@/lib/dataSource';
-import { getCurrentUser } from '@/lib/api';
+import { castVote as castVoteApi, getCurrentUser, withdrawVote } from '@/lib/api';
+import { planVote, type VoteValue } from '@/lib/votePlan';
 import { canRole, roleFromApi, type Role } from '@/lib/role';
 import type { Idea } from '@/lib/data';
 
@@ -131,6 +132,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const reloadIdeas = useCallback(() => { setIdeaReloads((n) => n + 1); }, []);
 
   /**
+   * Setzt die Zaehler EINER Idee auf die Zahlen der API.
+   *
+   * Der Server ist die Wahrheit: er liest ideas.vote_up/vote_down, die ein
+   * Trigger pflegt. Die Antwort des Schreibbefehls wird deshalb uebernommen,
+   * statt die Zahl im Browser hochzuzaehlen - eine hochgezaehlte Zahl waere
+   * eine Behauptung, die beim naechsten Laden wieder verschwindet.
+   */
+  const applyVoteCounts = useCallback((ideaId: string, zaehler: { voteUp: number; voteDown: number }) => {
+    setIdeaState((prev) => ({
+      ...prev,
+      ideas: prev.ideas.map((i) =>
+        i.id === ideaId ? { ...i, votes: { up: zaehler.voteUp, down: zaehler.voteDown } } : i,
+      ),
+    }));
+  }, []);
+
+  /**
    * Holt die Rolle vom Server - die einzige Quelle im API-Betrieb.
    *
    * Nicht angemeldet (HTTP 401) ist ein erwarteter Zustand und ergibt
@@ -170,15 +188,55 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const castVote = useCallback((key: string, v: 'up' | 'down' | 'yes' | 'no') => {
-    setVotes(prev => {
-      const next = { ...prev };
-      if (next[key] === v) delete next[key];
-      else next[key] = v;
-      localStorage.setItem('ideenschmiede_votes', JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  /**
+   * Eine Stimme abgeben - im API-Betrieb an den Server, sonst in den Browser.
+   *
+   * WAS WOZU GEHOERT, steht in lib/votePlan.ts: dort ist entschieden, welche
+   * Stimme ueberhaupt einen Endpunkt hat (Ideen ja, Meilensteine nein), und
+   * dass ein zweiter Klick auf denselben Wert ein ZURUECKNEHMEN ist und kein
+   * zweites Abstimmen. Hier steht nur die Ausfuehrung.
+   *
+   * Der Server ist die Wahrheit: der Zaehler kommt aus ideas und wird vom
+   * Trigger gepflegt. Der lokale Merker `votes` sagt nur, was DIESER Nutzer
+   * gewaehlt hat - er faellt bei einem Fehler nicht auseinander, weil er nur
+   * nach einem erfolgreichen Aufruf gesetzt wird.
+   */
+  const castVote = useCallback((key: string, v: VoteValue) => {
+    const merken = () => {
+      setVotes(prev => {
+        const next = { ...prev };
+        if (next[key] === v) delete next[key];
+        else next[key] = v;
+        localStorage.setItem('ideenschmiede_votes', JSON.stringify(next));
+        return next;
+      });
+    };
+
+    const plan = planVote({ apiMode: IDEAS_PLAN.mode === 'api', key, value: v, current: votes[key] });
+    if (plan.kind === 'local') {
+      merken();
+      return;
+    }
+    if (plan.kind === 'none') return;
+
+    const lauf = plan.withdraw ? withdrawVote(key) : castVoteApi(key, plan.direction);
+    void lauf
+      .then((zaehler) => {
+        merken();
+        // Die Zaehler der API sind die Wahrheit und ersetzen die Anzeige. Der
+        // Ideen-Stand wird nachgeladen, damit Liste und Detail dieselben Zahlen
+        // zeigen - sonst stuenden dort zwei Staende nebeneinander.
+        applyVoteCounts(key, zaehler);
+        setIdeaReloads((n) => n + 1);
+      })
+      .catch((fehler: unknown) => {
+        // Kein stiller Fehlschlag: ohne Abonnement antwortet die API mit 403,
+        // und das muss der Nutzer erfahren - die Stimme wurde NICHT gezaehlt.
+        const text = fehler instanceof Error ? fehler.message : String(fehler);
+        setToastMsg(text);
+        setToastKey((n) => n + 1);
+      });
+  }, [votes, applyVoteCounts]);
 
   const saveAllocation = useCallback((ideaId: string, alloc: TeamAllocation[]) => {
     setAllocations(prev => {
