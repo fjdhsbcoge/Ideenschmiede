@@ -189,7 +189,9 @@ npm run build    # Produktions-Build → dist/
 
 ## 📜 Lizenz
 
-Wird vom Projektinhaber noch festgelegt.
+Dieses Projekt steht unter der **MIT-Lizenz**. Der vollständige Lizenztext liegt in [`LICENSE`](LICENSE).
+
+Kurz gefasst: Nutzung, Veränderung und Weitergabe sind erlaubt, auch kommerziell. Bedingung ist, dass Copyright-Hinweis und Lizenztext beibehalten werden. Die Software wird ohne Gewährleistung bereitgestellt.
 
 ---
 

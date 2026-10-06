@@ -971,7 +971,7 @@ export const de = {
       liabilityRemove: 'Bei Bekanntwerden von Rechtsverletzungen werden derartige Links unverzüglich entfernt.',
 
       copyrightTitle: '5. Urheberrecht',
-      copyrightCode: 'Der Quellcode dieser Plattform steht unter der Lizenz des Repositorys, in dem er veröffentlicht ist. Das Repository ist über den Link „GitHub-Repository" im Fußbereich dieser Seite erreichbar; maßgeblich ist die dort hinterlegte Lizenz.',
+      copyrightCode: 'Der Quellcode dieser Plattform steht unter der MIT-Lizenz. Der vollständige Lizenztext liegt im Repository unter der Datei LICENSE; das Repository ist über den Link „GitHub-Repository" im Fußbereich dieser Seite erreichbar.',
       copyrightContent: 'Die Inhalte dieser Plattform – insbesondere Texte, Grafiken und das Erscheinungsbild – sind urheberrechtlich geschützt. Eine Verwendung außerhalb der Grenzen des Urheberrechts bedarf der vorherigen schriftlichen Zustimmung.',
 
       statusTitle: '6. Stand',

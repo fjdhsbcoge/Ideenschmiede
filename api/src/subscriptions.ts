@@ -229,6 +229,32 @@ export function parseEvent(body: Record<string, unknown>): BTCPayWebhookEvent {
 }
 
 /**
+ * Die Zahlungsart der Kette - nur sie zaehlt als Beleg.
+ *
+ * Eine Lightning-Zahlung liefert KEINEN Beleg im Sinne dieses Systems: sie hat
+ * keine Transaktionskennung auf der Kette. Ihr payment_hash ist ebenfalls 64
+ * Hex-Zeichen lang - eine Pruefung auf die FORM der Kennung kann eine
+ * Blitz-Zahlung also nicht von einer Ketten-Zahlung unterscheiden. Der
+ * Unterschied steht allein in der Zahlungsart.
+ *
+ * BTCPay gibt sie als paymentMethod mit. Alles, was 'lightning' enthaelt
+ * ('BTC-LightningLike', 'BTC-LightningNetwork'), ist deshalb kein Beleg - auch
+ * dann nicht, wenn das Feld transactionId gefuellt ist.
+ */
+const LIGHTNING_METHOD = /lightning/i;
+
+/**
+ * Ist diese Zahlung ein Beleg auf der Kette?
+ *
+ * Unbekannte Zahlungsarten werden angenommen, wenn sie eine Kennung tragen:
+ * eine kuenftige Umbenennung soll den Zahlungsweg nicht stillschweigend
+ * verstopfen. Blitz wird dagegen ausdruecklich abgelehnt.
+ */
+function istKettenZahlung(methode: string | null): boolean {
+  return methode === null || !LIGHTNING_METHOD.test(methode);
+}
+
+/**
  * Die Transaktionskennung der Zahlung, die die Rechnung beglichen hat.
  *
  * Eine Rechnung kann MEHRERE Zahlungen tragen (Teilzahlungen, mehrere
@@ -254,10 +280,14 @@ export function extractPaymentTxid(body: Record<string, unknown>): string | null
       .map((eintrag) => asRecord(eintrag))
       .filter((eintrag): eintrag is Record<string, unknown> => eintrag !== null)
       .map((eintrag) => ({
+        methode: asString(eintrag.paymentMethod),
         txid: asString(eintrag.transactionId) ?? asString(eintrag.txid),
         bestaetigt: eintrag.confirmed === true,
         betrag: Number(eintrag.amount ?? 0),
       }))
+      // Die Zahlungsart entscheidet, nicht die Form der Kennung: der
+      // payment_hash einer Blitz-Zahlung ist ebenfalls 64 Hex-Zeichen lang.
+      .filter((eintrag) => istKettenZahlung(eintrag.methode))
       .filter((eintrag) => eintrag.txid !== null)
       .sort((a, b) => Number(b.bestaetigt) - Number(a.bestaetigt) || b.betrag - a.betrag);
 

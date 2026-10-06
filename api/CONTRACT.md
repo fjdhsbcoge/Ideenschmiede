@@ -56,6 +56,22 @@ Zahlung doppelt, und beim Abonnement verdoppelt das nach ADR-003 das
 Stimmrecht. **Idempotenz des Webhooks ist damit eine Eigenschaft des
 Schemas, nicht des Anwendungscodes.**
 
+#### Nur Ketten-Zahlungen sind ein Beleg
+
+Eine Zahlung gilt **nur dann** als Beleg, wenn sie auf der Kette liegt.
+Eine Lightning-Zahlung ist **kein** Beleg — auch dann nicht, wenn ihr
+`payment_hash` die Form einer Transaktionskennung hat (64 Hexzeichen).
+
+Der Grund ist eine Verwechslungsgefahr, die die Formprüfung nicht auflösen
+kann: `payment_hash` und `txid` sehen gleich aus. Unterscheidbar sind sie nur
+über die **Zahlungsart**, die BTCPay im Zahlungsobjekt als `paymentMethod`
+mitliefert (`BTC` gegen `BTC-LightningLike`). Liegt keine Zahlungsart vor,
+entscheidet die Form — liegt eine vor und enthält sie `lightning`, wird die
+Zahlung **verworfen**, unabhängig von `transactionId`.
+
+Folge für den Betrieb: eine Rechnung, die nur Lightning anbietet, kann nie
+gebucht werden. Rechnungen müssen eine on-chain-Zahlungsart anbieten.
+
 #### Belegspalten werden in Kleinschreibung normalisiert
 
 Der Format-`CHECK` erlaubt `a-fA-F`, `UNIQUE` ist aber **case-sensitiv**:

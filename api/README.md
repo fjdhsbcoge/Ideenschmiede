@@ -1126,16 +1126,41 @@ bei **jedem** Schreibvorgang auf `users`). Der Webhook schreibt nur nach
     „Belege“ für die Ausdrucksindizes die **Ausnahme** beschreibt. *Diese
     Auslegung ist hier festgehalten, weil sie eine Abweichung von der
     lowercase-Regel ist.*
-25. **`InvoiceSettled` ohne verwertbare Transaktionskennung bucht nicht.**
-    Antwort `200` mit `result: no_payment_txid`. Begründung:
+25. **Nur Ketten-Zahlungen sind ein Beleg — entschieden vom Auftraggeber.**
+    `InvoiceSettled` ohne verwertbare Transaktionskennung bucht nicht: Antwort
+    `200` mit `result: no_payment_txid`. Begründung:
     `subscriptions.payment_txid` ist der **Beleg**; eine Zeile ohne Beleg wäre
     ein Stimmrecht ohne Deckung — dieselbe Haltung wie bei den Ledgern, in denen
-    eine Buchung ohne `txid` gar nicht möglich ist. **Offener Punkt, gemeldet
-    und nicht entschieden:** eine **Lightning**-Zahlung trägt keine on-chain-txid,
-    sondern einen Payment Hash. Ob der als Beleg gelten soll (er ist ebenfalls 64
-    Hexzeichen), ist eine Frage an den Auftraggeber — dieser Schritt legt es
-    **nicht** stillschweigend fest. Heute gilt: nur auf-chain-Zahlungen mit
-    `transactionId` werden verbucht.
+    eine Buchung ohne `txid` gar nicht möglich ist.
+
+    Der zuvor hier vermerkte **offene Punkt ist damit entschieden**: eine
+    Lightning-Zahlung gilt **nicht** als Beleg, auch wenn ihr `payment_hash`
+    ebenfalls 64 Hexzeichen lang ist. Der Auftraggeber hat am 11. Februar 2026
+    festgelegt: *payment on chain*. Die Entscheidung ist inhaltlich dieselbe wie
+    der bisherige Wortlaut, aber sie ist jetzt eine Entscheidung und keine
+    Voreinstellung.
+
+    **Was dabei repariert werden musste.** Die Umsetzung prüfte bis dahin nur die
+    **Form** der Kennung (`/^[0-9a-f]{64}$/`). Diese Prüfung kann eine
+    Ketten-Zahlung nicht von einer Blitz-Zahlung unterscheiden — beide Kennungen
+    sind 64 Hexzeichen. BTCPay liefert im Zahlungsobjekt `paymentMethod` mit
+    (`BTC` bzw. `BTC-LightningLike`), und für Blitz-Zahlungen ist
+    `transactionId` mit dem Payment Hash gefüllt. Eine Blitz-Zahlung wäre damit
+    **als Beleg durchgegangen**. Behoben in `extractPaymentTxid()`:
+    Zahlungen, deren `paymentMethod` die Zeichenfolge `lightning` enthält,
+    werden verworfen — **vor** der Formprüfung und unabhängig davon, ob
+    `transactionId` gefüllt ist. Unbekannte Zahlungsarten bleiben zugelassen,
+    damit eine künftige Umbenennung den Zahlungsweg nicht stillschweigend
+    verstopft.
+
+    **Folge für den Betrieb.** Eine Rechnung, die **nur** Lightning anbietet,
+    kann nie gebucht werden: der Webhook quittiert sie mit `200` und
+    `no_payment_txid`, und BTCPay wiederholt sie nicht. Die Rechnungen bei BTCPay
+    müssen deshalb eine **on-chain-Zahlungsart** anbieten.
+
+    Belegt durch `tests/payment-txid.test.ts` (10 Tests): eine Blitz-Zahlung mit
+    gefülltem `transactionId` ergibt `null`; steht die **größere** Blitz-Zahlung
+    neben der kleineren Ketten-Zahlung, wird die Ketten-Zahlung genommen.
 26. **`manually_marked` aus `InvoiceSettled` ändert die Buchung nicht.** Das
     Feld wird gelesen und als `manuallyMarked` im Antwortkörper zurückgemeldet
     (`webhookResponse()`), aber ein von Hand als bezahlt markiertes Invoice wird
