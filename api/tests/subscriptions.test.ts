@@ -229,8 +229,36 @@ function secretFuerKindprozess(): string {
   return (process.env.SESSION_SECRET ?? 'x').repeat(2).slice(0, 40);
 }
 
-/** Der Port der beiden Starttests - bewusst hoch und ungewoehnlich. */
-const PORT_FUER_STARTTEST = 55999;
+/**
+ * Holt einen freien Port vom Betriebssystem.
+ *
+ * Frueher stand hier die feste Zahl 55999. Das ging gut, solange genau EIN
+ * Testlauf lief, und schief, sobald zwei gleichzeitig liefen: beide starteten
+ * den Server auf demselben Port, der zweite bekam EADDRINUSE und endete mit
+ * einer Meldung, die wie ein Fehler der Anwendung aussah - waehrend der erste
+ * Lauf unbeeintraechtigt weiterlief. Genau das ist zweimal passiert, als zwei
+ * Arbeiter gleichzeitig testeten.
+ *
+ * Gebunden wird an Port 0: das Betriebssystem sucht einen freien. Die Nummer
+ * wird gelesen und der Sperrserver sofort wieder geschlossen. Zwischen
+ * Schliessen und dem Start des Kindprozesses ist der Port theoretisch wieder
+ * frei - das Fenster ist wenige Millisekunden gross und der Port stammt aus dem
+ * Bereich, den das Betriebssystem fuer neue Verbindungen vergibt. Fuer einen
+ * Test ist das die richtige Abwaegung; eine dauerhafte Reservierung gaebe es
+ * nur mit einem Prozess, der den Port haelt - und der waere der Server selbst.
+ */
+async function freierPort(): Promise<number> {
+  const sperre = net.createServer();
+  await new Promise<void>((fertig) => sperre.listen(0, '127.0.0.1', fertig));
+  const adresse = sperre.address();
+  if (adresse === null || typeof adresse === 'string') {
+    sperre.close();
+    throw new Error('Der Sperrserver hat keine Portnummer geliefert.');
+  }
+  const port = adresse.port;
+  await new Promise<void>((fertig) => sperre.close(() => fertig()));
+  return port;
+}
 
 const SERVER_PFAD = fileURLToPath(new URL('../src/server.ts', import.meta.url));
 const TSX_PFAD = fileURLToPath(new URL('../node_modules/tsx/dist/cli.mjs', import.meta.url));
@@ -248,13 +276,13 @@ function starteServer(umgebung: NodeJS.ProcessEnv) {
   });
 }
 
-function umgebungMit(secret: string | null): NodeJS.ProcessEnv {
+function umgebungMit(secret: string | null, port: number): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     DATABASE_URL: process.env.DATABASE_URL,
     SESSION_SECRET: secretFuerKindprozess(),
     AUTH_BASE_URL: 'https://auth.test.invalid',
-    PORT: String(PORT_FUER_STARTTEST),
+    PORT: String(port),
     NODE_ENV: 'test',
   };
   if (secret === null) {
@@ -755,8 +783,10 @@ describe('Ablauf und Start', () => {
     expect(zweite.body.status).toBe('open');
   });
 
-  it('fehlendes BTCPAY_WEBHOOK_SECRET -> der Start bricht ab', () => {
-    const lauf = starteServer(umgebungMit(null));
+  it('fehlendes BTCPAY_WEBHOOK_SECRET -> der Start bricht ab', async () => {
+    // Der Port ist hier beliebig - der Server endet VOR dem Binden. Er kommt
+    // trotzdem aus freierPort(), damit kein fester Wert im Spiel ist.
+    const lauf = starteServer(umgebungMit(null, await freierPort()));
     const ausgabe = (lauf.stdout ?? '') + (lauf.stderr ?? '');
     expect(ausgabe).toContain(WEBHOOK_SECRET_ENV + ' fehlt');
     expect(lauf.status).toBe(1);
@@ -775,10 +805,12 @@ describe('Ablauf und Start', () => {
       throw new Error('Der Sperrserver hat keine Portnummer geliefert.');
     }
     try {
-      const lauf = starteServer({
-        ...umgebungMit('ein-testgeheimnis-fuer-den-kindprozess'),
-        PORT: String(adresse.port),
-      });
+      // Hier wird der Port BEWUSST belegt gehalten - der Server soll ja auf
+      // EADDRINUSE laufen. Er kommt aus dem Betriebssystem (Port 0), nicht aus
+      // einer festen Zahl: sonst stoerten sich zwei gleichzeitige Testlaeufe.
+      const lauf = starteServer(
+        umgebungMit('ein-testgeheimnis-fuer-den-kindprozess', adresse.port),
+      );
       const ausgabe = (lauf.stdout ?? '') + (lauf.stderr ?? '');
       expect(ausgabe).not.toContain(WEBHOOK_SECRET_ENV + ' fehlt');
       expect(ausgabe).toContain('Port ' + adresse.port + ' ist bereits belegt');
