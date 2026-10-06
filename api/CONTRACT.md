@@ -142,6 +142,17 @@ Zeitpunkt der Stimmabgabe, nicht an jedes spätere `UPDATE`:
 | `UPDATE` | prüft **nicht** neu (das Recht wurde bei der Abgabe geprüft und ist im Beleg festgehalten); jede Änderung von `subscription_id` wird abgewiesen |
 | `DELETE` | frei — Zurückziehen braucht kein Abonnement |
 
+**Die zwei Zahlen einer Idee erscheinen in zwei Formen — bewusst.** Sie stehen an
+zwei Stellen, die Verschachtelung folgt dem Inhalt:
+
+| Stelle | Form | Warum |
+|---|---|---|
+| `GET /api/ideas` | `discussion.votes.{up,down}` | Anhang 5.2 führt die Stimmen **innerhalb** des Diskussionsblocks. Die Liste liefert eine ganze Idee, also ihre Gliederung |
+| `GET /api/ideas/:id/votes` | `{voteUp, voteDown}` | Hier gibt es **nichts außer** den zwei Zahlen; ein verschachteltes Objekt darum wäre eine Gliederung ohne Inhalt |
+
+In der Ablage heißen beide `ideas.vote_up` / `ideas.vote_down`. Die Trennung
+entsteht erst in der Antwort, nicht in der Datenbank.
+
 ### Zähler
 
 | Kanonisch | Nicht verwenden |

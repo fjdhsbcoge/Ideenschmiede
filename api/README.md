@@ -193,10 +193,20 @@ Einspeisen bleibt ein eigener, sichtbarer Schritt. Der Ordner `migrations/`
 liegt im Behälter unter `/migrations` (nur lesbar):
 
 ```bash
+# bash - die Werte stehen in .env und muessen hier eingesetzt werden
 docker compose --env-file .env exec -T db \
-  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 \
+  psql -U <POSTGRES_USER> -d <POSTGRES_DB> -v ON_ERROR_STOP=1 \
   -f /migrations/001_init.sql
+
+# PowerShell - die Werte aus der .env-Datei holen, statt sie zu tippen
+$e = @{}; Get-Content .env | Where-Object { $_ -match '^[A-Z_]+=' } | ForEach-Object {
+  $k,$v = $_ -split '=',2; $e[$k] = $v }
+docker compose --env-file .env exec -T db psql -U $e['POSTGRES_USER'] -d $e['POSTGRES_DB'] `
+  -v ON_ERROR_STOP=1 -f /migrations/001_init.sql
 ```
+
+**Alle Migrationen, nicht nur die erste.** Jede setzt die vorige voraus:
+`001_init.sql` bis `005_ratelimit.sql`, in dieser Reihenfolge.
 
 **Reihenfolge und `ON_ERROR_STOP` sind keine Höflichkeit.** Ohne das Abbruch-
 Verhalten läuft ein Skript nach einem Fehler weiter und hinterlässt ein halb
@@ -1236,6 +1246,24 @@ bei **jedem** Schreibvorgang auf `users`). Der Webhook schreibt nur nach
     festgelegt: *payment on chain*. Die Entscheidung ist inhaltlich dieselbe wie
     der bisherige Wortlaut, aber sie ist jetzt eine Entscheidung und keine
     Voreinstellung.
+
+    **Nachtrag: eine Stimme ändern, wenn das Abonnement abgelaufen ist.** Das ist
+    erlaubt — **nicht** weil es entschieden wurde, sondern weil der Trigger es so
+    vorgibt: `idea_votes_assign_subscription` kehrt im UPDATE-Zweig früh zurück und
+    prüft dort kein Abonnement. Der Beleg `subscription_id` bleibt unverändert, die
+    Stimme bleibt also auf das Abonnement bezogen, das sie gedeckt hat.
+
+    **Der naheliegende Upsert ist hier falsch — gemessen.** Wer
+    `INSERT ... ON CONFLICT (idea_id, user_id) DO UPDATE` schreibt, bekommt bei
+    abgelaufenem Abonnement `23514`, obwohl die Änderung selbst erlaubt wäre:
+    PostgreSQL führt den BEFORE-INSERT-Trigger aus, **bevor** es den Konflikt
+    feststellt. Deshalb geht der Code zuerst den UPDATE-Zweig und fügt nur ein,
+    wenn es wirklich noch keine Zeile gibt. Eine NEUE Stimme braucht ein Stimmrecht,
+    eine geänderte nicht.
+
+    Nachgemessen am laufenden Dienst: neue Stimme ohne aktives Abonnement → `403
+    vote_requires_subscription`, danach 0 Zeilen in `idea_votes` und die Zähler
+    unverändert; mit totem Abonnement die Richtung ändern → `200`, Beleg bleibt.
 
     **Was dabei repariert werden musste.** Die Umsetzung prüfte bis dahin nur die
     **Form** der Kennung (`/^[0-9a-f]{64}$/`). Diese Prüfung kann eine

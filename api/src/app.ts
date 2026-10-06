@@ -28,6 +28,7 @@ import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { Sql } from 'postgres';
+import { createApplicationsApp } from './applications.js';
 import {
   AUTH_ERROR_REASONS,
   AuthError,
@@ -64,6 +65,14 @@ import {
   webhookSecretFromEnv,
 } from './subscriptions.js';
 import { API_VERSION } from './version.js';
+import {
+  castVote,
+  isVoteDirection,
+  readVotes,
+  VoteError,
+  withdrawVote,
+  type VoteCounts,
+} from './votes.js';
 
 /** Paginierung: Grenzen, nicht Wunschwerte. */
 export const DEFAULT_LIMIT = 20;
@@ -405,6 +414,67 @@ export async function createApp(
   });
 
   // ---------------------------------------------------------------------------
+  // Stimmen auf Ideen (ADR-003)
+  // ---------------------------------------------------------------------------
+  // POST   /api/ideas/:id/vote    Stimme abgeben oder aendern   (Sitzung noetig)
+  // DELETE /api/ideas/:id/vote    eigene Stimme zuruecknehmen   (Sitzung noetig)
+  // GET    /api/ideas/:id/votes   oeffentlich: { voteUp, voteDown }
+  //
+  // Die Sitzung wird GENAU so gelesen wie bei GET /api/users/me: currentUser(c)
+  // (Cookie oder Bearer-Token); ohne gueltige Sitzung 401 in derselben Form.
+  //
+  // Die Arbeit an der Datenbank steht in src/votes.ts (dort auch die Begruendung,
+  // warum eine geaenderte Stimme ein UPDATE ist und kein zweiter INSERT). Hier
+  // steht nur die Uebersetzung nach HTTP.
+  //
+  // KEINE dieser Routen schreibt ideas.vote_up / ideas.vote_down. Die Zaehler
+  // gehoeren dem Trigger idea_votes_sync_counters_trg. Zurueckgegeben werden sie
+  // trotzdem - aber erst nach dem Schreiben aus ideas gelesen: die Antwort ist
+  // damit eine Tatsache ueber die Datenbank, nicht die Behauptung der Anwendung.
+  app.post('/api/ideas/:id/vote', async (c) => {
+    const nutzer = await currentUser(c);
+    if (nutzer === null) {
+      return authFailure(c, 401, AUTH_ERROR_REASONS.unauthorized);
+    }
+
+    let body: Record<string, unknown> | null;
+    try {
+      body = await readJsonBody(c.req.raw);
+    } catch (error) {
+      // readJsonBody wirft eine HTTPException(400). Hier bekommt sie den Code,
+      // der zu einem Anfragekoerper passt - 'invalid_query' waere die Auskunft
+      // fuer einen Abfrageparameter.
+      if (error instanceof HTTPException) {
+        return voteFailure(c, 400, 'invalid_request', error.message);
+      }
+      throw error;
+    }
+
+    const direction = body?.direction;
+    if (!isVoteDirection(direction)) {
+      return voteFailure(c, 400, 'invalid_request', 'Erwartet wird { "direction": "up" | "down" }.');
+    }
+
+    return voteAnswer(c, () => castVote(c.get('db'), c.req.param('id'), nutzer.id, direction));
+  });
+
+  app.delete('/api/ideas/:id/vote', async (c) => {
+    const nutzer = await currentUser(c);
+    if (nutzer === null) {
+      return authFailure(c, 401, AUTH_ERROR_REASONS.unauthorized);
+    }
+
+    return voteAnswer(c, () => withdrawVote(c.get('db'), c.req.param('id'), nutzer.id));
+  });
+
+  // Oeffentlich - ohne Sitzung, wie GET /api/ideas. Eine Stimme ist eine
+  // oeffentliche Tatsache ueber eine oeffentliche Idee; wer mitzaehlt, soll sich
+  // dafuer nicht anmelden muessen.
+  app.get('/api/ideas/:id/votes', async (c) => {
+    return voteAnswer(c, () => readVotes(c.get('db'), c.req.param('id')));
+  });
+
+  // ---------------------------------------------------------------------------
   // LNURL-auth (Roadmap Phase 3.2)
   // ---------------------------------------------------------------------------
   // Pfade ohne Versionspraefix - wie die bestehenden Endpunkte dieser API
@@ -687,6 +757,16 @@ export async function createApp(
   });
 
   // ---------------------------------------------------------------------------
+  // Bewerbungen auf ein Team (Migration 006_team_applications.sql)
+  // ---------------------------------------------------------------------------
+  // Eigene Datei (src/applications.ts) mit eigenen Routen, hier mit EINEM
+  // Aufruf eingehaengt: app.ts wird parallel bearbeitet (Abstimmungen), und
+  // zwei Arbeiter in derselben Datei sind zwei Arbeiter zu viel. Pool und
+  // Auth-Konfiguration gehen als Parameter hinein, damit die Bewerbungen nicht
+  // an den Variablensatz dieser App gebunden sind.
+  app.route('/', createApplicationsApp({ db, auth }));
+
+  // ---------------------------------------------------------------------------
   // Fehler als JSON, nicht als HTML-Stacktrace
   // ---------------------------------------------------------------------------
   app.notFound((c) =>
@@ -832,6 +912,60 @@ function sessionCookieOptions(secure: boolean): SessionCookieOptions {
     maxAge: SESSION_COOKIE_MAX_AGE,
     secure,
   };
+}
+
+// -----------------------------------------------------------------------------
+// Hilfsfunktionen fuer die Stimmen-Routen
+// -----------------------------------------------------------------------------
+
+/**
+ * Die Fehlerform der uebrigen Endpunkte dieser API: { error: { code, message } }
+ * - dieselbe, die app.onError schreibt. Ein VoteError traegt seinen Status
+ * selbst (siehe src/votes.ts); hier wird er nur noch geschrieben.
+ *
+ * Ab 403 wird zusaetzlich protokolliert: das ist der Fall, in dem ein Nutzer
+ * etwas versucht, wofuer ihm das Stimmrecht fehlt - die Ursache soll im
+ * Serverprotokoll nachvollziehbar bleiben, waehrend nach aussen eine knappe
+ * Begruendung geht.
+ */
+function voteFailure(
+  c: Context<AppEnv>,
+  status: 400 | 403 | 404,
+  code: string,
+  message: string,
+): Response {
+  if (status !== 400) {
+    console.warn(`[votes] ${code}: ${message}`);
+  }
+  return c.json({ error: { code, message } }, status);
+}
+
+/**
+ * Fuehrt die Datenbankarbeit aus und macht aus einem VoteError die passende
+ * Antwort. Ein unbekannter Fehler wird WEITERGEWORFEN und landet damit in
+ * app.onError (500, Ursache im Protokoll) - er ist kein Aufruferfehler und darf
+ * nicht als solcher ausgegeben werden.
+ *
+ * `null` heisst: diese Idee gibt es nicht (so meldet es readVotes, das keinen
+ * Fehler werfen muss, um nichts zu finden). Daraus wird ein 404 - "keine
+ * Stimmen" und "keine Idee" duerfen nicht dieselbe Antwort bekommen.
+ */
+async function voteAnswer(
+  c: Context<AppEnv>,
+  arbeit: () => Promise<VoteCounts | null>,
+): Promise<Response> {
+  try {
+    const ergebnis = await arbeit();
+    if (ergebnis === null) {
+      return voteFailure(c, 404, 'not_found', 'Diese Idee gibt es nicht.');
+    }
+    return c.json(ergebnis);
+  } catch (error) {
+    if (error instanceof VoteError) {
+      return voteFailure(c, error.status, error.code, error.message);
+    }
+    throw error;
+  }
 }
 
 // -----------------------------------------------------------------------------
