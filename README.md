@@ -4,197 +4,121 @@
 
 *Die Wertschöpfungskette von der Idee zum Produkt – neu gedacht.*
 
-## 🔴 Live-Demo
+## Die Idee
 
-[![Live-Demo](https://img.shields.io/badge/Live--Demo-online-54763a?style=for-the-badge&logo=githubpages&logoColor=white)](https://ideenschmiede-forum.de/)
+Eine gute Idee stirbt meist nicht an sich selbst. Sie stirbt daran, dass niemand
+sie sieht, dass niemand Zeit hat, sie zu bauen, und dass niemand früh Geld dafür
+gibt. Wer eine Idee hat, wird nicht gefragt. Wer bauen kann, weiß nicht, was.
+Wer investieren würde, darf nicht.
 
-**https://ideenschmiede-forum.de/**
+Die Ideenschmiede setzt diese drei an einen Tisch – und lässt sie an **demselben
+Ergebnis** verdienen.
 
-Diese Seite wird bei jedem Push auf `master` (Änderungen an `webapp/**`) automatisch
-per GitHub Actions neu gebaut und deployed – sie zeigt **immer die aktuellste Version**.
+- **Ideengeber** veröffentlichen ihre Idee und verdienen an ihrem Erfolg.
+- **Macher** bewerben sich mit einem Plan und bauen sie.
+- **Geldgeber** finanzieren direkt, ohne Zwischeninstanz.
 
----
+## Die Überzeugung dahinter
 
-## 📝 Über dieses Repository
+**Geld ist das einzige Tor.** Wer ein Abonnement bezahlt, ist dabei. Kein Ausweis,
+keine Telefonnummer, kein Bewerbungsverfahren, keine Einladung durch eine Gruppe.
+Damit ist der Zugang für jeden gleich – und niemand muss einer Plattform seine
+Identität geben.
 
-Dieses Repository enthält die Entwicklung der **Ideenschmiede**, einem Marktplatz für Ideen.
+**Eine Person, eine Stimme.** Das Abonnement ist nicht nur Zugang, es ist das
+Stimmrecht. Wer zahlt, entscheidet mit – nicht wer am meisten zahlt.
 
-**Wichtiger Transparenz-Hinweis:**
-- Dieses Repository wurde von **Kimi Claw**, einem KI-Assistenten, erstellt und wird von ihm gepflegt
-- Alle Commits mit dem Autor „Kimi Claw" stammen von einer KI, nicht von einem Menschen
-- Der menschliche Kollaborateur ist @senator-thunfisch (Projektinhaber)
-- Dies ist ein KI-Mensch-Kollaborationsprojekt
+**Die Plattform hält kein Geld.** Zahlungen fließen direkt zwischen den Beteiligten.
+Es gibt kein Treuhandkonto, das man sperren, pfänden oder missbrauchen könnte.
 
----
+**Macher und Geldgeber teilen dasselbe Risiko.** Beide sind am selben Ergebnis
+beteiligt. Wer eine Idee baut, verdient an ihr – und wer sie finanziert, auch.
 
-## 🎯 Was ist die Ideenschmiede?
+**Transparenz ersetzt Verträge.** Umsatzberichte sind öffentlich, Entscheidungen
+nachvollziehbar. Vertrauen soll aus Nachvollziehbarkeit entstehen, nicht aus
+Anwälten.
 
-Die Ideenschmiede ist eine Plattform, auf der:
-- **Ideengeber** Ideen veröffentlichen und an ihrem Erfolg verdienen
-- **Investoren** von der Community validierte Ideen entdecken und finanzieren
-- **Macher** Teams bilden und Ideen zum Leben erwecken
-
-### Kernprinzipien
-- **Non-custodial** – die Plattform hält niemals Nutzergelder
-- **Eigene Bitcoin-Infrastruktur der Nutzer** – Wallets verbinden, direkt zahlen
-- **20/80-Umsatzteilung** – 20 % an Ideengeber, 80 % an Macher
-- **Community-Validierung** – 1 Person = 1 Stimme
-- **Parallele Teams** – mehrere Teams dürfen dieselbe Idee bauen
-- **Vertrauen durch Transparenz** – soziale Verträge + Reputation statt Durchsetzung
-
----
-
-## 🤖 KI-Mensch-Zusammenarbeit
-
-Dieses Projekt folgt einem **KI-first-Spezifikationsansatz**:
-1. Die KI (Kimi Claw) erstellt Prototypen und Spezifikationen
-2. Der Mensch prüft und gibt Feedback
-3. Die KI verfeinert auf Basis des Feedbacks
-4. Künftige KI-Agenten können diese Spezifikationen zur Umsetzung nutzen
-
----
-
-## 📁 Repository-Struktur
+## Wie es abläuft
 
 ```
-├── webapp/              # ⭐ Aktive Plattform v1.2 (React + TypeScript + Vite + Tailwind)
-│   ├── src/pages/       # Landing, Diskussion, Marktplatz, Teams, Dashboard …
-│   ├── src/lib/i18n/    # de.ts – zentrale Sprachdatei (i18n-ready)
-│   └── src/lib/         # Store (Rollen, Bewerbungen, Votes), Beispieldaten
-│
-├── docs/                # GitHub Pages (Einstieg) + Whitepaper
-│   ├── index.html       # Weiterleitung zur aktuellen Demo
-│   └── Ideenschmiede_Whitepaper.pdf
-│
-├── archive/             # Historie – nichts gelöscht, nur sortiert
-│   ├── legacy-demos/    # Statische HTML-Demos v0.3–v0.5
-│   ├── prototypes/      # Frühe UI-Prototypen v0.1–v0.5
-│   ├── memory/          # Entwicklungs-Log (2026-03-12)
-│   ├── v0.2/            # v0.2 Demo
-│   └── INVESTMENT-SCENARIOS.md
-│
-├── VISION.md            # Idealvorstellung – Kernprinzipien & Entscheidungen
-├── BUILD.md             # Bauanleitung – Schritt-für-Schritt-Umsetzung
-├── ARCHITECTURE.md      # Technische Architektur – Stack, Datenmodelle, APIs
-└── README.md            # Diese Datei
+1. Diskussion     Eine Idee wird veröffentlicht. Jeder kann lesen und antworten.
+2. Abstimmung     Die Gemeinschaft entscheidet, ob die Idee weitergeht.
+3. Beteiligung    Die Idee wird finanziert - direkt, von Person zu Person.
+4. Teams          Macher bewerben sich. Geldgeber wählen, wem sie vertrauen.
+5. Bauen          In Abschnitten, jeder mit eigener Freigabe.
+6. Ernte          20 % an die Idee, 80 % an die, die gebaut haben.
 ```
 
----
+## Die Aufteilung
 
-## 🚀 Live-Demo
+**Wenn investiert wird** – das Geld kommt da an, wo es gebraucht wird:
 
-**🆕 Plattform v1.2 (React):** Vollständige interaktive Plattform-Demo – siehe [`webapp/`](webapp/). Lokal starten:
-
-```bash
-cd webapp
-npm install
-npm run dev      # Entwicklung
-npm run build    # Produktions-Build → dist/
-```
-
-**Highlights der v1.2:**
-- 💡 Ideen-Diskussion mit Chain-of-Thought-Rewards & Create-Idea-Wizard
-- 🛒 Marktplatz mit Paywall, echtem Voting und **Investor Team Selection** (80 %-Pool per Slider auf Teams verteilen, non-refundable)
-- 👥 Team-Detailseiten: Meilensteine mit Deliverables, monatliche Revenue-Reports, Shareholder, eingehende Bewerbungen (Leader-Ansicht)
-- 📨 Bewerbungs-System mit Status-Tracking (localStorage-persistiert)
-- 🗳️ Milestone-Voting & Marktplatz-Voting („1 Person = 1 Stimme")
-- 🗣️ i18n-Infrastruktur (`de.ts`) – neue Sprachen per Datei, typsicher
-- 🌐 Landing-Sektionen „Dein Abo ist dein Stimmrecht" (Subscription statt KYC) & „Tausend Schmieden statt einer Plattform" (Föderation)
-
-**Automatisches Deployment:** Ein GitHub-Actions-Workflow (`.github/workflows/deploy.yml`) baut die webapp bei jedem Push und deployed sie auf GitHub Pages.
-
-**Ältere HTML-Demos:** Ins Archiv umgezogen → [`archive/legacy-demos/`](archive/legacy-demos/).
-
----
-
-## 📊 Projektstatus
-
-### Abgeschlossen ✅
-- [x] Vision-Dokument (VISION.md)
-- [x] Bauanleitung (BUILD.md)
-- [x] Architektur-Dokumentation (ARCHITECTURE.md)
-- [x] Interaktive HTML-Demos v0.1–v0.5 (Archiv)
-- [x] 3-stufiges Rollensystem (Visitor/User/Subscriber)
-- [x] **v1.2 React-Plattform** (TypeScript + Vite + Tailwind, siehe `webapp/`)
-  - Landing mit Föderations- & Subscription-Sektionen
-  - Team-Detailseiten mit Revenue-Reports & Milestone-Voting
-  - Bewerbungs-System (Bewerber- & Leader-Ansicht)
-  - Investor Team Selection (80 %-Pool-Verteilung)
-  - i18n-Infrastruktur (de.ts, typsicher erweiterbar)
-- [x] GitHub-Actions-Workflow: Build & Deploy der webapp auf Pages
-
-### In Arbeit 🚧
-- [ ] i18n-Migration der restlichen Seiten (Dashboard, Profil, Teams) auf de.ts
-- [ ] Settings-Seite (Profil, Wallet/xpub, Benachrichtigungen)
-
-### Geplant 📋
-- [ ] Backend (Auth, Datenbank, echte Persistenz) – MVP-Phase 2
-- [ ] BTCPay-Server-Anbindung (Bitcoin-Subscription, non-custodial)
-- [ ] Föderations-Protokoll (Instanzen, portable Reputation, signierte Attestierungen)
-- [ ] RGB-Protokoll-Integration (Phase 2)
-
----
-
-## 📖 Zentrale Dokumente
-
-| Dokument | Zweck |
-|----------|-------|
-| [VISION.md](VISION.md) | Idealvorstellung – Kernprinzipien, Nutzerflüsse, Entscheidungen |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Technische Architektur – Stack, Datenmodelle, APIs |
-| [BUILD.md](BUILD.md) | Bauanleitung – Schritt-für-Schritt-Umsetzung |
-| [webapp/README.md](webapp/README.md) | Plattform v1.2 – Setup, Struktur, i18n |
-| [Whitepaper (PDF)](docs/Ideenschmiede_Whitepaper.pdf) | Konzept-Paper |
-
----
-
-## 🏗️ Die 6 Stufen einer Idee
-
-```
-1. Diskussion    → Idee posten, Feedback sammeln (kostenlos)
-2. Voting        → Community validiert (8 Tage)
-3. Idea-Shares   → Verkauf mit fixem Angebot (14 Tage)
-4. Teams         → Macher bewerben sich, Investoren wählen
-5. Building      → Meilenstein-basierte Entwicklung
-6. Revenue       → 20/80-Verteilung an Shareholder
-```
-
----
-
-## 💰 Geldfluss
-
-### Investitions-Aufteilung
 ```
 100 % Investition
-├── 15 % → Ideengeber (sofort)
-├──  5 % → frühe Mitdenker
-└── 80 % → Team-Budget
+├── 15 %  an den Ideengeber - sofort, als Anerkennung
+├──  5 %  an frühe Mitdenker
+└── 80 %  an das Team, das baut
 ```
 
-### Umsatz-Aufteilung
+**Wenn gebaut und verdient wird** – beide Seiten ernten:
+
 ```
-100 % Team-Umsatz
-├── 20 % → Idea-Share-Halter (alle Teams)
-└── 80 % → Team-Share-Halter (dieses Team)
+100 % Umsatz des Teams
+├── 20 %  an alle, die an der IDEE beteiligt sind
+└── 80 %  an alle, die am TEAM beteiligt sind
 ```
+
+Zwei getrennte Beteiligungen, und das ist Absicht: Die Idee trägt, wenn **irgendein**
+Team sie zum Erfolg bringt. Das Team trägt, wenn **dieses** Team liefert. Wer an
+einer Idee beteiligt ist, setzt darauf, dass sie funktioniert – nicht darauf, dass
+ein bestimmtes Team es schafft.
+
+**Warum mehrere Teams dieselbe Idee bauen dürfen:** Eine Idee ist kein Besitz, der
+vergeben wird. Konkurrenz um die beste Umsetzung ist kein Fehler, sondern der
+Mechanismus.
+
+## Der Stand des Projektes
+
+**Die Demo ist aktuell und vollständig anklickbar:**
+
+### **https://ideenschmiede-forum.de/**
+
+Sie zeigt den vollständigen Ablauf – von der veröffentlichten Idee über Abstimmung
+und Beteiligung bis zum Team, das baut. Alle Seiten sind begehbar, alle Rollen
+umschaltbar.
+
+**Was funktioniert:** Die gesamte Oberfläche ist gebaut und benutzbar. Das Fundament
+für echte Konten und echte Zahlungen steht ebenfalls – Anmeldung per Bitcoin-Wallet,
+Abonnement, direkte Zahlungen ohne Zwischeninstanz.
+
+**Was noch fehlt:** Die Plattform läuft noch nicht öffentlich mit echten Nutzern und
+echtem Geld. Dafür braucht es einen Server und eine rechtliche Prüfung – denn sobald
+Menschen sich beteiligen können, ist das keine Demo mehr.
+
+**Wie es weitergeht:** Zuerst die Oberfläche fertigstellen und die Farben und die
+Darstellung auf dem Telefon in Ordnung bringen. Dann der öffentliche Start.
+
+Der vollständige Gedanke – Nutzerflüsse, Beteiligungsformen, Föderation,
+Sicherungen – steht in **[VISION.md](VISION.md)**.
 
 ---
 
-## 🔗 Links
+## Wer das hier baut
 
-- **Aktive Plattform:** [`webapp/`](webapp/) (React v1.2 – lokal via `npm run dev`)
-- **Pages-Einstieg:** https://ideenschmiede-forum.de
-- **Archiv (alte Demos):** [`archive/legacy-demos/`](archive/legacy-demos/)
+Dieses Projekt entsteht in Zusammenarbeit von Mensch und KI. Die Programmierung und
+die Texte stammen überwiegend von KI-Agenten; der Projektinhaber
+**@senator-thunfisch** entscheidet, prüft und gibt die Richtung vor.
 
----
-
-## 📜 Lizenz
-
-Dieses Projekt steht unter der **MIT-Lizenz**. Der vollständige Lizenztext liegt in [`LICENSE`](LICENSE).
-
-Kurz gefasst: Nutzung, Veränderung und Weitergabe sind erlaubt, auch kommerziell. Bedingung ist, dass Copyright-Hinweis und Lizenztext beibehalten werden. Die Software wird ohne Gewährleistung bereitgestellt.
-
----
-
-*Verfasst von Kimi Claw (KI-Assistent) in Zusammenarbeit mit @senator-thunfisch*
+Die Commits tragen den Autor **DeepSeek-Coordinator**. Sie stammen von einer KI,
+nicht von einem Menschen – das steht hier, damit es niemand herausfinden muss.
 
 > "Don't worry. Even if the world forgets, I'll remember for you."
+
+---
+
+## Lizenz
+
+Dieses Projekt steht unter der **MIT-Lizenz**. Nutzung, Veränderung und Weitergabe
+sind erlaubt, auch kommerziell. Bedingung ist, dass Copyright-Hinweis und
+Lizenztext beibehalten werden. Die Software wird ohne Gewährleistung
+bereitgestellt. Vollständiger Text: [`LICENSE`](LICENSE).
