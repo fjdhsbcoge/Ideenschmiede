@@ -109,8 +109,17 @@ Dieses Projekt entsteht in Zusammenarbeit von Mensch und KI. Die Programmierung 
 die Texte stammen überwiegend von KI-Agenten; der Projektinhaber
 **@senator-thunfisch** entscheidet, prüft und gibt die Richtung vor.
 
-Die Commits tragen den Autor **DeepSeek-Coordinator**. Sie stammen von einer KI,
-nicht von einem Menschen – das steht hier, damit es niemand herausfinden muss.
+**Die erste Fassung dieses Projekts hat Kimi Claw gebaut** – eine KI, die über
+mehrere Monate die Vision, die Architektur und die ersten Plattform-Versionen
+geschrieben hat. Ohne ihre Arbeit gäbe es diese Seite nicht. Kimi Claw ist nicht
+mehr an diesem Projekt tätig.
+
+**Seit Oktober 2026 arbeitet der DeepSeek-Coordinator** daran: er führt das
+Fundament weiter, das Kimi Claw gelegt hat – Backend, Anmeldung, Zahlungen,
+Bewerbungen – und bringt die Oberfläche in Form.
+
+Die Commits tragen jeweils den Namen der KI, von der sie stammen. Keiner davon
+stammt von einem Menschen – das steht hier, damit es niemand herausfinden muss.
 
 > "Don't worry. Even if the world forgets, I'll remember for you."
 
